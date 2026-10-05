@@ -6,6 +6,7 @@
                 <h1 class="text-2xl font-bold text-[#003366]">
                     Truk
                 </h1>
+
                 <p class="mt-1 text-sm text-gray-500">
                     Kelola armada kendaraan operasional MJI.
                 </p>
@@ -23,21 +24,30 @@
         <!-- SUMMARY -->
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div class="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-                <p class="text-sm text-gray-500">Total Truk</p>
+                <p class="text-sm text-gray-500">
+                    Total Truk
+                </p>
+
                 <p class="mt-2 text-2xl font-bold text-gray-900">
                     {{ trucks.length }}
                 </p>
             </div>
 
             <div class="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-                <p class="text-sm text-gray-500">Aktif</p>
+                <p class="text-sm text-gray-500">
+                    Aktif
+                </p>
+
                 <p class="mt-2 text-2xl font-bold text-emerald-600">
                     {{ activeCount }}
                 </p>
             </div>
 
             <div class="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-                <p class="text-sm text-gray-500">Nonaktif</p>
+                <p class="text-sm text-gray-500">
+                    Nonaktif
+                </p>
+
                 <p class="mt-2 text-2xl font-bold text-gray-400">
                     {{ inactiveCount }}
                 </p>
@@ -46,11 +56,11 @@
 
         <!-- FILTER -->
         <div class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-            <div class="grid grid-cols-1 gap-3 md:grid-cols-[1fr_180px]">
+            <div class="grid grid-cols-1 gap-3 md:grid-cols-[1fr_200px]">
                 <input
                     v-model="search"
                     type="text"
-                    placeholder="Cari kode, nomor polisi, atau nama truk..."
+                    placeholder="Cari kode, nomor polisi, merk, atau model..."
                     class="rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-[#0052cc] focus:ring-2 focus:ring-blue-100"
                 />
 
@@ -58,9 +68,25 @@
                     v-model="statusFilter"
                     class="rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#0052cc]"
                 >
-                    <option value="">Semua Status</option>
-                    <option value="active">Aktif</option>
-                    <option value="inactive">Nonaktif</option>
+                    <option value="">
+                        Semua Status
+                    </option>
+
+                    <option value="available">
+                        Tersedia
+                    </option>
+
+                    <option value="in_use">
+                        Digunakan
+                    </option>
+
+                    <option value="maintenance">
+                        Maintenance
+                    </option>
+
+                    <option value="inactive">
+                        Nonaktif
+                    </option>
                 </select>
             </div>
         </div>
@@ -74,21 +100,27 @@
                             <th class="px-5 py-4 text-left font-semibold text-gray-600">
                                 Kode
                             </th>
+
                             <th class="px-5 py-4 text-left font-semibold text-gray-600">
                                 Nomor Polisi
                             </th>
+
                             <th class="px-5 py-4 text-left font-semibold text-gray-600">
-                                Nama Truk
+                                Kendaraan
                             </th>
+
                             <th class="px-5 py-4 text-left font-semibold text-gray-600">
                                 Jenis
                             </th>
+
                             <th class="px-5 py-4 text-left font-semibold text-gray-600">
                                 Kapasitas
                             </th>
+
                             <th class="px-5 py-4 text-left font-semibold text-gray-600">
                                 Status
                             </th>
+
                             <th class="px-5 py-4 text-right font-semibold text-gray-600">
                                 Aksi
                             </th>
@@ -106,29 +138,36 @@
                             </td>
 
                             <td class="px-5 py-4 font-semibold text-gray-900">
-                                {{ truck.plateNumber }}
+                                {{ truck.plate_number }}
                             </td>
 
                             <td class="px-5 py-4 text-gray-700">
-                                {{ truck.name }}
+                                <div class="font-medium">
+                                    {{ vehicleName(truck) }}
+                                </div>
+
+                                <div
+                                    v-if="truck.brand || truck.model"
+                                    class="mt-0.5 text-xs text-gray-400"
+                                >
+                                    {{ truck.brand }} {{ truck.model }}
+                                </div>
                             </td>
 
                             <td class="px-5 py-4 text-gray-600">
-                                {{ truck.truckType }}
+                                {{ truck.truck_type?.name || '-' }}
                             </td>
 
                             <td class="px-5 py-4 text-gray-600">
-                                {{ truck.capacity }}
+                                {{ formatCapacity(truck) }}
                             </td>
 
                             <td class="px-5 py-4">
                                 <span
-                                    :class="truck.status === 'active'
-                                        ? 'bg-emerald-50 text-emerald-700'
-                                        : 'bg-gray-100 text-gray-500'"
                                     class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold"
+                                    :class="statusClass(truck.status)"
                                 >
-                                    {{ truck.status === 'active' ? 'Aktif' : 'Nonaktif' }}
+                                    {{ statusLabel(truck.status) }}
                                 </span>
                             </td>
 
@@ -143,14 +182,21 @@
                                     </button>
 
                                     <button
+                                        v-if="truck.status !== 'in_use'"
                                         type="button"
                                         class="rounded-lg px-3 py-1.5 text-xs font-semibold"
-                                        :class="truck.status === 'active'
-                                            ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                                            : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'"
+                                        :class="
+                                            truck.status === 'inactive'
+                                                ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                                                : 'bg-red-50 text-red-600 hover:bg-red-100'
+                                        "
                                         @click="toggleStatus(truck)"
                                     >
-                                        {{ truck.status === 'active' ? 'Nonaktifkan' : 'Aktifkan' }}
+                                        {{
+                                            truck.status === 'inactive'
+                                                ? 'Aktifkan'
+                                                : 'Nonaktifkan'
+                                        }}
                                     </button>
                                 </div>
                             </td>
@@ -176,11 +222,13 @@
             @click.self="closeModal"
         >
             <div class="w-full max-w-xl rounded-2xl bg-white shadow-xl">
+                <!-- MODAL HEADER -->
                 <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
                     <div>
                         <h2 class="text-lg font-bold text-[#003366]">
                             {{ editingId ? 'Edit Truk' : 'Tambah Truk' }}
                         </h2>
+
                         <p class="mt-1 text-xs text-gray-500">
                             Data armada kendaraan operasional.
                         </p>
@@ -195,12 +243,18 @@
                     </button>
                 </div>
 
-                <form class="space-y-4 p-6" @submit.prevent="saveTruck">
+                <!-- FORM -->
+                <form
+                    class="space-y-4 p-6"
+                    @submit.prevent="saveTruck"
+                >
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <!-- CODE -->
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700">
                                 Kode Truk
                             </label>
+
                             <input
                                 v-model="form.code"
                                 required
@@ -209,12 +263,14 @@
                             />
                         </div>
 
+                        <!-- PLATE -->
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700">
                                 Nomor Polisi
                             </label>
+
                             <input
-                                v-model="form.plateNumber"
+                                v-model="form.plate_number"
                                 required
                                 placeholder="L 8123 AB"
                                 class="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm uppercase outline-none focus:border-[#0052cc] focus:ring-2 focus:ring-blue-100"
@@ -222,62 +278,138 @@
                         </div>
                     </div>
 
-                    <div>
-                        <label class="mb-1.5 block text-sm font-medium text-gray-700">
-                            Nama Truk
-                        </label>
-                        <input
-                            v-model="form.name"
-                            required
-                            placeholder="Colt Diesel 01"
-                            class="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#0052cc] focus:ring-2 focus:ring-blue-100"
-                        />
-                    </div>
-
+                    <!-- BRAND + MODEL -->
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700">
-                                Jenis Truk
+                                Merk
                             </label>
-                            <select
-                                v-model="form.truckType"
-                                required
-                                class="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#0052cc]"
-                            >
-                                <option value="">Pilih jenis</option>
-                                <option>Colt Diesel</option>
-                                <option>Fuso</option>
-                                <option>Engkel</option>
-                                <option>Tronton</option>
-                                <option>Trailer</option>
-                                <option>Lainnya</option>
-                            </select>
+
+                            <input
+                                v-model="form.brand"
+                                placeholder="Mitsubishi"
+                                class="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#0052cc] focus:ring-2 focus:ring-blue-100"
+                            />
                         </div>
 
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700">
+                                Model
+                            </label>
+
+                            <input
+                                v-model="form.model"
+                                placeholder="Canter FE 74"
+                                class="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#0052cc] focus:ring-2 focus:ring-blue-100"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- TYPE -->
+                    <div>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">
+                            Jenis Truk
+                        </label>
+
+                        <select
+                            v-model="form.truck_type_id"
+                            required
+                            class="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#0052cc]"
+                        >
+                            <option value="">
+                                Pilih jenis truk
+                            </option>
+
+                            <option
+                                v-for="type in truckTypes"
+                                :key="type.id"
+                                :value="type.id"
+                            >
+                                {{ type.code }} - {{ type.name }}
+                            </option>
+                        </select>
+
+                        <p
+                            v-if="truckTypes.length === 0"
+                            class="mt-1.5 text-xs text-amber-600"
+                        >
+                            Belum ada master jenis truk.
+                        </p>
+                    </div>
+
+                    <!-- CAPACITY -->
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                            <label class="mb-1.5 block text-sm font-medium text-gray-700">
                                 Kapasitas
                             </label>
+
                             <input
                                 v-model="form.capacity"
-                                placeholder="Contoh: 5 Ton"
+                                type="number"
+                                min="0"
+                                step="0.001"
+                                placeholder="5"
+                                class="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#0052cc]"
+                            />
+                        </div>
+
+                        <div>
+                            <label class="mb-1.5 block text-sm font-medium text-gray-700">
+                                Satuan Kapasitas
+                            </label>
+
+                            <input
+                                v-model="form.capacity_unit"
+                                placeholder="Ton"
                                 class="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#0052cc]"
                             />
                         </div>
                     </div>
 
+                    <!-- STATUS -->
+                    <div>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">
+                            Status
+                        </label>
+
+                        <select
+                            v-model="form.status"
+                            class="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#0052cc]"
+                        >
+                            <option value="available">
+                                Tersedia
+                            </option>
+
+                            <option value="in_use">
+                                Digunakan
+                            </option>
+
+                            <option value="maintenance">
+                                Maintenance
+                            </option>
+
+                            <option value="inactive">
+                                Nonaktif
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- NOTES -->
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">
                             Keterangan
                         </label>
+
                         <textarea
                             v-model="form.notes"
                             rows="3"
                             placeholder="Keterangan tambahan..."
                             class="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#0052cc]"
-                        />
+                        ></textarea>
                     </div>
 
+                    <!-- ACTION -->
                     <div class="flex justify-end gap-3 border-t border-gray-100 pt-4">
                         <button
                             type="button"
@@ -289,9 +421,10 @@
 
                         <button
                             type="submit"
-                            class="rounded-xl bg-[#0052cc] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#003f9e]"
+                            :disabled="saving"
+                            class="rounded-xl bg-[#0052cc] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#003f9e] disabled:cursor-not-allowed disabled:opacity-60"
                         >
-                            Simpan
+                            {{ saving ? 'Menyimpan...' : 'Simpan' }}
                         </button>
                     </div>
                 </form>
@@ -301,72 +434,57 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { erpApi, getApiError } from '@/services/api'
 
 const search = ref('')
 const statusFilter = ref('')
+
 const showModal = ref(false)
 const editingId = ref(null)
+const saving = ref(false)
 
-const trucks = ref([
-    {
-        id: 1,
-        code: 'TRK-001',
-        plateNumber: 'L 8123 AB',
-        name: 'Colt Diesel 01',
-        truckType: 'Colt Diesel',
-        capacity: '5 Ton',
-        notes: '',
-        status: 'active',
-    },
-    {
-        id: 2,
-        code: 'TRK-002',
-        plateNumber: 'L 8456 CD',
-        name: 'Colt Diesel 02',
-        truckType: 'Colt Diesel',
-        capacity: '5 Ton',
-        notes: '',
-        status: 'active',
-    },
-    {
-        id: 3,
-        code: 'TRK-003',
-        plateNumber: 'N 9123 EF',
-        name: 'Fuso 01',
-        truckType: 'Fuso',
-        capacity: '10 Ton',
-        notes: '',
-        status: 'active',
-    },
-])
+const trucks = ref([])
+const truckTypes = ref([])
 
 const form = reactive({
     code: '',
-    plateNumber: '',
-    name: '',
-    truckType: '',
+    plate_number: '',
+    truck_type_id: '',
+    brand: '',
+    model: '',
     capacity: '',
+    capacity_unit: '',
+    status: 'available',
     notes: '',
 })
 
 const activeCount = computed(() =>
-    trucks.value.filter(item => item.status === 'active').length
+    trucks.value.filter(item =>
+        ['available', 'in_use'].includes(item.status)
+    ).length
 )
 
 const inactiveCount = computed(() =>
-    trucks.value.filter(item => item.status === 'inactive').length
+    trucks.value.filter(item =>
+        ['inactive', 'maintenance'].includes(item.status)
+    ).length
 )
 
 const filteredTrucks = computed(() => {
     const keyword = search.value.toLowerCase().trim()
 
     return trucks.value.filter(truck => {
+        const typeName =
+            truck.truck_type?.name?.toLowerCase() || ''
+
         const matchesSearch =
             !keyword ||
-            truck.code.toLowerCase().includes(keyword) ||
-            truck.plateNumber.toLowerCase().includes(keyword) ||
-            truck.name.toLowerCase().includes(keyword)
+            (truck.code || '').toLowerCase().includes(keyword) ||
+            (truck.plate_number || '').toLowerCase().includes(keyword) ||
+            (truck.brand || '').toLowerCase().includes(keyword) ||
+            (truck.model || '').toLowerCase().includes(keyword) ||
+            typeName.includes(keyword)
 
         const matchesStatus =
             !statusFilter.value ||
@@ -377,12 +495,17 @@ const filteredTrucks = computed(() => {
 })
 
 function resetForm() {
-    form.code = ''
-    form.plateNumber = ''
-    form.name = ''
-    form.truckType = ''
-    form.capacity = ''
-    form.notes = ''
+    Object.assign(form, {
+        code: '',
+        plate_number: '',
+        truck_type_id: '',
+        brand: '',
+        model: '',
+        capacity: '',
+        capacity_unit: '',
+        status: 'available',
+        notes: '',
+    })
 }
 
 function openCreate() {
@@ -395,11 +518,14 @@ function openEdit(truck) {
     editingId.value = truck.id
 
     Object.assign(form, {
-        code: truck.code,
-        plateNumber: truck.plateNumber,
-        name: truck.name,
-        truckType: truck.truckType,
-        capacity: truck.capacity,
+        code: truck.code || '',
+        plate_number: truck.plate_number || '',
+        truck_type_id: truck.truck_type_id || '',
+        brand: truck.brand || '',
+        model: truck.model || '',
+        capacity: truck.capacity ?? '',
+        capacity_unit: truck.capacity_unit || '',
+        status: truck.status || 'available',
         notes: truck.notes || '',
     })
 
@@ -410,35 +536,191 @@ function closeModal() {
     showModal.value = false
 }
 
-function saveTruck() {
-    if (editingId.value) {
+function vehicleName(truck) {
+    const parts = [
+        truck.brand,
+        truck.model,
+    ].filter(Boolean)
+
+    return parts.length
+        ? parts.join(' ')
+        : truck.truck_type?.name || '-'
+}
+
+function formatCapacity(truck) {
+    if (
+        truck.capacity === null ||
+        truck.capacity === undefined ||
+        truck.capacity === ''
+    ) {
+        return '-'
+    }
+
+    return `${truck.capacity} ${truck.capacity_unit || ''}`.trim()
+}
+
+function statusLabel(status) {
+    const labels = {
+        available: 'Tersedia',
+        in_use: 'Digunakan',
+        maintenance: 'Maintenance',
+        inactive: 'Nonaktif',
+    }
+
+    return labels[status] || status
+}
+
+function statusClass(status) {
+    const classes = {
+        available: 'bg-emerald-50 text-emerald-700',
+        in_use: 'bg-blue-50 text-blue-700',
+        maintenance: 'bg-amber-50 text-amber-700',
+        inactive: 'bg-gray-100 text-gray-500',
+    }
+
+    return classes[status] || 'bg-gray-100 text-gray-500'
+}
+
+async function loadTruckTypes() {
+    try {
+        const response = await erpApi.master.truckTypes.list({
+            is_active: true,
+        })
+
+        truckTypes.value = Array.isArray(response)
+            ? response
+            : response?.data ?? []
+    } catch (error) {
+        console.error('Gagal memuat jenis truk:', error)
+        truckTypes.value = []
+    }
+}
+
+async function loadTrucks() {
+    try {
+        const response = await erpApi.master.trucks.list()
+
+        trucks.value = Array.isArray(response)
+            ? response
+            : response?.data ?? []
+    } catch (error) {
+        console.error('Gagal memuat truk:', error)
+
+        alert(
+            getApiError(error)?.message ||
+            'Gagal memuat data truk.'
+        )
+
+        trucks.value = []
+    }
+}
+
+async function saveTruck() {
+    saving.value = true
+
+    try {
+        const payload = {
+            code: form.code.trim(),
+            plate_number: form.plate_number.trim().toUpperCase(),
+            truck_type_id: form.truck_type_id
+                ? Number(form.truck_type_id)
+                : null,
+            brand: form.brand.trim() || null,
+            model: form.model.trim() || null,
+            capacity: form.capacity !== ''
+                ? Number(form.capacity)
+                : null,
+            capacity_unit: form.capacity_unit.trim() || null,
+            status: form.status,
+            notes: form.notes.trim() || null,
+        }
+
+        let response
+
+        if (editingId.value) {
+            response = await erpApi.master.trucks.update(
+                editingId.value,
+                payload
+            )
+        } else {
+            response = await erpApi.master.trucks.create(payload)
+        }
+
+        const savedTruck = response?.data ?? response
+
+        if (editingId.value) {
+            const index = trucks.value.findIndex(
+                item => item.id === editingId.value
+            )
+
+            if (index !== -1) {
+                trucks.value[index] = savedTruck
+            }
+        } else {
+            trucks.value.unshift(savedTruck)
+        }
+
+        // TUTUP MODAL
+        closeModal()
+
+    } catch (error) {
+        console.error('Gagal menyimpan truk:', error)
+
+        const apiError = getApiError(error)
+
+        alert(
+            apiError?.message ||
+            'Gagal menyimpan data truk.'
+        )
+    } finally {
+        saving.value = false
+    }
+}
+
+async function toggleStatus(truck) {
+    if (truck.status === 'in_use') {
+        alert('Truk yang sedang digunakan tidak dapat dinonaktifkan.')
+        return
+    }
+
+    const newStatus =
+        truck.status === 'inactive'
+            ? 'available'
+            : 'inactive'
+
+    try {
+        const response = await erpApi.master.trucks.update(
+            truck.id,
+            {
+                status: newStatus,
+            }
+        )
+
+        const updatedTruck = response?.data ?? response
+
         const index = trucks.value.findIndex(
-            item => item.id === editingId.value
+            item => item.id === truck.id
         )
 
         if (index !== -1) {
-            trucks.value[index] = {
-                ...trucks.value[index],
-                ...form,
-                plateNumber: form.plateNumber.toUpperCase(),
-            }
+            trucks.value[index] = updatedTruck
         }
-    } else {
-        trucks.value.push({
-            id: Date.now(),
-            ...form,
-            plateNumber: form.plateNumber.toUpperCase(),
-            status: 'active',
-        })
+    } catch (error) {
+        console.error('Gagal mengubah status truk:', error)
+
+        const apiError = getApiError(error)
+
+        alert(
+            apiError?.message ||
+            'Gagal mengubah status truk.'
+        )
     }
-
-    closeModal()
 }
 
-function toggleStatus(truck) {
-    truck.status =
-        truck.status === 'active'
-            ? 'inactive'
-            : 'active'
-}
+onMounted(async () => {
+    await Promise.all([
+        loadTrucks(),
+        loadTruckTypes(),
+    ])
+})
 </script>

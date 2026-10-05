@@ -9,11 +9,14 @@
                 class="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
             >
                 <!-- Header -->
-                <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+                <div
+                    class="flex items-center justify-between border-b border-gray-200 px-6 py-4"
+                >
                     <div>
                         <h2 class="text-lg font-semibold text-[#003366]">
                             Tambah Karyawan
                         </h2>
+
                         <p class="mt-1 text-sm text-gray-500">
                             Tambahkan data karyawan baru.
                         </p>
@@ -46,10 +49,11 @@
                     @submit.prevent="submit"
                 >
                     <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
-
-                        <!-- Kode -->
+                        <!-- Kode Karyawan -->
                         <div>
-                            <label class="mb-1.5 block text-sm font-medium text-gray-700">
+                            <label
+                                class="mb-1.5 block text-sm font-medium text-gray-700"
+                            >
                                 Kode Karyawan
                             </label>
 
@@ -63,7 +67,9 @@
 
                         <!-- NIK -->
                         <div>
-                            <label class="mb-1.5 block text-sm font-medium text-gray-700">
+                            <label
+                                class="mb-1.5 block text-sm font-medium text-gray-700"
+                            >
                                 NIK
                                 <span class="text-red-500">*</span>
                             </label>
@@ -79,7 +85,9 @@
 
                         <!-- Nama -->
                         <div>
-                            <label class="mb-1.5 block text-sm font-medium text-gray-700">
+                            <label
+                                class="mb-1.5 block text-sm font-medium text-gray-700"
+                            >
                                 Nama Lengkap
                                 <span class="text-red-500">*</span>
                             </label>
@@ -95,7 +103,9 @@
 
                         <!-- No HP -->
                         <div>
-                            <label class="mb-1.5 block text-sm font-medium text-gray-700">
+                            <label
+                                class="mb-1.5 block text-sm font-medium text-gray-700"
+                            >
                                 No. HP
                             </label>
 
@@ -109,7 +119,9 @@
 
                         <!-- Email -->
                         <div>
-                            <label class="mb-1.5 block text-sm font-medium text-gray-700">
+                            <label
+                                class="mb-1.5 block text-sm font-medium text-gray-700"
+                            >
                                 Email
                             </label>
 
@@ -123,7 +135,9 @@
 
                         <!-- Jabatan -->
                         <div>
-                            <label class="mb-1.5 block text-sm font-medium text-gray-700">
+                            <label
+                                class="mb-1.5 block text-sm font-medium text-gray-700"
+                            >
                                 Jabatan
                                 <span class="text-red-500">*</span>
                             </label>
@@ -139,43 +153,54 @@
 
                         <!-- Departemen -->
                         <div>
-                            <label class="mb-1.5 block text-sm font-medium text-gray-700">
+                            <label
+                                class="mb-1.5 block text-sm font-medium text-gray-700"
+                            >
                                 Departemen
                                 <span class="text-red-500">*</span>
                             </label>
 
                             <select
-                                v-model="form.department"
+                                v-model="form.department_id"
                                 class="form-input"
                                 required
                             >
                                 <option value="">
                                     Pilih departemen
                                 </option>
-
+                                {{ departments }}
                                 <option
                                     v-for="department in departments"
-                                    :key="department"
-                                    :value="department"
+                                    :key="department.id"
+                                    :value="department.id"
                                 >
-                                    {{ department }}
+                                    {{ department.name }}
                                 </option>
                             </select>
+
+                            <p
+                                v-if="!departments.length"
+                                class="mt-1 text-xs text-amber-600"
+                            >
+                                Belum ada data departemen.
+                            </p>
                         </div>
 
-                        <!-- Tipe -->
+                        <!-- Tipe Karyawan -->
                         <div>
-                            <label class="mb-1.5 block text-sm font-medium text-gray-700">
+                            <label
+                                class="mb-1.5 block text-sm font-medium text-gray-700"
+                            >
                                 Tipe Karyawan
                                 <span class="text-red-500">*</span>
                             </label>
 
                             <select
-                                v-model="form.type"
+                                v-model="form.employment_type"
                                 class="form-input"
                                 required
                             >
-                                <option value="tetap">
+                                <option value="permanent">
                                     Tetap
                                 </option>
 
@@ -183,7 +208,7 @@
                                     Trial
                                 </option>
 
-                                <option value="magang">
+                                <option value="intern">
                                     Magang
                                 </option>
                             </select>
@@ -191,7 +216,9 @@
 
                         <!-- Status -->
                         <div>
-                            <label class="mb-1.5 block text-sm font-medium text-gray-700">
+                            <label
+                                class="mb-1.5 block text-sm font-medium text-gray-700"
+                            >
                                 Status Karyawan
                                 <span class="text-red-500">*</span>
                             </label>
@@ -201,15 +228,15 @@
                                 class="form-input"
                                 required
                             >
-                                <option value="aktif">
+                                <option value="active">
                                     Aktif
                                 </option>
 
-                                <option value="resign">
+                                <option value="resigned">
                                     Resign
                                 </option>
 
-                                <option value="pensiun">
+                                <option value="retired">
                                     Pensiun
                                 </option>
                             </select>
@@ -217,13 +244,15 @@
 
                         <!-- Tanggal Masuk -->
                         <div>
-                            <label class="mb-1.5 block text-sm font-medium text-gray-700">
+                            <label
+                                class="mb-1.5 block text-sm font-medium text-gray-700"
+                            >
                                 Tanggal Masuk
                                 <span class="text-red-500">*</span>
                             </label>
 
                             <input
-                                v-model="form.joinDate"
+                                v-model="form.join_date"
                                 type="date"
                                 class="form-input"
                                 required
@@ -232,10 +261,13 @@
 
                         <!-- Tanggal Keluar -->
                         <div>
-                            <label class="mb-1.5 block text-sm font-medium text-gray-700">
+                            <label
+                                class="mb-1.5 block text-sm font-medium text-gray-700"
+                            >
                                 Tanggal Keluar
+
                                 <span
-                                    v-if="form.status !== 'aktif'"
+                                    v-if="form.status !== 'active'"
                                     class="text-red-500"
                                 >
                                     *
@@ -243,10 +275,10 @@
                             </label>
 
                             <input
-                                v-model="form.endDate"
+                                v-model="form.exit_date"
                                 type="date"
                                 class="form-input"
-                                :required="form.status !== 'aktif'"
+                                :required="form.status !== 'active'"
                             />
 
                             <p class="mt-1 text-xs text-gray-400">
@@ -256,7 +288,9 @@
 
                         <!-- Alamat -->
                         <div class="md:col-span-2">
-                            <label class="mb-1.5 block text-sm font-medium text-gray-700">
+                            <label
+                                class="mb-1.5 block text-sm font-medium text-gray-700"
+                            >
                                 Alamat
                             </label>
 
@@ -265,12 +299,14 @@
                                 rows="3"
                                 class="form-input resize-none"
                                 placeholder="Alamat lengkap karyawan"
-                            />
+                            ></textarea>
                         </div>
 
                         <!-- Catatan -->
                         <div class="md:col-span-2">
-                            <label class="mb-1.5 block text-sm font-medium text-gray-700">
+                            <label
+                                class="mb-1.5 block text-sm font-medium text-gray-700"
+                            >
                                 Catatan
                             </label>
 
@@ -279,12 +315,14 @@
                                 rows="3"
                                 class="form-input resize-none"
                                 placeholder="Catatan tambahan"
-                            />
+                            ></textarea>
                         </div>
                     </div>
 
                     <!-- Footer -->
-                    <div class="mt-6 flex flex-col-reverse gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:justify-end">
+                    <div
+                        class="mt-6 flex flex-col-reverse gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:justify-end"
+                    >
                         <button
                             type="button"
                             class="rounded-xl border border-gray-200 px-5 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
@@ -342,33 +380,33 @@ function getToday() {
 }
 
 const form = reactive({
-    code: '',
+    employee_number: '',
     nik: '',
     name: '',
     phone: '',
     email: '',
     position: '',
-    department: '',
-    type: 'tetap',
-    status: 'aktif',
-    joinDate: getToday(),
-    endDate: '',
+    department_id: '',
+    employment_type: 'permanent',
+    status: 'active',
+    join_date: getToday(),
+    exit_date: '',
     address: '',
     notes: '',
 })
 
 function resetForm() {
-    form.code = props.code
+    form.employee_number = props.code || ''
     form.nik = ''
     form.name = ''
     form.phone = ''
     form.email = ''
     form.position = ''
-    form.department = ''
-    form.type = 'tetap'
-    form.status = 'aktif'
-    form.joinDate = getToday()
-    form.endDate = ''
+    form.department_id = ''
+    form.employment_type = 'permanent'
+    form.status = 'active'
+    form.join_date = getToday()
+    form.exit_date = ''
     form.address = ''
     form.notes = ''
 }
@@ -385,8 +423,8 @@ watch(
 watch(
     () => form.status,
     (value) => {
-        if (value === 'aktif') {
-            form.endDate = ''
+        if (value === 'active') {
+            form.exit_date = ''
         }
     }
 )
@@ -397,22 +435,24 @@ function close() {
 
 function submit() {
     const payload = {
-        code: props.code,
-        nik: form.nik.trim(),
+        employee_number: form.employee_number || props.code || '',
+        nik: form.nik.trim() || null,
         name: form.name.trim(),
-        phone: form.phone.trim(),
-        email: form.email.trim(),
-        position: form.position.trim(),
-        department: form.department,
-        type: form.type,
-        status: form.status,
-        joinDate: form.joinDate,
-        endDate:
-            form.status === 'aktif'
+        department_id: form.department_id
+            ? Number(form.department_id)
+            : null,
+        employment_type: form.employment_type,
+        position: form.position.trim() || null,
+        phone: form.phone.trim() || null,
+        email: form.email.trim() || null,
+        address: form.address.trim() || null,
+        join_date: form.join_date,
+        exit_date:
+            form.status === 'active'
                 ? null
-                : form.endDate || null,
-        address: form.address.trim(),
-        notes: form.notes.trim(),
+                : form.exit_date || null,
+        status: form.status,
+        notes: form.notes.trim() || null,
     }
 
     emit('saved', payload)
@@ -429,7 +469,9 @@ function submit() {
     font-size: 0.875rem;
     color: #374151;
     outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition:
+        border-color 0.2s,
+        box-shadow 0.2s;
 }
 
 .form-input:focus {

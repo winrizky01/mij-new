@@ -362,15 +362,30 @@
         </div>
     </div>
 </template>
-
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import {
+    computed,
+    onMounted,
+    reactive,
+    ref,
+} from 'vue'
+
+import {
+    erpApi,
+    getApiError,
+} from '@/services/api'
 
 const search = ref('')
 const statusFilter = ref('')
+
 const showModal = ref(false)
 const editingId = ref(null)
 const expandedProvinces = ref([])
+
+const loading = ref(false)
+const saving = ref(false)
+
+const provinces = ref([])
 
 const form = reactive({
     provinceId: '',
@@ -382,160 +397,14 @@ const form = reactive({
 
 /*
 |--------------------------------------------------------------------------
-| MASTER PROVINSI INDONESIA
+| COMPUTED
 |--------------------------------------------------------------------------
-| Untuk sementara kota/kabupaten diisi beberapa contoh.
-| Nanti dataset kota/kabupaten lengkap dimasukkan ke master wilayah.
 */
-const provinces = ref([
-    { id: 1, code: '11', name: 'Aceh', status: 'active', cities: [] },
-    { id: 2, code: '12', name: 'Sumatera Utara', status: 'active', cities: [] },
-    { id: 3, code: '13', name: 'Sumatera Barat', status: 'active', cities: [] },
-    { id: 4, code: '14', name: 'Riau', status: 'active', cities: [] },
-    { id: 5, code: '15', name: 'Jambi', status: 'active', cities: [] },
-    { id: 6, code: '16', name: 'Sumatera Selatan', status: 'active', cities: [] },
-    { id: 7, code: '17', name: 'Bengkulu', status: 'active', cities: [] },
-    { id: 8, code: '18', name: 'Lampung', status: 'active', cities: [] },
-    { id: 9, code: '19', name: 'Kepulauan Bangka Belitung', status: 'active', cities: [] },
-    { id: 10, code: '21', name: 'Kepulauan Riau', status: 'active', cities: [] },
-
-    { id: 11, code: '31', name: 'DKI Jakarta', status: 'active', cities: [] },
-    { id: 12, code: '32', name: 'Jawa Barat', status: 'active', cities: [] },
-    { id: 13, code: '33', name: 'Jawa Tengah', status: 'active', cities: [] },
-    { id: 14, code: '34', name: 'DI Yogyakarta', status: 'active', cities: [] },
-
-    {
-        id: 15,
-        code: '35',
-        name: 'Jawa Timur',
-        status: 'active',
-        cities: [
-            {
-                id: 3501,
-                code: '35.01',
-                name: 'Kabupaten Pacitan',
-                type: 'KABUPATEN',
-                status: 'active',
-            },
-            {
-                id: 3502,
-                code: '35.02',
-                name: 'Kabupaten Ponorogo',
-                type: 'KABUPATEN',
-                status: 'active',
-            },
-            {
-                id: 3503,
-                code: '35.03',
-                name: 'Kabupaten Trenggalek',
-                type: 'KABUPATEN',
-                status: 'active',
-            },
-            {
-                id: 3504,
-                code: '35.04',
-                name: 'Kabupaten Tulungagung',
-                type: 'KABUPATEN',
-                status: 'active',
-            },
-            {
-                id: 3510,
-                code: '35.10',
-                name: 'Kabupaten Mojokerto',
-                type: 'KABUPATEN',
-                status: 'active',
-            },
-            {
-                id: 3515,
-                code: '35.15',
-                name: 'Kabupaten Sidoarjo',
-                type: 'KABUPATEN',
-                status: 'active',
-            },
-            {
-                id: 3516,
-                code: '35.16',
-                name: 'Kabupaten Madiun',
-                type: 'KABUPATEN',
-                status: 'active',
-            },
-            {
-                id: 3517,
-                code: '35.17',
-                name: 'Kabupaten Magetan',
-                type: 'KABUPATEN',
-                status: 'active',
-            },
-            {
-                id: 3518,
-                code: '35.18',
-                name: 'Kabupaten Ngawi',
-                type: 'KABUPATEN',
-                status: 'active',
-            },
-            {
-                id: 3520,
-                code: '35.20',
-                name: 'Kabupaten Jombang',
-                type: 'KABUPATEN',
-                status: 'active',
-            },
-            {
-                id: 3525,
-                code: '35.25',
-                name: 'Kabupaten Gresik',
-                type: 'KABUPATEN',
-                status: 'active',
-            },
-            {
-                id: 3576,
-                code: '35.76',
-                name: 'Kota Mojokerto',
-                type: 'KOTA',
-                status: 'active',
-            },
-            {
-                id: 3578,
-                code: '35.78',
-                name: 'Kota Surabaya',
-                type: 'KOTA',
-                status: 'active',
-            },
-        ],
-    },
-
-    { id: 16, code: '36', name: 'Banten', status: 'active', cities: [] },
-
-    { id: 17, code: '51', name: 'Bali', status: 'active', cities: [] },
-    { id: 18, code: '52', name: 'Nusa Tenggara Barat', status: 'active', cities: [] },
-    { id: 19, code: '53', name: 'Nusa Tenggara Timur', status: 'active', cities: [] },
-
-    { id: 20, code: '61', name: 'Kalimantan Barat', status: 'active', cities: [] },
-    { id: 21, code: '62', name: 'Kalimantan Tengah', status: 'active', cities: [] },
-    { id: 22, code: '63', name: 'Kalimantan Selatan', status: 'active', cities: [] },
-    { id: 23, code: '64', name: 'Kalimantan Timur', status: 'active', cities: [] },
-    { id: 24, code: '65', name: 'Kalimantan Utara', status: 'active', cities: [] },
-
-    { id: 25, code: '71', name: 'Sulawesi Utara', status: 'active', cities: [] },
-    { id: 26, code: '72', name: 'Sulawesi Tengah', status: 'active', cities: [] },
-    { id: 27, code: '73', name: 'Sulawesi Selatan', status: 'active', cities: [] },
-    { id: 28, code: '74', name: 'Sulawesi Tenggara', status: 'active', cities: [] },
-    { id: 29, code: '75', name: 'Gorontalo', status: 'active', cities: [] },
-    { id: 30, code: '76', name: 'Sulawesi Barat', status: 'active', cities: [] },
-
-    { id: 31, code: '81', name: 'Maluku', status: 'active', cities: [] },
-    { id: 32, code: '82', name: 'Maluku Utara', status: 'active', cities: [] },
-
-    { id: 33, code: '91', name: 'Papua', status: 'active', cities: [] },
-    { id: 34, code: '92', name: 'Papua Barat', status: 'active', cities: [] },
-    { id: 35, code: '93', name: 'Papua Selatan', status: 'active', cities: [] },
-    { id: 36, code: '94', name: 'Papua Tengah', status: 'active', cities: [] },
-    { id: 37, code: '95', name: 'Papua Pegunungan', status: 'active', cities: [] },
-    { id: 38, code: '96', name: 'Papua Barat Daya', status: 'active', cities: [] },
-])
 
 const filteredProvinces = computed(() => {
-    const keyword = search.value.toLowerCase().trim()
+    const keyword = search.value
+        .toLowerCase()
+        .trim()
 
     return provinces.value
         .map(province => {
@@ -544,11 +413,18 @@ const filteredProvinces = computed(() => {
             }
 
             const provinceMatch =
-                province.name.toLowerCase().includes(keyword)
+                String(province.name || '')
+                    .toLowerCase()
+                    .includes(keyword)
 
-            const matchingCities = province.cities.filter(city =>
-                city.name.toLowerCase().includes(keyword)
-            )
+            const matchingCities =
+                Array.isArray(province.cities)
+                    ? province.cities.filter(city =>
+                        String(city.name || '')
+                            .toLowerCase()
+                            .includes(keyword)
+                    )
+                    : []
 
             if (provinceMatch) {
                 return province
@@ -569,31 +445,88 @@ const filteredProvinces = computed(() => {
                 return true
             }
 
-            return province.status === statusFilter.value
+            return (
+                province.status ===
+                statusFilter.value
+            )
         })
 })
 
 const totalCities = computed(() =>
     provinces.value.reduce(
-        (total, province) => total + province.cities.length,
+        (total, province) =>
+            total +
+            (
+                Array.isArray(province.cities)
+                    ? province.cities.length
+                    : 0
+            ),
         0
     )
 )
 
 const activeProvinceCount = computed(() =>
     provinces.value.filter(
-        province => province.status === 'active'
+        province =>
+            province.status === 'active'
     ).length
 )
+
+/*
+|--------------------------------------------------------------------------
+| HELPERS
+|--------------------------------------------------------------------------
+*/
+
+function unwrapData(response) {
+    return response?.data ?? response
+}
+
+function normalizeProvince(province) {
+    return {
+        id: province.id,
+        code: province.code,
+        name: province.name,
+        status:
+            province.is_active
+                ? 'active'
+                : 'inactive',
+
+        cities:
+            Array.isArray(province.cities)
+                ? province.cities.map(
+                    normalizeCity
+                )
+                : [],
+    }
+}
+
+function normalizeCity(city) {
+    return {
+        id: city.id,
+        provinceId: city.province_id,
+        code: city.code,
+        name: city.name,
+        type: city.type || 'KABUPATEN',
+        status:
+            city.is_active
+                ? 'active'
+                : 'inactive',
+    }
+}
 
 function isExpanded(id) {
     return expandedProvinces.value.includes(id)
 }
 
 function toggleProvince(id) {
-    if (expandedProvinces.value.includes(id)) {
+    if (
+        expandedProvinces.value.includes(id)
+    ) {
         expandedProvinces.value =
-            expandedProvinces.value.filter(item => item !== id)
+            expandedProvinces.value.filter(
+                item => item !== id
+            )
 
         return
     }
@@ -611,9 +544,60 @@ function resetForm() {
     })
 }
 
+/*
+|--------------------------------------------------------------------------
+| LOAD DATA
+|--------------------------------------------------------------------------
+*/
+
+async function loadProvinces() {
+    loading.value = true
+
+    try {
+        const response =
+            await erpApi.master.provinces.list({
+                is_active: true,
+            })
+
+        const data =
+            unwrapData(response)
+
+        if (!Array.isArray(data)) {
+            provinces.value = []
+            return
+        }
+
+        provinces.value =
+            data.map(normalizeProvince)
+
+    } catch (error) {
+        console.error(
+            'Gagal memuat wilayah:',
+            error
+        )
+
+        provinces.value = []
+
+        alert(
+            getApiError(error)?.message ||
+            'Gagal memuat data wilayah.'
+        )
+    } finally {
+        loading.value = false
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| MODAL
+|--------------------------------------------------------------------------
+*/
+
 function openCreate() {
     editingId.value = null
+
     resetForm()
+
     showModal.value = true
 }
 
@@ -622,58 +606,133 @@ function openEdit(province, city) {
 
     Object.assign(form, {
         provinceId: province.id,
-        type: city.type,
-        name: city.name,
-        code: city.code || '',
-        status: city.status,
+
+        type:
+            city.type || 'KOTA',
+
+        name:
+            city.name || '',
+
+        code:
+            city.code || '',
+
+        status:
+            city.status || 'active',
     })
 
     showModal.value = true
 }
 
 function closeModal() {
-    showModal.value = false
-}
-
-function saveCity() {
-    const province = provinces.value.find(
-        item => item.id === Number(form.provinceId)
-    )
-
-    if (!province) {
+    if (saving.value) {
         return
     }
 
-    if (editingId.value) {
-        const city = province.cities.find(
-            item => item.id === editingId.value
-        )
+    showModal.value = false
+}
 
-        if (city) {
-            Object.assign(city, {
-                type: form.type,
-                name: form.name,
-                code: form.code,
-                status: form.status,
-            })
-        }
-    } else {
-        province.cities.push({
-            id: Date.now(),
-            code: form.code,
-            name: form.name,
-            type: form.type,
-            status: form.status,
-        })
+/*
+|--------------------------------------------------------------------------
+| SAVE CITY
+|--------------------------------------------------------------------------
+*/
+
+async function saveCity() {
+    if (!form.provinceId) {
+        alert('Provinsi wajib dipilih.')
+        return
     }
 
-    expandedProvinces.value = [
-        ...new Set([
-            ...expandedProvinces.value,
-            province.id,
-        ]),
-    ]
+    if (!form.name.trim()) {
+        alert(
+            'Nama Kabupaten/Kota wajib diisi.'
+        )
+        return
+    }
 
-    closeModal()
+    saving.value = true
+
+    try {
+        const payload = {
+            province_id: Number(form.provinceId),
+            code: form.code.trim(),
+            name: form.name.trim(),
+            type: form.type,
+            is_active: form.status === 'active',
+        }
+
+        if (editingId.value) {
+            await erpApi.master.cities.update(
+                editingId.value,
+                payload
+            )
+        } else {
+            await erpApi.master.cities.create(
+                payload
+            )
+        }
+
+        closeModal()
+
+        await loadProvinces()
+
+        // Buka kembali provinsi setelah save
+        const provinceId =
+            Number(form.provinceId)
+
+        if (
+            provinceId &&
+            !expandedProvinces.value.includes(
+                provinceId
+            )
+        ) {
+            expandedProvinces.value.push(
+                provinceId
+            )
+        }
+
+    } catch (error) {
+        console.error(
+            'Gagal menyimpan wilayah:',
+            error
+        )
+
+        const apiError =
+            getApiError(error)
+
+        alert(
+            apiError?.message ||
+            'Gagal menyimpan Kabupaten/Kota.'
+        )
+    } finally {
+        saving.value = false
+    }
 }
+
+
+async function loadCities() {
+    try {
+        const response = await erpApi.master.cities.list({
+            is_active: true,
+        })
+
+        const data = unwrapData(response)
+
+        cities.value = Array.isArray(data)
+            ? data
+            : []
+    } catch (error) {
+        console.error('Gagal memuat city:', error)
+        cities.value = []
+    }
+}
+/*
+|--------------------------------------------------------------------------
+| INIT
+|--------------------------------------------------------------------------
+*/
+
+onMounted(() => {
+    loadProvinces()
+})
 </script>

@@ -4,9 +4,13 @@
         class="fixed inset-0 z-[110] flex items-center justify-center bg-black/40 p-4"
         @click.self="close"
     >
-        <div class="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+        <div
+            class="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+        >
             <!-- HEADER -->
-            <div class="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+            <div
+                class="flex items-center justify-between border-b border-gray-200 px-5 py-4"
+            >
                 <div class="flex items-center gap-3">
                     <div
                         class="flex h-11 w-11 items-center justify-center rounded-full bg-[#0052cc]/10 font-bold text-[#0052cc]"
@@ -20,7 +24,7 @@
                         </h2>
 
                         <p class="text-xs text-gray-500">
-                            {{ employee.code }}
+                            {{ employee.employee_number || '-' }}
                         </p>
                     </div>
                 </div>
@@ -36,13 +40,14 @@
 
             <!-- BODY -->
             <div class="overflow-y-auto p-5">
+
                 <!-- BADGES -->
                 <div class="mb-6 flex flex-wrap gap-2">
                     <span
                         class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold"
-                        :class="typeClasses(employee.type)"
+                        :class="typeClasses(employee.employment_type)"
                     >
-                        {{ typeLabel(employee.type) }}
+                        {{ typeLabel(employee.employment_type) }}
                     </span>
 
                     <span
@@ -60,19 +65,20 @@
                     </h3>
 
                     <div class="grid gap-5 sm:grid-cols-2">
+
                         <DetailItem
                             label="Kode Karyawan"
-                            :value="employee.code"
+                            :value="employee.employee_number || '-'"
                         />
 
                         <DetailItem
                             label="NIK"
-                            :value="employee.nik"
+                            :value="employee.nik || '-'"
                         />
 
                         <DetailItem
                             label="Nama Lengkap"
-                            :value="employee.name"
+                            :value="employee.name || '-'"
                         />
 
                         <DetailItem
@@ -84,6 +90,7 @@
                             label="Email"
                             :value="employee.email || '-'"
                         />
+
                     </div>
 
                     <div class="mt-5">
@@ -91,7 +98,9 @@
                             Alamat
                         </div>
 
-                        <div class="mt-1 rounded-xl bg-gray-50 p-3 text-sm text-gray-700">
+                        <div
+                            class="mt-1 rounded-xl bg-gray-50 p-3 text-sm text-gray-700"
+                        >
                             {{ employee.address || '-' }}
                         </div>
                     </div>
@@ -104,19 +113,20 @@
                     </h3>
 
                     <div class="grid gap-5 sm:grid-cols-2">
+
                         <DetailItem
                             label="Jabatan"
-                            :value="employee.position"
+                            :value="employee.position || '-'"
                         />
 
                         <DetailItem
                             label="Departemen"
-                            :value="employee.department"
+                            :value="departmentName(employee)"
                         />
 
                         <DetailItem
                             label="Tipe Karyawan"
-                            :value="typeLabel(employee.type)"
+                            :value="typeLabel(employee.employment_type)"
                         />
 
                         <DetailItem
@@ -126,13 +136,17 @@
 
                         <DetailItem
                             label="Tanggal Masuk"
-                            :value="formatDate(employee.joinDate)"
+                            :value="formatDate(employee.join_date)"
                         />
 
                         <DetailItem
                             label="Tanggal Keluar"
-                            :value="employee.endDate ? formatDate(employee.endDate) : '-'"
+                            :value="employee.exit_date
+                                ? formatDate(employee.exit_date)
+                                : '-'
+                            "
                         />
+
                     </div>
                 </section>
 
@@ -142,13 +156,17 @@
                         Catatan
                     </h3>
 
-                    <div class="rounded-xl bg-gray-50 p-4 text-sm leading-6 text-gray-700">
+                    <div
+                        class="rounded-xl bg-gray-50 p-4 text-sm leading-6 text-gray-700"
+                    >
                         {{ employee.notes || '-' }}
                     </div>
                 </section>
 
                 <!-- FOOTER -->
-                <div class="mt-7 flex justify-end gap-3 border-t border-gray-200 pt-4">
+                <div
+                    class="mt-7 flex justify-end gap-3 border-t border-gray-200 pt-4"
+                >
                     <button
                         type="button"
                         class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50"
@@ -165,6 +183,7 @@
                         Edit Karyawan
                     </button>
                 </div>
+
             </div>
         </div>
     </div>
@@ -208,42 +227,70 @@ function getInitials(name) {
         .toUpperCase()
 }
 
+function departmentName(employee) {
+    return employee?.department?.name || '-'
+}
+
 function formatDate(date) {
     if (!date) return '-'
+
+    const parsedDate = new Date(date)
+
+    if (Number.isNaN(parsedDate.getTime())) {
+        return '-'
+    }
 
     return new Intl.DateTimeFormat('id-ID', {
         day: '2-digit',
         month: 'short',
         year: 'numeric',
-    }).format(new Date(date))
+    }).format(parsedDate)
 }
 
 function typeLabel(type) {
     return {
-        tetap: 'Tetap',
+        permanent: 'Tetap',
         trial: 'Trial',
+        intern: 'Magang',
+
+        // fallback data lama
+        tetap: 'Tetap',
         magang: 'Magang',
-    }[type] || type
+    }[type] || type || '-'
 }
 
 function typeClasses(type) {
     return {
-        tetap: 'bg-blue-50 text-blue-700',
+        permanent: 'bg-blue-50 text-blue-700',
         trial: 'bg-amber-50 text-amber-700',
+        intern: 'bg-purple-50 text-purple-700',
+
+        // fallback data lama
+        tetap: 'bg-blue-50 text-blue-700',
         magang: 'bg-purple-50 text-purple-700',
     }[type] || 'bg-gray-100 text-gray-600'
 }
 
 function statusLabel(status) {
     return {
+        active: 'Aktif',
+        resigned: 'Resign',
+        retired: 'Pensiun',
+
+        // fallback data lama
         aktif: 'Aktif',
         resign: 'Resign',
         pensiun: 'Pensiun',
-    }[status] || status
+    }[status] || status || '-'
 }
 
 function statusClasses(status) {
     return {
+        active: 'bg-green-50 text-green-700',
+        resigned: 'bg-red-50 text-red-700',
+        retired: 'bg-gray-100 text-gray-600',
+
+        // fallback data lama
         aktif: 'bg-green-50 text-green-700',
         resign: 'bg-red-50 text-red-700',
         pensiun: 'bg-gray-100 text-gray-600',
@@ -252,8 +299,15 @@ function statusClasses(status) {
 
 const DetailItem = {
     props: {
-        label: String,
-        value: String,
+        label: {
+            type: String,
+            default: '',
+        },
+
+        value: {
+            type: String,
+            default: '-',
+        },
     },
 
     template: `
@@ -263,7 +317,7 @@ const DetailItem = {
             </div>
 
             <div class="mt-1 text-sm font-medium text-gray-800">
-                {{ value }}
+                {{ value || '-' }}
             </div>
         </div>
     `,

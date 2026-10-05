@@ -4,16 +4,21 @@
         class="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4"
         @click.self="close"
     >
-        <div class="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+        <div
+            class="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+        >
             <!-- HEADER -->
-            <div class="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+            <div
+                class="flex items-center justify-between border-b border-gray-200 px-5 py-4"
+            >
                 <div>
                     <h2 class="text-lg font-bold text-[#003366]">
                         Edit Karyawan
                     </h2>
 
                     <p class="mt-0.5 text-xs text-gray-500">
-                        {{ employee.code }} · {{ employee.name }}
+                        {{ employee.employee_number || employee.code }} ·
+                        {{ employee.name }}
                     </p>
                 </div>
 
@@ -32,6 +37,7 @@
                 @submit.prevent="save"
             >
                 <div class="space-y-6">
+
                     <!-- IDENTITAS -->
                     <section>
                         <h3 class="mb-3 text-sm font-bold text-gray-900">
@@ -39,62 +45,100 @@
                         </h3>
 
                         <div class="grid gap-4 md:grid-cols-2">
-                            <FormField label="Kode Karyawan">
+
+                            <!-- KODE -->
+                            <div>
+                                <label
+                                    class="mb-1.5 block text-xs font-semibold text-gray-600"
+                                >
+                                    Kode Karyawan
+                                </label>
+
                                 <input
-                                    :value="form.code"
+                                    :value="form.employee_number"
                                     type="text"
                                     readonly
                                     class="form-input bg-gray-50"
                                 />
-                            </FormField>
+                            </div>
 
-                            <FormField
-                                label="NIK"
-                                required
-                            >
+                            <!-- NIK -->
+                            <div>
+                                <label
+                                    class="mb-1.5 block text-xs font-semibold text-gray-600"
+                                >
+                                    NIK
+                                </label>
+
                                 <input
                                     v-model="form.nik"
                                     type="text"
                                     class="form-input"
-                                    required
                                 />
-                            </FormField>
+                            </div>
 
-                            <FormField
-                                label="Nama Lengkap"
-                                required
-                            >
+                            <!-- NAMA -->
+                            <div>
+                                <label
+                                    class="mb-1.5 block text-xs font-semibold text-gray-600"
+                                >
+                                    Nama Lengkap
+                                    <span class="text-red-500">*</span>
+                                </label>
+
                                 <input
                                     v-model="form.name"
                                     type="text"
                                     class="form-input"
                                     required
                                 />
-                            </FormField>
+                            </div>
 
-                            <FormField label="No. HP">
+                            <!-- PHONE -->
+                            <div>
+                                <label
+                                    class="mb-1.5 block text-xs font-semibold text-gray-600"
+                                >
+                                    No. HP
+                                </label>
+
                                 <input
                                     v-model="form.phone"
                                     type="text"
                                     class="form-input"
                                 />
-                            </FormField>
+                            </div>
 
-                            <FormField label="Email">
+                            <!-- EMAIL -->
+                            <div>
+                                <label
+                                    class="mb-1.5 block text-xs font-semibold text-gray-600"
+                                >
+                                    Email
+                                </label>
+
                                 <input
                                     v-model="form.email"
                                     type="email"
                                     class="form-input"
                                 />
-                            </FormField>
+                            </div>
 
-                            <FormField label="Alamat">
+                            <!-- ALAMAT -->
+                            <div>
+                                <label
+                                    class="mb-1.5 block text-xs font-semibold text-gray-600"
+                                >
+                                    Alamat
+                                </label>
+
                                 <input
                                     v-model="form.address"
                                     type="text"
                                     class="form-input"
                                 />
-                            </FormField>
+                            </div>
+
                         </div>
                     </section>
 
@@ -105,24 +149,35 @@
                         </h3>
 
                         <div class="grid gap-4 md:grid-cols-2">
-                            <FormField
-                                label="Jabatan"
-                                required
-                            >
+
+                            <!-- JABATAN -->
+                            <div>
+                                <label
+                                    class="mb-1.5 block text-xs font-semibold text-gray-600"
+                                >
+                                    Jabatan
+                                    <span class="text-red-500">*</span>
+                                </label>
+
                                 <input
                                     v-model="form.position"
                                     type="text"
                                     class="form-input"
                                     required
                                 />
-                            </FormField>
+                            </div>
 
-                            <FormField
-                                label="Departemen"
-                                required
-                            >
+                            <!-- DEPARTEMEN -->
+                            <div>
+                                <label
+                                    class="mb-1.5 block text-xs font-semibold text-gray-600"
+                                >
+                                    Departemen
+                                    <span class="text-red-500">*</span>
+                                </label>
+
                                 <select
-                                    v-model="form.department"
+                                    v-model="form.department_id"
                                     class="form-input"
                                     required
                                 >
@@ -132,24 +187,29 @@
 
                                     <option
                                         v-for="department in departments"
-                                        :key="department"
-                                        :value="department"
+                                        :key="department.id"
+                                        :value="department.id"
                                     >
-                                        {{ department }}
+                                        {{ department.name }}
                                     </option>
                                 </select>
-                            </FormField>
+                            </div>
 
-                            <FormField
-                                label="Tipe Karyawan"
-                                required
-                            >
+                            <!-- TIPE -->
+                            <div>
+                                <label
+                                    class="mb-1.5 block text-xs font-semibold text-gray-600"
+                                >
+                                    Tipe Karyawan
+                                    <span class="text-red-500">*</span>
+                                </label>
+
                                 <select
-                                    v-model="form.type"
+                                    v-model="form.employment_type"
                                     class="form-input"
                                     required
                                 >
-                                    <option value="tetap">
+                                    <option value="permanent">
                                         Tetap
                                     </option>
 
@@ -157,59 +217,77 @@
                                         Trial
                                     </option>
 
-                                    <option value="magang">
+                                    <option value="intern">
                                         Magang
                                     </option>
                                 </select>
-                            </FormField>
+                            </div>
 
-                            <FormField
-                                label="Status Karyawan"
-                                required
-                            >
+                            <!-- STATUS -->
+                            <div>
+                                <label
+                                    class="mb-1.5 block text-xs font-semibold text-gray-600"
+                                >
+                                    Status Karyawan
+                                    <span class="text-red-500">*</span>
+                                </label>
+
                                 <select
                                     v-model="form.status"
                                     class="form-input"
                                     required
                                 >
-                                    <option value="aktif">
+                                    <option value="active">
                                         Aktif
                                     </option>
 
-                                    <option value="resign">
+                                    <option value="resigned">
                                         Resign
                                     </option>
 
-                                    <option value="pensiun">
+                                    <option value="retired">
                                         Pensiun
                                     </option>
                                 </select>
-                            </FormField>
+                            </div>
 
-                            <FormField
-                                label="Tanggal Masuk"
-                                required
-                            >
+                            <!-- TANGGAL MASUK -->
+                            <div>
+                                <label
+                                    class="mb-1.5 block text-xs font-semibold text-gray-600"
+                                >
+                                    Tanggal Masuk
+                                    <span class="text-red-500">*</span>
+                                </label>
+
                                 <input
-                                    v-model="form.joinDate"
+                                    v-model="form.join_date"
                                     type="date"
                                     class="form-input"
                                     required
                                 />
-                            </FormField>
+                            </div>
 
-                            <FormField label="Tanggal Keluar">
+                            <!-- TANGGAL KELUAR -->
+                            <div>
+                                <label
+                                    class="mb-1.5 block text-xs font-semibold text-gray-600"
+                                >
+                                    Tanggal Keluar
+                                </label>
+
                                 <input
-                                    v-model="form.endDate"
+                                    v-model="form.exit_date"
                                     type="date"
                                     class="form-input"
-                                    :disabled="form.status === 'aktif'"
+                                    :disabled="form.status === 'active'"
                                 />
 
                                 <p class="mt-1 text-xs text-gray-400">
                                     Diisi apabila resign atau pensiun.
                                 </p>
-                            </FormField>
+                            </div>
+
                         </div>
                     </section>
 
@@ -223,12 +301,15 @@
                             v-model="form.notes"
                             rows="3"
                             class="form-input resize-none"
-                        />
+                        ></textarea>
                     </section>
+
                 </div>
 
                 <!-- FOOTER -->
-                <div class="mt-6 flex justify-end gap-3 border-t border-gray-200 pt-4">
+                <div
+                    class="mt-6 flex justify-end gap-3 border-t border-gray-200 pt-4"
+                >
                     <button
                         type="button"
                         class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50"
@@ -276,18 +357,24 @@ const emit = defineEmits([
 
 const form = reactive({
     id: null,
-    code: '',
+
+    employee_number: '',
     nik: '',
     name: '',
+
     phone: '',
     email: '',
-    position: '',
-    department: '',
-    type: 'tetap',
-    status: 'aktif',
-    joinDate: '',
-    endDate: '',
     address: '',
+
+    position: '',
+    department_id: '',
+
+    employment_type: 'permanent',
+    status: 'active',
+
+    join_date: '',
+    exit_date: '',
+
     notes: '',
 })
 
@@ -296,10 +383,66 @@ watch(
     (employee) => {
         if (!employee) return
 
-        Object.assign(form, {
-            ...employee,
-            endDate: employee.endDate || '',
-        })
+        form.id = employee.id ?? null
+
+        form.employee_number =
+            employee.employee_number ||
+            employee.code ||
+            ''
+
+        form.nik =
+            employee.nik ||
+            ''
+
+        form.name =
+            employee.name ||
+            ''
+
+        form.phone =
+            employee.phone ||
+            ''
+
+        form.email =
+            employee.email ||
+            ''
+
+        form.address =
+            employee.address ||
+            ''
+
+        form.position =
+            employee.position ||
+            ''
+
+        form.department_id =
+            employee.department_id ||
+            employee.department?.id ||
+            ''
+
+        form.employment_type =
+            normalizeEmploymentType(
+                employee.employment_type ||
+                employee.type
+            )
+
+        form.status =
+            normalizeStatus(
+                employee.status
+            )
+
+        form.join_date =
+            formatDate(employee.join_date || employee.joinDate)
+
+        form.exit_date =
+            formatDate(
+                employee.exit_date ||
+                employee.endDate ||
+                employee.exitDate
+            )
+
+        form.notes =
+            employee.notes ||
+            ''
     },
     {
         immediate: true,
@@ -309,11 +452,50 @@ watch(
 watch(
     () => form.status,
     (status) => {
-        if (status === 'aktif') {
-            form.endDate = ''
+        if (status === 'active') {
+            form.exit_date = ''
         }
     }
 )
+
+function normalizeEmploymentType(value) {
+    const map = {
+        tetap: 'permanent',
+        permanent: 'permanent',
+
+        trial: 'trial',
+
+        magang: 'intern',
+        intern: 'intern',
+    }
+
+    return map[value] || 'permanent'
+}
+
+function normalizeStatus(value) {
+    const map = {
+        aktif: 'active',
+        active: 'active',
+
+        resign: 'resigned',
+        resigned: 'resigned',
+
+        pensiun: 'retired',
+        retired: 'retired',
+    }
+
+    return map[value] || 'active'
+}
+
+function formatDate(value) {
+    if (!value) return ''
+
+    if (typeof value === 'string') {
+        return value.substring(0, 10)
+    }
+
+    return ''
+}
 
 function close() {
     emit('close')
@@ -322,41 +504,50 @@ function close() {
 function save() {
     emit('saved', {
         id: form.id,
-        code: form.code,
-        nik: form.nik.trim(),
-        name: form.name.trim(),
-        phone: form.phone.trim(),
-        email: form.email.trim(),
-        position: form.position.trim(),
-        department: form.department,
-        type: form.type,
-        status: form.status,
-        joinDate: form.joinDate,
-        endDate:
-            form.status === 'aktif'
+
+        employee_number:
+            form.employee_number.trim(),
+
+        nik:
+            form.nik?.trim() || null,
+
+        name:
+            form.name.trim(),
+
+        phone:
+            form.phone?.trim() || null,
+
+        email:
+            form.email?.trim() || null,
+
+        address:
+            form.address?.trim() || null,
+
+        position:
+            form.position.trim(),
+
+        department_id:
+            form.department_id
+                ? Number(form.department_id)
+                : null,
+
+        employment_type:
+            form.employment_type,
+
+        status:
+            form.status,
+
+        join_date:
+            form.join_date,
+
+        exit_date:
+            form.status === 'active'
                 ? null
-                : form.endDate || null,
-        address: form.address.trim(),
-        notes: form.notes.trim(),
+                : form.exit_date || null,
+
+        notes:
+            form.notes?.trim() || null,
     })
-}
-
-const FormField = {
-    props: {
-        label: String,
-        required: Boolean,
-    },
-
-    template: `
-        <div>
-            <label class="mb-1.5 block text-xs font-semibold text-gray-600">
-                {{ label }}
-                <span v-if="required" class="text-red-500">*</span>
-            </label>
-
-            <slot />
-        </div>
-    `,
 }
 </script>
 

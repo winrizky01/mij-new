@@ -26,8 +26,8 @@ import AdminWebsiteContent from '../pages/admin/WebsiteContent.vue'
 // =====================================
 
 import ErpDashboard from '../pages/erp/Dashboard.vue'
-import ErpProducts from '../pages/erp/master/Products.vue'
-import ErpGeneral from '../pages/erp/setting/General.vue'
+import ErpProducts from '../pages/erp/Products.vue'
+import ErpGeneral from '../pages/erp/General.vue'
 import ErpPurchases from '../pages/erp/Purchases.vue'
 import ErpTrucks from '../pages/erp/Trucks.vue'
 import ErpTariffs from '../pages/erp/Tariffs.vue'
@@ -37,6 +37,7 @@ import ErpEmployees from '../pages/erp/Employees.vue'
 import ErpPartners from '../pages/erp/Partners.vue'
 import ErpInventory from '../pages/erp/Stock.vue'
 import ErpStockIssues from '../pages/erp/StockIssues.vue'
+import ErpInvoices from '../pages/erp/SalesInvoices.vue'
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
@@ -231,6 +232,12 @@ const router = createRouter({
                     path: 'stock-issues',
                     name: 'erp.stock-issues',
                     component: ErpStockIssues,
+                },
+
+                {
+                    path: 'invoices',
+                    name: 'erp.invoices',
+                    component: ErpInvoices,
                 },
             ],
         },

@@ -20,8 +20,9 @@
             </div>
 
             <!-- Login Card -->
-            <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
-
+            <div
+                class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm sm:p-8"
+            >
                 <div class="mb-6">
                     <h2 class="text-xl font-semibold text-gray-900">
                         Masuk
@@ -39,29 +40,37 @@
 
                     <!-- Email -->
                     <div>
-                        <label class="mb-2 block text-sm font-medium text-gray-700">
+                        <label
+                            class="mb-2 block text-sm font-medium text-gray-700"
+                        >
                             Email
                         </label>
 
                         <input
                             v-model="form.email"
                             type="email"
-                            placeholder="admin@mji.co.id"
-                            class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                            autocomplete="email"
+                            placeholder="nama@mji.co.id"
+                            :disabled="loading"
+                            class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-gray-50 disabled:text-gray-400"
                         />
                     </div>
 
                     <!-- Password -->
                     <div>
-                        <label class="mb-2 block text-sm font-medium text-gray-700">
+                        <label
+                            class="mb-2 block text-sm font-medium text-gray-700"
+                        >
                             Password
                         </label>
 
                         <input
                             v-model="form.password"
                             type="password"
+                            autocomplete="current-password"
                             placeholder="••••••••"
-                            class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                            :disabled="loading"
+                            class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-gray-50 disabled:text-gray-400"
                         />
                     </div>
 
@@ -83,28 +92,6 @@
                     </button>
 
                 </form>
-
-                <!-- Demo -->
-                <div class="mt-6 rounded-xl bg-gray-50 p-4">
-                    <p class="text-xs font-medium text-gray-500">
-                        DEMO LOGIN
-                    </p>
-
-                    <p class="mt-2 text-xs text-gray-500">
-                        Email:
-                        <span class="font-medium text-gray-700">
-                            admin@mji.co.id
-                        </span>
-                    </p>
-
-                    <p class="mt-1 text-xs text-gray-500">
-                        Password:
-                        <span class="font-medium text-gray-700">
-                            password
-                        </span>
-                    </p>
-                </div>
-
             </div>
 
             <p class="mt-6 text-center text-xs text-gray-400">
@@ -118,6 +105,7 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { authApi, getApiError } from '@/services/api'
 
 const router = useRouter()
 
@@ -140,49 +128,112 @@ async function login() {
     loading.value = true
 
     try {
-        // ==========================================
-        // MOCK LOGIN
-        // Nanti diganti API Laravel
-        // ==========================================
+        const response = await authApi.login(
+            form.email,
+            form.password
+        )
+
+        const user = response.user
+
+        /*
+        |--------------------------------------------------------------------------
+        | ACCESS SYSTEM
+        |--------------------------------------------------------------------------
+        |
+        | Untuk tahap awal:
+        |
+        | admin → bisa masuk Admin + ERP
+        |
+        | Nanti kalau role sudah lebih spesifik:
+        | website_admin → Admin
+        | erp → ERP
+        |
+        */
+
+        const roles = user?.roles || []
+
+        const access = []
 
         if (
-            form.email !== 'admin@mji.co.id' ||
-            form.password !== 'password'
+            roles.includes('admin') ||
+            roles.includes('website_admin')
         ) {
-            error.value = 'Email atau password salah.'
-            return
+            access.push('admin')
         }
 
-        const user = {
-            id: 1,
-            name: 'Administrator',
-            email: form.email,
+        if (
+            roles.includes('admin') ||
+            roles.includes('erp')
+        ) {
+            access.push('erp')
+        }
 
-            // User ini punya akses ke dua sistem
-            access: [
-                'admin',
-                'erp',
-            ],
+        /*
+        |--------------------------------------------------------------------------
+        | Simpan user dengan informasi access
+        |--------------------------------------------------------------------------
+        |
+        | authApi.login() sudah menyimpan token + user.
+        | Kita update user agar router / SelectSystem
+        | tetap mendapatkan informasi access.
+        |
+        */
+
+        const storedUser = {
+            ...user,
+            access,
         }
 
         localStorage.setItem(
             'mji_user',
-            JSON.stringify(user)
+            JSON.stringify(storedUser)
         )
 
-        // Kalau hanya punya satu akses
-        if (user.access.length === 1) {
-            if (user.access[0] === 'admin') {
-                router.push('/admin/dashboard')
+        /*
+        |--------------------------------------------------------------------------
+        | Redirect
+        |--------------------------------------------------------------------------
+        */
+
+        if (access.length === 0) {
+            error.value =
+                'Akun Anda belum memiliki akses ke sistem.'
+
+            return
+        }
+
+        if (access.length === 1) {
+            if (access[0] === 'admin') {
+                await router.push('/admin/dashboard')
             } else {
-                router.push('/erp/dashboard')
+                await router.push('/erp/dashboard')
             }
 
             return
         }
 
-        // Kalau punya lebih dari satu akses
-        router.push('/select-system')
+        // Memiliki akses Admin + ERP
+        await router.push('/select-system')
+
+    } catch (err) {
+        const apiError = getApiError(err)
+
+        if (apiError.status === 422) {
+            error.value =
+                apiError.errors?.email?.[0] ||
+                apiError.errors?.password?.[0] ||
+                apiError.message
+        } else if (apiError.status === 401) {
+            error.value = 'Email atau password salah.'
+        } else if (apiError.status === 403) {
+            error.value =
+                apiError.message ||
+                'Akun Anda tidak memiliki akses.'
+        } else {
+            error.value =
+                apiError.message ||
+                'Terjadi kesalahan saat login.'
+        }
 
     } finally {
         loading.value = false

@@ -787,6 +787,19 @@ export const erpApi = {
             delete(id) {
                 return destroy(`/erp/trucks/${id}`)
             },
+
+            plateHistory(id) {
+                return api.get(
+                    `/erp/trucks/${id}/plate-history`
+                )
+            },
+
+            changePlate(id, data) {
+                return api.post(
+                    `/erp/trucks/${id}/change-plate`,
+                    data
+                )
+            },
         },
 
         shippingTariffs: {

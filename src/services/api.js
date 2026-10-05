@@ -585,36 +585,23 @@ export const erpApi = {
     master: {
         products: {
             list(params = {}) {
-                return get(
-                    '/erp/master/products',
-                    params
-                )
+                return api.get('/erp/products', { params })
             },
 
-            show(id) {
-                return get(
-                    `/erp/master/products/${id}`
-                )
+            get(id) {
+                return api.get(`/erp/products/${id}`)
             },
 
             create(data) {
-                return post(
-                    '/erp/master/products',
-                    data
-                )
+                return api.post('/erp/products', data)
             },
 
             update(id, data) {
-                return put(
-                    `/erp/master/products/${id}`,
-                    data
-                )
+                return api.put(`/erp/products/${id}`, data)
             },
 
-            delete(id) {
-                return destroy(
-                    `/erp/master/products/${id}`
-                )
+            remove(id) {
+                return api.delete(`/erp/products/${id}`)
             },
         },
 

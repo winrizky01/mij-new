@@ -102,9 +102,19 @@
 
                             <!-- TYPE -->
                             <div>
-                                <label class="form-label">
-                                    Type
-                                </label>
+                                <div class="mb-1.5 flex items-center justify-between">
+                                    <label class="form-label mb-0">
+                                        Tipe Produk
+                                    </label>
+
+                                    <button
+                                        type="button"
+                                        class="text-xs font-semibold text-[#0052cc] hover:text-[#003f9e]"
+                                        @click="openCreateProductType"
+                                    >
+                                        + Kelola Tipe Produk
+                                    </button>
+                                </div>
 
                                 <select
                                     v-model="form.type_id"
@@ -134,9 +144,19 @@
 
                             <!-- CATEGORY -->
                             <div>
-                                <label class="form-label">
-                                    Kategori
-                                </label>
+                                <div class="mb-1.5 flex items-center justify-between">
+                                    <label class="form-label mb-0">
+                                        Kategori
+                                    </label>
+
+                                    <button
+                                        type="button"
+                                        class="text-xs font-semibold text-[#0052cc] hover:text-[#003f9e]"
+                                        @click="openCreateProductCategory"
+                                    >
+                                        + Kelola Kategori
+                                    </button>
+                                </div>
 
                                 <select
                                     v-model="form.category_id"
@@ -528,6 +548,19 @@
             </form>
         </div>
     </div>
+
+    <ProductTypeModal
+        v-if="showProductTypeModal"
+        @close="showProductTypeModal = false"
+        @saved="handleProductTypeSaved"
+    />
+
+    <ProductCategoryModal
+        v-if="showProductCategoryModal"
+        @close="showProductCategoryModal = false"
+        @saved="handleProductCategorySaved"
+    />
+
 </template>
 
 <script setup>
@@ -544,6 +577,8 @@ import {
     Loader2Icon,
 } from 'lucide-vue-next'
 
+import ProductTypeModal from './ProductTypeModal.vue'
+import ProductCategoryModal from './ProductCategoryModal.vue'
 
 const props = defineProps({
     product: {
@@ -575,8 +610,33 @@ const emit = defineEmits([
 
 
 const saving = ref(false)
-
 const errors = reactive({})
+
+const showProductCategoryModal = ref(false)
+function openCreateProductCategory() {
+    showProductCategoryModal.value = true
+}
+function handleProductCategorySaved(category) {
+    showProductCategoryModal.value = false
+
+    emit('saved', {
+        type: 'category_created',
+        category,
+    })
+}
+
+const showProductTypeModal = ref(false)
+function openCreateProductType() {
+    showProductTypeModal.value = true
+}
+function handleProductTypeSaved(type) {
+    showProductTypeModal.value = false
+
+    emit('saved', {
+        type: 'product_type',
+        type,
+    })
+}
 
 
 const emptyForm = () => ({

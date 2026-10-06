@@ -18,12 +18,43 @@
             <button
                 type="button"
                 @click="openCreate"
-                class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#14a2d8] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#118fbe]"
+                :disabled="loading"
+                class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#14a2d8] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#118fbe] disabled:cursor-not-allowed disabled:opacity-60"
             >
                 <PlusIcon class="h-5 w-5" />
                 Tambah Produk
             </button>
         </div>
+
+
+        <!-- ERROR -->
+        <div
+            v-if="errorMessage"
+            class="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3"
+        >
+            <CircleAlertIcon
+                class="mt-0.5 h-5 w-5 shrink-0 text-red-500"
+            />
+
+            <div class="min-w-0 flex-1">
+                <p class="text-sm font-semibold text-red-700">
+                    Terjadi kesalahan
+                </p>
+
+                <p class="mt-0.5 text-sm text-red-600">
+                    {{ errorMessage }}
+                </p>
+            </div>
+
+            <button
+                type="button"
+                @click="loadInitialData"
+                class="text-xs font-semibold text-red-700 hover:text-red-900"
+            >
+                Coba Lagi
+            </button>
+        </div>
+
 
         <!-- SUMMARY -->
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -51,6 +82,7 @@
                 </div>
             </div>
 
+
             <!-- ACTIVE -->
             <div
                 class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
@@ -76,6 +108,7 @@
                 </div>
             </div>
 
+
             <!-- INACTIVE -->
             <div
                 class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
@@ -98,6 +131,7 @@
                     </div>
                 </div>
             </div>
+
 
             <!-- TRACK STOCK -->
             <div
@@ -124,14 +158,18 @@
 
         </div>
 
+
         <!-- FILTER -->
         <div
             class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
         >
-            <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
+            <div
+                class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5"
+            >
 
                 <!-- SEARCH -->
                 <div class="relative xl:col-span-2">
+
                     <SearchIcon
                         class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
                     />
@@ -141,12 +179,16 @@
                         type="text"
                         placeholder="Cari kode, nama, merk, barcode..."
                         class="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#14a2d8] focus:bg-white focus:ring-2 focus:ring-[#14a2d8]/10"
+                        @keyup.enter="loadProducts"
                     />
+
                 </div>
+
 
                 <!-- TYPE -->
                 <select
                     v-model="filters.typeId"
+                    @change="loadProducts"
                     class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-[#14a2d8] focus:bg-white focus:ring-2 focus:ring-[#14a2d8]/10"
                 >
                     <option value="">
@@ -162,9 +204,11 @@
                     </option>
                 </select>
 
+
                 <!-- CATEGORY -->
                 <select
                     v-model="filters.categoryId"
+                    @change="loadProducts"
                     class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-[#14a2d8] focus:bg-white focus:ring-2 focus:ring-[#14a2d8]/10"
                 >
                     <option value="">
@@ -180,9 +224,11 @@
                     </option>
                 </select>
 
+
                 <!-- STATUS -->
                 <select
                     v-model="filters.status"
+                    @change="loadProducts"
                     class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-[#14a2d8] focus:bg-white focus:ring-2 focus:ring-[#14a2d8]/10"
                 >
                     <option value="">
@@ -199,7 +245,31 @@
                 </select>
 
             </div>
+
+
+            <!-- SEARCH BUTTON -->
+            <div class="mt-3 flex justify-end">
+                <button
+                    type="button"
+                    @click="loadProducts"
+                    :disabled="loadingProducts"
+                    class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                    <Loader2Icon
+                        v-if="loadingProducts"
+                        class="h-4 w-4 animate-spin"
+                    />
+
+                    <SearchIcon
+                        v-else
+                        class="h-4 w-4"
+                    />
+
+                    Cari
+                </button>
+            </div>
         </div>
+
 
         <!-- TABLE -->
         <div
@@ -216,7 +286,7 @@
                     </h2>
 
                     <p class="mt-0.5 text-xs text-slate-500">
-                        {{ filteredProducts.length }} produk ditampilkan
+                        {{ products.length }} produk ditampilkan
                     </p>
                 </div>
 
@@ -229,11 +299,32 @@
                 </button>
             </div>
 
-            <!-- DESKTOP TABLE -->
-            <div class="hidden overflow-x-auto lg:block">
+
+            <!-- LOADING -->
+            <div
+                v-if="loadingProducts"
+                class="px-5 py-16 text-center"
+            >
+                <Loader2Icon
+                    class="mx-auto h-8 w-8 animate-spin text-[#14a2d8]"
+                />
+
+                <p class="mt-3 text-sm font-medium text-slate-600">
+                    Memuat produk...
+                </p>
+            </div>
+
+
+            <!-- DESKTOP -->
+            <div
+                v-else
+                class="hidden overflow-x-auto lg:block"
+            >
                 <table class="min-w-full">
+
                     <thead>
                         <tr class="border-b border-slate-200 bg-slate-50/70">
+
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                                 Produk
                             </th>
@@ -269,13 +360,15 @@
                             <th class="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
                                 Aksi
                             </th>
+
                         </tr>
                     </thead>
+
 
                     <tbody class="divide-y divide-slate-100">
 
                         <tr
-                            v-for="product in filteredProducts"
+                            v-for="product in products"
                             :key="product.id"
                             class="transition hover:bg-slate-50/70"
                         >
@@ -293,6 +386,7 @@
                                     </div>
 
                                     <div class="min-w-0">
+
                                         <p class="truncate font-semibold text-slate-800">
                                             {{ product.name }}
                                         </p>
@@ -306,10 +400,12 @@
                                                 · {{ product.brand }}
                                             </span>
                                         </p>
+
                                     </div>
 
                                 </div>
                             </td>
+
 
                             <!-- TYPE -->
                             <td class="px-5 py-4">
@@ -318,12 +414,14 @@
                                 </span>
                             </td>
 
+
                             <!-- CATEGORY -->
                             <td class="px-5 py-4">
                                 <span class="text-sm text-slate-600">
                                     {{ product.category?.name || '-' }}
                                 </span>
                             </td>
+
 
                             <!-- UNIT -->
                             <td class="px-5 py-4">
@@ -334,12 +432,14 @@
                                 </span>
                             </td>
 
+
                             <!-- PURCHASE -->
                             <td class="px-5 py-4 text-right">
                                 <span class="text-sm font-medium text-slate-700">
                                     {{ formatCurrency(product.purchase_price) }}
                                 </span>
                             </td>
+
 
                             <!-- SELLING -->
                             <td class="px-5 py-4 text-right">
@@ -348,8 +448,10 @@
                                 </span>
                             </td>
 
+
                             <!-- STOCK -->
                             <td class="px-5 py-4 text-center">
+
                                 <span
                                     v-if="product.track_stock"
                                     class="text-sm text-slate-500"
@@ -363,20 +465,28 @@
                                 >
                                     Tidak ditrack
                                 </span>
+
                             </td>
+
 
                             <!-- STATUS -->
                             <td class="px-5 py-4 text-center">
+
                                 <span
-                                    :class="product.is_active
-                                        ? 'bg-emerald-50 text-emerald-700'
-                                        : 'bg-slate-100 text-slate-500'"
+                                    :class="
+                                        product.is_active
+                                            ? 'bg-emerald-50 text-emerald-700'
+                                            : 'bg-slate-100 text-slate-500'
+                                    "
                                     class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
                                 >
+
                                     <span
-                                        :class="product.is_active
-                                            ? 'bg-emerald-500'
-                                            : 'bg-slate-400'"
+                                        :class="
+                                            product.is_active
+                                                ? 'bg-emerald-500'
+                                                : 'bg-slate-400'
+                                        "
                                         class="h-1.5 w-1.5 rounded-full"
                                     ></span>
 
@@ -385,11 +495,15 @@
                                             ? 'Aktif'
                                             : 'Tidak Aktif'
                                     }}
+
                                 </span>
+
                             </td>
+
 
                             <!-- ACTION -->
                             <td class="px-5 py-4">
+
                                 <div class="flex justify-end gap-1">
 
                                     <button
@@ -411,16 +525,20 @@
                                     </button>
 
                                 </div>
+
                             </td>
 
                         </tr>
 
+
                         <!-- EMPTY -->
-                        <tr v-if="filteredProducts.length === 0">
+                        <tr v-if="products.length === 0">
+
                             <td
                                 colspan="9"
                                 class="px-5 py-16 text-center"
                             >
+
                                 <div
                                     class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100"
                                 >
@@ -436,21 +554,29 @@
                                 <p class="mt-1 text-sm text-slate-400">
                                     Coba ubah pencarian atau filter.
                                 </p>
+
                             </td>
+
                         </tr>
 
                     </tbody>
+
                 </table>
             </div>
 
+
             <!-- MOBILE -->
-            <div class="divide-y divide-slate-100 lg:hidden">
+            <div
+                v-if="!loadingProducts"
+                class="divide-y divide-slate-100 lg:hidden"
+            >
 
                 <div
-                    v-for="product in filteredProducts"
+                    v-for="product in products"
                     :key="product.id"
                     class="p-4"
                 >
+
                     <div class="flex items-start justify-between gap-3">
 
                         <div class="flex min-w-0 gap-3">
@@ -464,6 +590,7 @@
                             </div>
 
                             <div class="min-w-0">
+
                                 <p class="font-semibold text-slate-800">
                                     {{ product.name }}
                                 </p>
@@ -471,14 +598,18 @@
                                 <p class="mt-0.5 text-xs text-slate-400">
                                     {{ product.code }}
                                 </p>
+
                             </div>
 
                         </div>
 
+
                         <span
-                            :class="product.is_active
-                                ? 'bg-emerald-50 text-emerald-700'
-                                : 'bg-slate-100 text-slate-500'"
+                            :class="
+                                product.is_active
+                                    ? 'bg-emerald-50 text-emerald-700'
+                                    : 'bg-slate-100 text-slate-500'
+                            "
                             class="shrink-0 rounded-full px-2 py-1 text-[11px] font-semibold"
                         >
                             {{
@@ -489,6 +620,7 @@
                         </span>
 
                     </div>
+
 
                     <div class="mt-4 grid grid-cols-2 gap-3">
 
@@ -502,6 +634,7 @@
                             </p>
                         </div>
 
+
                         <div>
                             <p class="text-xs text-slate-400">
                                 Kategori
@@ -512,6 +645,7 @@
                             </p>
                         </div>
 
+
                         <div>
                             <p class="text-xs text-slate-400">
                                 Satuan
@@ -521,6 +655,7 @@
                                 {{ product.unit?.code || '-' }}
                             </p>
                         </div>
+
 
                         <div>
                             <p class="text-xs text-slate-400">
@@ -533,6 +668,7 @@
                         </div>
 
                     </div>
+
 
                     <div class="mt-4 flex justify-end gap-2">
 
@@ -555,10 +691,12 @@
                         </button>
 
                     </div>
+
                 </div>
 
+
                 <div
-                    v-if="filteredProducts.length === 0"
+                    v-if="products.length === 0"
                     class="px-5 py-16 text-center"
                 >
                     <PackageOpenIcon
@@ -574,7 +712,8 @@
 
         </div>
 
-        <!-- MODAL -->
+
+        <!-- PRODUCT MODAL -->
         <ProductModal
             v-if="showModal"
             :product="selectedProduct"
@@ -583,15 +722,20 @@
             :units="units"
             @close="closeModal"
             @saved="handleSaved"
+            @category-created="handleCategoryCreated"
         />
 
     </div>
 </template>
 
+
 <script setup>
+
 import {
     computed,
+    onMounted,
     ref,
+    watch,
 } from 'vue'
 
 import {
@@ -604,9 +748,17 @@ import {
     CircleOffIcon,
     PencilIcon,
     Trash2Icon,
+    Loader2Icon,
+    CircleAlertIcon,
 } from 'lucide-vue-next'
 
-import ProductModal from '../../components/erp/product/ProductModal.vue'
+import {
+    erpApi,
+    getApiError,
+} from '@/services/api'
+ 
+import ProductModal
+    from '../../components/erp/product/ProductModal.vue'
 
 
 /*
@@ -615,10 +767,6 @@ import ProductModal from '../../components/erp/product/ProductModal.vue'
 |--------------------------------------------------------------------------
 */
 
-const showModal = ref(false)
-
-const selectedProduct = ref(null)
-
 const products = ref([])
 
 const productTypes = ref([])
@@ -626,6 +774,19 @@ const productTypes = ref([])
 const categories = ref([])
 
 const units = ref([])
+
+
+const showModal = ref(false)
+
+const selectedProduct = ref(null)
+
+
+const loading = ref(false)
+
+const loadingProducts = ref(false)
+
+const errorMessage = ref('')
+
 
 const filters = ref({
     search: '',
@@ -642,13 +803,14 @@ const filters = ref({
 */
 
 const summary = computed(() => {
+
     const list = products.value
 
     return {
         total: list.length,
 
         active: list.filter(
-            item => item.is_active
+            item => Boolean(item.is_active)
         ).length,
 
         inactive: list.filter(
@@ -656,10 +818,284 @@ const summary = computed(() => {
         ).length,
 
         trackStock: list.filter(
-            item => item.track_stock
+            item => Boolean(item.track_stock)
         ).length,
     }
 })
+
+
+/*
+|--------------------------------------------------------------------------
+| LOAD INITIAL DATA
+|--------------------------------------------------------------------------
+*/
+
+async function loadInitialData() {
+
+    loading.value = true
+
+    errorMessage.value = ''
+
+    try {
+
+        await Promise.all([
+            loadProductTypes(),
+            loadCategories(),
+            loadUnits(),
+            loadProducts(),
+        ])
+
+    } catch (error) {
+
+        console.error(
+            'Gagal memuat master produk:',
+            error
+        )
+
+        errorMessage.value =
+            getErrorMessage(
+                error,
+                'Gagal memuat data produk.'
+            )
+
+    } finally {
+
+        loading.value = false
+    }
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| LOAD PRODUCTS
+|--------------------------------------------------------------------------
+*/
+
+async function loadProducts() {
+
+    loadingProducts.value = true
+
+    try {
+
+        const params = {}
+
+        const search =
+            filters.value.search.trim()
+
+        if (search) {
+            params.search = search
+        }
+
+        if (filters.value.typeId) {
+            params.type_id =
+                filters.value.typeId
+        }
+
+        if (filters.value.categoryId) {
+            params.category_id =
+                filters.value.categoryId
+        }
+
+        if (filters.value.status) {
+
+            params.is_active =
+                filters.value.status === 'active'
+
+        }
+
+        const response =
+            await erpApi.master.products.list(
+                params,
+            )
+
+        products.value =
+            response.data?.data ?? []
+
+    } catch (error) {
+
+        console.error(
+            'Gagal memuat produk:',
+            error
+        )
+
+        errorMessage.value =
+            getErrorMessage(
+                error,
+                'Gagal memuat daftar produk.'
+            )
+
+    } finally {
+
+        loadingProducts.value = false
+    }
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| LOAD PRODUCT TYPES
+|--------------------------------------------------------------------------
+*/
+
+async function loadProductTypes() {
+
+    const response =
+        await erpApi.master.productTypes.list({
+            is_active: true,
+        })
+
+    productTypes.value =
+        response.data?.data ?? []
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| LOAD CATEGORIES
+|--------------------------------------------------------------------------
+*/
+
+async function loadCategories() {
+
+    const response =
+        await erpApi.master.productCategories.list({
+            is_active: true,
+        })
+
+    categories.value =
+        response.data?.data ?? []
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| LOAD UNITS
+|--------------------------------------------------------------------------
+*/
+
+async function loadUnits() {
+
+    const response =
+        await erpApi.master.units.list({
+            is_active: true,
+        })
+
+    units.value =
+        response.data?.data ?? []
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| MODAL
+|--------------------------------------------------------------------------
+*/
+
+function openCreate() {
+
+    selectedProduct.value = null
+
+    showModal.value = true
+}
+
+
+function openEdit(product) {
+
+    selectedProduct.value = product
+
+    showModal.value = true
+}
+
+
+function closeModal() {
+
+    showModal.value = false
+
+    selectedProduct.value = null
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| PRODUCT SAVED
+|--------------------------------------------------------------------------
+*/
+
+async function handleSaved(product) {
+
+    console.log(
+        'Product saved:',
+        product
+    )
+
+    closeModal()
+
+    await loadProducts()
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| CATEGORY CREATED
+|--------------------------------------------------------------------------
+*/
+
+async function handleCategoryCreated(category) {
+
+    console.log(
+        'Category created:',
+        category
+    )
+
+    await loadCategories()
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| DELETE
+|--------------------------------------------------------------------------
+*/
+
+async function deleteProduct(product) {
+
+    const confirmed =
+        window.confirm(
+            `Hapus produk "${product.name}"?`
+        )
+
+    if (!confirmed) {
+        return
+    }
+
+    try {
+
+        loadingProducts.value = true
+
+        await axios.delete(
+            `/api/erp/products/${product.id}`
+        )
+
+        await loadProducts()
+
+    } catch (error) {
+
+        console.error(
+            'Gagal menghapus produk:',
+            error
+        )
+
+        errorMessage.value =
+            getErrorMessage(
+                error,
+                'Gagal menghapus produk.'
+            )
+
+    } finally {
+
+        loadingProducts.value = false
+    }
+}
 
 
 /*
@@ -668,98 +1104,35 @@ const summary = computed(() => {
 |--------------------------------------------------------------------------
 */
 
-const filteredProducts = computed(() => {
-
-    const search =
-        filters.value.search
-            .trim()
-            .toLowerCase()
-
-    return products.value.filter(product => {
-
-        const matchSearch =
-            !search ||
-            product.code
-                ?.toLowerCase()
-                .includes(search) ||
-            product.name
-                ?.toLowerCase()
-                .includes(search) ||
-            product.brand
-                ?.toLowerCase()
-                .includes(search) ||
-            product.barcode
-                ?.toLowerCase()
-                .includes(search)
-
-        const matchType =
-            !filters.value.typeId ||
-            String(product.type_id) ===
-                String(filters.value.typeId)
-
-        const matchCategory =
-            !filters.value.categoryId ||
-            String(product.category_id) ===
-                String(filters.value.categoryId)
-
-        const matchStatus =
-            !filters.value.status ||
-            (
-                filters.value.status === 'active'
-                    ? product.is_active
-                    : !product.is_active
-            )
-
-        return (
-            matchSearch &&
-            matchType &&
-            matchCategory &&
-            matchStatus
-        )
-    })
-})
-
-
-/*
-|--------------------------------------------------------------------------
-| ACTIONS
-|--------------------------------------------------------------------------
-*/
-
-function openCreate() {
-    selectedProduct.value = null
-    showModal.value = true
-}
-
-function openEdit(product) {
-    selectedProduct.value = product
-    showModal.value = true
-}
-
-function closeModal() {
-    showModal.value = false
-    selectedProduct.value = null
-}
-
-function handleSaved(product) {
-    // Nanti sambungkan dengan reload API.
-    console.log('Product saved:', product)
-
-    closeModal()
-}
-
-function deleteProduct(product) {
-    // Nanti sambungkan ke API + confirmation.
-    console.log('Delete:', product)
-}
-
 function resetFilters() {
+
     filters.value = {
         search: '',
         typeId: '',
         categoryId: '',
         status: '',
     }
+
+    loadProducts()
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| ERROR
+|--------------------------------------------------------------------------
+*/
+
+function getErrorMessage(
+    error,
+    fallback
+) {
+
+    return (
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        fallback
+    )
 }
 
 
@@ -770,7 +1143,9 @@ function resetFilters() {
 */
 
 function formatCurrency(value) {
-    const number = Number(value || 0)
+
+    const number =
+        Number(value || 0)
 
     return new Intl.NumberFormat(
         'id-ID',
@@ -781,4 +1156,16 @@ function formatCurrency(value) {
         }
     ).format(number)
 }
+
+
+/*
+|--------------------------------------------------------------------------
+| INITIALIZE
+|--------------------------------------------------------------------------
+*/
+
+onMounted(() => {
+    loadInitialData()
+})
+
 </script>

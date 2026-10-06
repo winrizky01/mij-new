@@ -188,6 +188,21 @@
 
 
                             <RouterLink
+                                to="/erp/units"
+                                class="erp-nav"
+                                @click="closeSidebar"
+                            >
+                                <span class="erp-icon">
+                                    ⚙️
+                                </span>
+
+                                <span>
+                                    Satuan
+                                </span>
+                            </RouterLink>
+
+
+                            <RouterLink
                                 to="/erp/general"
                                 class="erp-nav"
                                 @click="closeSidebar"

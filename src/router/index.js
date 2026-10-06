@@ -38,6 +38,7 @@ import ErpPartners from '../pages/erp/Partners.vue'
 import ErpInventory from '../pages/erp/Stock.vue'
 import ErpStockIssues from '../pages/erp/StockIssues.vue'
 import ErpInvoices from '../pages/erp/SalesInvoices.vue'
+import ErpUnits from '../pages/erp/Units.vue'
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
@@ -184,6 +185,12 @@ const router = createRouter({
                     path: 'general',
                     name: 'erp.general',
                     component: ErpGeneral,
+                },
+
+                {
+                    path: 'units',
+                    name: 'erp.units',
+                    component: ErpUnits,
                 },
 
                 {

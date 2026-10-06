@@ -605,6 +605,72 @@ export const erpApi = {
             },
         },
 
+        productTypes: {
+            list(params = {}) {
+                return api.get('/erp/product-types', { params })
+            },
+
+            get(id) {
+                return api.get(`/erp/product-types/${id}`)
+            },
+
+            create(data) {
+                return api.post('/erp/product-types', data)
+            },
+
+            update(id, data) {
+                return api.put(`/erp/product-types/${id}`, data)
+            },
+
+            remove(id) {
+                return api.delete(`/erp/product-types/${id}`)
+            },
+        },
+
+        productCategories: {
+            list(params = {}) {
+                return api.get('/erp/product-categories', { params })
+            },
+
+            get(id) {
+                return api.get(`/erp/product-categories/${id}`)
+            },
+
+            create(data) {
+                return api.post('/erp/product-categories', data)
+            },
+
+            update(id, data) {
+                return api.put(`/erp/product-categories/${id}`, data)
+            },
+
+            remove(id) {
+                return api.delete(`/erp/product-categories/${id}`)
+            },
+        },
+
+        units: {
+            list(params = {}) {
+                return api.get('/erp/units', { params })
+            },
+
+            get(id) {
+                return api.get(`/erp/units/${id}`)
+            },
+
+            create(data) {
+                return api.post('/erp/units', data)
+            },
+
+            update(id, data) {
+                return api.put(`/erp/units/${id}`, data)
+            },
+
+            remove(id) {
+                return api.delete(`/erp/units/${id}`)
+            },
+        },
+
         partners: {
             list(params = {}) {
                 return get(

@@ -149,7 +149,6 @@
 
 
                 <div>
-
                     <label class="mb-1.5 block text-xs font-semibold text-gray-600">
                         Tipe Karyawan
                     </label>
@@ -162,19 +161,14 @@
                             Semua Tipe
                         </option>
 
-                        <option value="permanent">
-                            Tetap
-                        </option>
-
-                        <option value="trial">
-                            Trial
-                        </option>
-
-                        <option value="intern">
-                            Magang
+                        <option
+                            v-for="status in employeeStatuses"
+                            :key="status.id"
+                            :value="status.code"
+                        >
+                            {{ status.name }}
                         </option>
                     </select>
-
                 </div>
 
 
@@ -636,27 +630,20 @@ import {
 */
 
 const employees = ref([])
-
+const employeeStatuses = ref([])
 const departments = ref([])
-
 const loading = ref(false)
-
 const error = ref('')
+const selectedEmployee = ref(null)
+const showCreateModal = ref(false)
+const showEditModal = ref(false)
 
+const showShowModal = ref(false)
 const filters = reactive({
     search: '',
     type: '',
     status: '',
 })
-
-const selectedEmployee = ref(null)
-
-const showCreateModal = ref(false)
-
-const showEditModal = ref(false)
-
-const showShowModal = ref(false)
-
 
 /*
 |--------------------------------------------------------------------------
@@ -805,6 +792,23 @@ async function loadDepartments() {
         console.error('Gagal memuat departemen:', error)
 
         departments.value = []
+    }
+}
+
+async function loadEmployeeStatuses() {
+    try {
+        const response = await erpApi.master.general.list({
+            group       : 'employee_status',
+            is_active   : true,
+        })
+
+        const data = response?.data ?? response
+        employeeStatuses.value = Array.isArray(data)
+            ? data
+            : data?.data ?? []
+    } catch (error) {
+        console.error('Gagal memuat status karyawan:', error)
+        employeeStatuses.value = []
     }
 }
 
@@ -1252,10 +1256,8 @@ function statusClasses(status) {
 */
 
 onMounted(() => {
-
     loadEmployees()
-
     loadDepartments()
-
+    loadEmployeeStatuses()
 })
 </script>

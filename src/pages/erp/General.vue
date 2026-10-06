@@ -690,6 +690,14 @@ const masters = ref([
         codePrefix: 'PRI',
         count: 0,
     },
+
+    {
+        key: 'employee_status',
+        label: 'Status Karyawan',
+        icon: '👥',
+        codePrefix: 'EMP',
+        count: 0,
+    },
 ])
 
 
@@ -1023,7 +1031,7 @@ async function saveItem() {
         if (editingItem.value) {
 
             const response =
-                await erpApi.master.generals.update(
+                await erpApi.master.general.update(
                     form.id,
                     payload
                 )
@@ -1045,7 +1053,7 @@ async function saveItem() {
         } else {
 
             const response =
-                await erpApi.master.generals.create(
+                await erpApi.master.general.create(
                     payload
                 )
 

@@ -45,47 +45,31 @@
         <div class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
             <div class="grid grid-cols-1 gap-3 md:grid-cols-4">
                 <input
-                    v-model="search"
+                    v-model="filters.search"
                     type="text"
                     placeholder="Cari nomor, vendor, tujuan, atau truk..."
                     class="rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-[#0052cc] focus:ring-2 focus:ring-blue-100"
                 />
 
                 <select
-                    v-model="statusFilter"
+                    v-model="filters.status"
                     class="rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#0052cc]"
                 >
                     <option value="">
                         Semua Status
                     </option>
 
-                    <option value="draft">
-                        Dibuat
-                    </option>
-
-                    <option value="scheduled">
-                        Dijadwalkan
-                    </option>
-
-                    <option value="departed">
-                        Berangkat
-                    </option>
-
-                    <option value="on_route">
-                        Dalam Perjalanan
-                    </option>
-
-                    <option value="arrived">
-                        Sampai Tujuan
-                    </option>
-
-                    <option value="completed">
-                        Selesai
+                    <option
+                        v-for="item in statusOptions"
+                        :key="item.value"
+                        :value="item.value"
+                    >
+                        {{ item.label }}
                     </option>
                 </select>
 
                 <input
-                    v-model="dateFilter"
+                    v-model="filters.date"
                     type="date"
                     class="rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#0052cc]"
                 />
@@ -103,7 +87,7 @@
         <!-- TABLE -->
         <div class="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
             <div class="overflow-x-auto">
-                <table class="min-w-[1250px] w-full text-sm">
+                <table class="min-w-[1200px] w-full text-sm">
                     <thead class="border-b border-gray-100 bg-gray-50">
                         <tr>
                             <th class="px-5 py-4 text-left font-semibold text-gray-600">
@@ -141,22 +125,32 @@
                     </thead>
 
                     <tbody class="divide-y divide-gray-100">
+                        <tr v-if="loading">
+                            <td
+                                colspan="8"
+                                class="px-5 py-12 text-center text-gray-400"
+                            >
+                                Memuat data pengiriman...
+                            </td>
+                        </tr>
+
                         <tr
                             v-for="shipment in filteredShipments"
+                            v-else
                             :key="shipment.id"
                             class="transition hover:bg-gray-50"
                         >
                             <td class="px-5 py-4">
                                 <p class="font-semibold text-[#003366]">
-                                    {{ shipment.shipmentNumber }}
+                                    {{ shipment.shipment_number }}
                                 </p>
 
                                 <p class="mt-1 text-xs text-gray-500">
-                                    {{ formatDate(shipment.date) }}
+                                    {{ formatDate(shipment.shipment_date) }}
                                 </p>
 
                                 <span
-                                    v-if="shipment.hasCorrection"
+                                    v-if="shipment.has_correction"
                                     class="mt-2 inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700"
                                 >
                                     Ada Koreksi
@@ -165,40 +159,41 @@
 
                             <td class="px-5 py-4">
                                 <p class="font-medium text-gray-900">
-                                    {{ shipment.vendorName }}
+                                    {{ shipment.vendor?.name || '-' }}
                                 </p>
                             </td>
 
                             <td class="px-5 py-4">
                                 <p class="font-medium text-gray-900">
-                                    {{ shipment.plateNumber }}
+                                    {{ shipment.truck?.plate_number || '-' }}
                                 </p>
 
                                 <p class="mt-1 text-xs text-gray-500">
-                                    {{ shipment.truckName }}
+                                    {{ shipment.truck?.name || shipment.truck?.code || '-' }}
                                 </p>
 
                                 <p class="mt-1 text-xs text-gray-500">
-                                    Driver: {{ shipment.driverName }}
+                                    Driver:
+                                    {{ shipment.driver?.name || '-' }}
                                 </p>
                             </td>
 
                             <td class="px-5 py-4">
                                 <p class="font-medium text-gray-900">
-                                    {{ shipment.destination.companyName }}
+                                    {{ shipment.destination_company || '-' }}
                                 </p>
 
                                 <p class="mt-1 text-xs text-gray-500">
-                                    {{ shipment.destination.city }}
+                                    {{ shipment.destination_city || '-' }}
                                 </p>
                             </td>
 
                             <td class="px-5 py-4 text-right font-semibold text-gray-900">
-                                {{ formatCurrency(shipment.vendorTotal) }}
+                                {{ formatCurrency(shipment.vendor_total) }}
                             </td>
 
                             <td class="px-5 py-4 text-right font-semibold text-gray-900">
-                                {{ formatCurrency(shipment.driverTotal) }}
+                                {{ formatCurrency(shipment.driver_total) }}
                             </td>
 
                             <td class="px-5 py-4 text-center">
@@ -239,7 +234,7 @@
                             </td>
                         </tr>
 
-                        <tr v-if="filteredShipments.length === 0">
+                        <tr v-if="!loading && filteredShipments.length === 0">
                             <td
                                 colspan="8"
                                 class="px-5 py-12 text-center text-gray-400"
@@ -252,20 +247,16 @@
             </div>
         </div>
 
-        <!-- CREATE / EDIT / CORRECTION MODAL -->
+        <!-- FORM MODAL -->
         <ShipmentModal
             :show="showModal"
             :mode="modalMode"
             :shipment="selectedShipment"
-            :trucks="trucks"
-            :employees="employees"
-            :vendors="vendors"
-            :tariffs="tariffs"
             @close="closeModal"
             @saved="handleSaved"
         />
 
-        <!-- SHOW MODAL -->
+        <!-- DETAIL MODAL -->
         <div
             v-if="showShowModal && selectedShipment"
             class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
@@ -275,7 +266,7 @@
                 <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
                     <div>
                         <h2 class="text-lg font-bold text-[#003366]">
-                            {{ selectedShipment.shipmentNumber }}
+                            {{ selectedShipment.delivery_order_number }}
                         </h2>
 
                         <p class="mt-1 text-xs text-gray-500">
@@ -293,7 +284,6 @@
                 </div>
 
                 <div class="space-y-6 p-6">
-                    <!-- STATUS -->
                     <div class="flex flex-wrap items-center justify-between gap-3">
                         <span
                             :class="statusClass(selectedShipment.status)"
@@ -303,14 +293,13 @@
                         </span>
 
                         <span
-                            v-if="selectedShipment.hasCorrection"
+                            v-if="selectedShipment.has_correction"
                             class="rounded-full bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700"
                         >
                             Telah Dikoreksi Admin
                         </span>
                     </div>
 
-                    <!-- INFO -->
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div class="rounded-2xl bg-gray-50 p-5">
                             <p class="mb-4 text-sm font-bold text-[#003366]">
@@ -319,34 +308,33 @@
 
                             <div class="space-y-3 text-sm">
                                 <InfoRow label="Tanggal">
-                                    {{ formatDate(selectedShipment.date) }}
+                                    {{ formatDate(selectedShipment.shipment_date) }}
                                 </InfoRow>
 
                                 <InfoRow label="Vendor">
-                                    {{ selectedShipment.vendorName }}
+                                    {{ selectedShipment.vendor?.name || '-' }}
                                 </InfoRow>
 
                                 <InfoRow label="Truk">
-                                    {{ selectedShipment.truckName }}
+                                    {{ selectedShipment.truck?.name || '-' }}
                                     -
-                                    {{ selectedShipment.plateNumber }}
+                                    {{ selectedShipment.truck?.plate_number || '-' }}
                                 </InfoRow>
 
                                 <InfoRow label="Driver">
-                                    {{ selectedShipment.driverName }}
+                                    {{ selectedShipment.driver?.name || '-' }}
                                 </InfoRow>
 
                                 <InfoRow label="Tujuan">
-                                    {{ selectedShipment.destination.companyName }}
+                                    {{ selectedShipment.destination_company || '-' }}
                                 </InfoRow>
 
                                 <InfoRow label="Kota">
-                                    {{ selectedShipment.destination.city }}
+                                    {{ selectedShipment.destination_city || '-' }}
                                 </InfoRow>
                             </div>
                         </div>
 
-                        <!-- FINANCIAL -->
                         <div class="rounded-2xl bg-gray-50 p-5">
                             <p class="mb-4 text-sm font-bold text-[#003366]">
                                 Perhitungan
@@ -354,39 +342,40 @@
 
                             <div class="space-y-3 text-sm">
                                 <InfoRow label="Tarif Vendor">
-                                    {{ formatCurrency(selectedShipment.vendorRate) }}
+                                    {{ formatCurrency(selectedShipment.vendor_rate) }}
                                 </InfoRow>
 
                                 <InfoRow label="Tambahan Vendor">
-                                    {{ formatCurrency(selectedShipment.vendorAdditional) }}
+                                    {{ formatCurrency(selectedShipment.vendor_additional) }}
+                                </InfoRow>
+
+                                <InfoRow label="Koreksi Vendor">
+                                    {{ formatCurrency(selectedShipment.vendor_correction) }}
                                 </InfoRow>
 
                                 <InfoRow label="Balen Vendor">
-                                    {{ formatCurrency(selectedShipment.balen.vendorCharge) }}
+                                    {{ formatCurrency(selectedShipment.balen_vendor_charge) }}
                                 </InfoRow>
 
                                 <div class="border-t border-gray-200 pt-3">
                                     <InfoRow label="Total Tagihan Vendor">
                                         <strong>
-                                            {{ formatCurrency(selectedShipment.vendorTotal) }}
+                                            {{ formatCurrency(selectedShipment.vendor_total) }}
                                         </strong>
                                     </InfoRow>
                                 </div>
 
-                                <div class="border-t border-gray-200 pt-3">
-                                    <InfoRow label="Total Bayar Driver">
-                                        <strong>
-                                            {{ formatCurrency(selectedShipment.driverTotal) }}
-                                        </strong>
-                                    </InfoRow>
-                                </div>
+                                <InfoRow label="Total Bayar Driver">
+                                    <strong>
+                                        {{ formatCurrency(selectedShipment.driver_total) }}
+                                    </strong>
+                                </InfoRow>
                             </div>
                         </div>
                     </div>
 
-                    <!-- CORRECTION -->
                     <div
-                        v-if="selectedShipment.hasCorrection"
+                        v-if="selectedShipment.has_correction"
                         class="rounded-2xl border border-amber-200 bg-amber-50 p-5"
                     >
                         <p class="font-semibold text-amber-800">
@@ -394,16 +383,15 @@
                         </p>
 
                         <p class="mt-2 text-sm text-amber-700">
-                            {{ selectedShipment.correctionNote || '-' }}
+                            {{ selectedShipment.correction_note || '-' }}
                         </p>
 
                         <p class="mt-3 text-xs text-amber-600">
-                            Dikoreksi oleh:
-                            {{ selectedShipment.correctedBy || 'Administrator' }}
+                            Dikoreksi:
+                            {{ formatDateTime(selectedShipment.corrected_at) }}
                         </p>
                     </div>
 
-                    <!-- NOTES -->
                     <div>
                         <p class="mb-2 text-sm font-semibold text-gray-800">
                             Catatan
@@ -430,13 +418,14 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import InfoRow from '../../components/erp/shipments/InfoRow.vue'
 import ShipmentModal from '../../components/erp/shipments/ShipmentModal.vue'
+import { erpApi } from '../../services/api'
 
-const search = ref('')
-const statusFilter = ref('')
-const dateFilter = ref('')
+const loading = ref(false)
+
+const shipments = ref([])
 
 const showModal = ref(false)
 const showShowModal = ref(false)
@@ -444,247 +433,74 @@ const showShowModal = ref(false)
 const modalMode = ref('create')
 const selectedShipment = ref(null)
 
-const vendors = ref([
+const filters = reactive({
+    search: '',
+    status: '',
+    date: '',
+})
+
+const statusOptions = [
     {
-        id: 1,
-        name: 'PT ABC Manufacturing',
+        value: 'draft',
+        label: 'Dibuat',
     },
     {
-        id: 2,
-        name: 'PT Maju Bersama',
+        value: 'scheduled',
+        label: 'Dijadwalkan',
     },
     {
-        id: 3,
-        name: 'CV Sumber Makmur',
-    },
-])
-
-const trucks = ref([
-    {
-        id: 1,
-        code: 'TRK-001',
-        name: 'Colt Diesel 01',
-        plateNumber: 'L 8123 AB',
-        truckType: 'Colt Diesel',
+        value: 'departed',
+        label: 'Berangkat',
     },
     {
-        id: 2,
-        code: 'TRK-002',
-        name: 'Colt Diesel 02',
-        plateNumber: 'L 8456 CD',
-        truckType: 'Colt Diesel',
+        value: 'on_route',
+        label: 'Dalam Perjalanan',
     },
     {
-        id: 3,
-        code: 'TRK-003',
-        name: 'Fuso 01',
-        plateNumber: 'N 9123 EF',
-        truckType: 'Fuso',
-    },
-])
-
-/*
- * Nanti ini berasal dari modul Karyawan.
- * Untuk sementara mock.
- */
-const employees = ref([
-    {
-        id: 1,
-        name: 'Budi',
-        position: 'Driver',
+        value: 'arrived',
+        label: 'Sampai Tujuan',
     },
     {
-        id: 2,
-        name: 'Joko',
-        position: 'Driver',
+        value: 'completed',
+        label: 'Selesai',
     },
-    {
-        id: 3,
-        name: 'Agus',
-        position: 'Driver',
-    },
-])
-
-const tariffs = ref([
-    {
-        id: 1,
-        provinceId: 15,
-        cityId: 3576,
-        province: 'Jawa Timur',
-        city: 'Kota Mojokerto',
-        tariffType: 'Reguler',
-        truckType: 'Colt Diesel',
-        vendorRate: 850000,
-        driverRate: 350000,
-        vendorAdditional: 0,
-        driverAdditional: 0,
-        status: 'active',
-    },
-    {
-        id: 2,
-        provinceId: 15,
-        cityId: 3576,
-        province: 'Jawa Timur',
-        city: 'Kota Mojokerto',
-        tariffType: 'Khusus',
-        truckType: 'Colt Diesel',
-        vendorRate: 950000,
-        driverRate: 400000,
-        vendorAdditional: 100000,
-        driverAdditional: 50000,
-        status: 'active',
-    },
-    {
-        id: 3,
-        provinceId: 15,
-        cityId: 3525,
-        province: 'Jawa Timur',
-        city: 'Kabupaten Gresik',
-        tariffType: 'Reguler',
-        truckType: 'Fuso',
-        vendorRate: 1200000,
-        driverRate: 500000,
-        vendorAdditional: 0,
-        driverAdditional: 0,
-        status: 'active',
-    },
-])
-
-const shipments = ref([
-    {
-        id: 1,
-        shipmentNumber: 'SHP-2026-0001',
-        date: '2026-10-02',
-
-        vendorId: 1,
-        vendorName: 'PT ABC Manufacturing',
-
-        truckId: 1,
-        truckName: 'Colt Diesel 01',
-        plateNumber: 'L 8123 AB',
-
-        driverId: 1,
-        driverName: 'Budi',
-
-        destination: {
-            provinceId: 15,
-            province: 'Jawa Timur',
-            cityId: 3576,
-            city: 'Kota Mojokerto',
-            companyName: 'PT ABC Manufacturing',
-            address: 'Jl. Raya Mojokerto',
-        },
-
-        tariffId: 1,
-
-        vendorRate: 850000,
-        vendorAdditional: 0,
-        vendorCorrection: 0,
-
-        driverRate: 350000,
-        driverAdditional: 0,
-        driverCorrection: 0,
-
-        hasBalen: true,
-
-        balen: {
-            description: 'Balen dari customer',
-            vendorCharge: 150000,
-            driverPayment: 75000,
-        },
-
-        vendorTotal: 1000000,
-        driverTotal: 425000,
-
-        status: 'completed',
-
-        hasCorrection: false,
-        correctionNote: '',
-        correctedBy: '',
-
-        notes: 'Pengiriman selesai.',
-    },
-    {
-        id: 2,
-        shipmentNumber: 'SHP-2026-0002',
-        date: '2026-10-02',
-
-        vendorId: 2,
-        vendorName: 'PT Maju Bersama',
-
-        truckId: 3,
-        truckName: 'Fuso 01',
-        plateNumber: 'N 9123 EF',
-
-        driverId: 2,
-        driverName: 'Joko',
-
-        destination: {
-            provinceId: 15,
-            province: 'Jawa Timur',
-            cityId: 3525,
-            city: 'Kabupaten Gresik',
-            companyName: 'PT Maju Bersama',
-            address: 'Kawasan Industri Gresik',
-        },
-
-        tariffId: 3,
-
-        vendorRate: 1200000,
-        vendorAdditional: 0,
-        vendorCorrection: 0,
-
-        driverRate: 500000,
-        driverAdditional: 0,
-        driverCorrection: 0,
-
-        hasBalen: false,
-
-        balen: {
-            description: '',
-            vendorCharge: 0,
-            driverPayment: 0,
-        },
-
-        vendorTotal: 1200000,
-        driverTotal: 500000,
-
-        status: 'on_route',
-
-        hasCorrection: false,
-        correctionNote: '',
-        correctedBy: '',
-
-        notes: '',
-    },
-])
+]
 
 const filteredShipments = computed(() => {
-    const keyword = search.value.toLowerCase().trim()
+    const keyword = filters.search
+        .toLowerCase()
+        .trim()
 
     return shipments.value.filter(shipment => {
-        const matchesSearch =
-            !keyword ||
-            shipment.shipmentNumber.toLowerCase().includes(keyword) ||
-            shipment.vendorName.toLowerCase().includes(keyword) ||
-            shipment.destination.companyName.toLowerCase().includes(keyword) ||
-            shipment.destination.city.toLowerCase().includes(keyword) ||
-            shipment.plateNumber.toLowerCase().includes(keyword) ||
-            shipment.driverName.toLowerCase().includes(keyword)
+        if (filters.status && shipment.status !== filters.status) {
+            return false
+        }
 
-        const matchesStatus =
-            !statusFilter.value ||
-            shipment.status === statusFilter.value
+        if (
+            filters.date &&
+            shipment.shipment_date !== filters.date
+        ) {
+            return false
+        }
 
-        const matchesDate =
-            !dateFilter.value ||
-            shipment.date === dateFilter.value
+        if (!keyword) {
+            return true
+        }
 
-        return (
-            matchesSearch &&
-            matchesStatus &&
-            matchesDate
-        )
+        const searchable = [
+            shipment.shipment_number,
+            shipment.vendor?.name,
+            shipment.truck?.plate_number,
+            shipment.truck?.name,
+            shipment.driver?.name,
+            shipment.destination_company,
+            shipment.destination_city,
+        ]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase()
+
+        return searchable.includes(keyword)
     })
 })
 
@@ -711,40 +527,97 @@ const summaryCards = computed(() => [
     {
         label: 'Koreksi',
         value: shipments.value.filter(
-            item => item.hasCorrection
+            item => item.has_correction
         ).length,
         color: 'text-amber-600',
     },
     {
         label: 'Balen',
         value: shipments.value.filter(
-            item => item.hasBalen
+            item => item.has_balen
         ).length,
         color: 'text-purple-600',
     },
 ])
 
-function openCreate() {
+watch(
+    () => [
+        filters.search,
+        filters.status,
+        filters.date,
+    ],
+    () => {
+        loadShipments()
+    }
+)
+
+onMounted(() => {
+    loadShipments()
+})
+
+async function loadShipments() {
+    loading.value = true
+
+    try {
+        const response = await erpApi.shipments.list({
+            search: filters.search || undefined,
+            status: filters.status || undefined,
+            shipment_date: filters.date || undefined,
+        })
+
+        const data = response?.data ?? response
+
+        shipments.value = Array.isArray(data)
+            ? data
+            : data?.data ?? []
+    } catch (error) {
+        console.error(
+            'Gagal memuat pengiriman:',
+            error
+        )
+
+        shipments.value = []
+    } finally {
+        loading.value = false
+    }
+}
+
+async function openCreate() {
     selectedShipment.value = null
     modalMode.value = 'create'
     showModal.value = true
 }
 
-function openEdit(shipment) {
+async function openEdit(shipment) {
     selectedShipment.value = shipment
     modalMode.value = 'edit'
     showModal.value = true
 }
 
-function openCorrection(shipment) {
+async function openCorrection(shipment) {
     selectedShipment.value = shipment
     modalMode.value = 'correction'
     showModal.value = true
 }
 
-function openShow(shipment) {
-    selectedShipment.value = shipment
-    showShowModal.value = true
+async function openShow(shipment) {
+    try {
+        const response = await erpApi.shipments.get(
+            shipment.id
+        )
+
+        const data = response?.data ?? response
+
+        selectedShipment.value =
+            data?.data ?? data
+
+        showShowModal.value = true
+    } catch (error) {
+        console.error(
+            'Gagal memuat detail pengiriman:',
+            error
+        )
+    }
 }
 
 function closeModal() {
@@ -752,41 +625,23 @@ function closeModal() {
     selectedShipment.value = null
 }
 
-function handleSaved(payload) {
-    if (payload.mode === 'create') {
-        shipments.value.unshift(payload.shipment)
-    }
-
-    if (payload.mode === 'edit' || payload.mode === 'correction') {
-        const index = shipments.value.findIndex(
-            item => item.id === payload.shipment.id
-        )
-
-        if (index !== -1) {
-            shipments.value[index] = payload.shipment
-        }
-    }
-
+async function handleSaved() {
     closeModal()
+    await loadShipments()
 }
 
 function resetFilter() {
-    search.value = ''
-    statusFilter.value = ''
-    dateFilter.value = ''
+    filters.search = ''
+    filters.status = ''
+    filters.date = ''
 }
 
 function statusLabel(status) {
-    const labels = {
-        draft: 'Dibuat',
-        scheduled: 'Dijadwalkan',
-        departed: 'Berangkat',
-        on_route: 'Dalam Perjalanan',
-        arrived: 'Sampai Tujuan',
-        completed: 'Selesai',
-    }
+    const item = statusOptions.find(
+        option => option.value === status
+    )
 
-    return labels[status] || status
+    return item?.label || status || '-'
 }
 
 function statusClass(status) {
@@ -799,7 +654,10 @@ function statusClass(status) {
         completed: 'bg-emerald-50 text-emerald-700',
     }
 
-    return classes[status] || 'bg-gray-100 text-gray-600'
+    return (
+        classes[status] ||
+        'bg-gray-100 text-gray-600'
+    )
 }
 
 function formatCurrency(value) {
@@ -807,7 +665,7 @@ function formatCurrency(value) {
         style: 'currency',
         currency: 'IDR',
         maximumFractionDigits: 0,
-    }).format(value || 0)
+    }).format(Number(value || 0))
 }
 
 function formatDate(value) {
@@ -817,6 +675,15 @@ function formatDate(value) {
         day: '2-digit',
         month: 'short',
         year: 'numeric',
+    }).format(new Date(value))
+}
+
+function formatDateTime(value) {
+    if (!value) return '-'
+
+    return new Intl.DateTimeFormat('id-ID', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
     }).format(new Date(value))
 }
 </script>

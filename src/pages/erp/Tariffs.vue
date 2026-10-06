@@ -946,7 +946,7 @@ async function loadTrucks() {
                 status: 'available',
             })
 
-        const data = unwrapData(response)
+        const data = response?.data?.data ?? []
 
         trucks.value = Array.isArray(data)
             ? data

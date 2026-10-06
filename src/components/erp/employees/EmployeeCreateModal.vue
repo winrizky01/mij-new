@@ -188,28 +188,20 @@
 
                         <!-- Tipe Karyawan -->
                         <div>
-                            <label
-                                class="mb-1.5 block text-sm font-medium text-gray-700"
-                            >
+                            <label class="mb-1.5 block text-xs font-semibold text-gray-600">
                                 Tipe Karyawan
-                                <span class="text-red-500">*</span>
                             </label>
 
                             <select
                                 v-model="form.employment_type"
-                                class="form-input"
-                                required
+                                class="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-[#0052cc] focus:ring-2 focus:ring-[#0052cc]/10"
                             >
-                                <option value="permanent">
-                                    Tetap
-                                </option>
-
-                                <option value="trial">
-                                    Trial
-                                </option>
-
-                                <option value="intern">
-                                    Magang
+                                <option
+                                    v-for="status in employeeStatuses"
+                                    :key="status.id"
+                                    :value="status.code"
+                                >
+                                    {{ status.name }}
                                 </option>
                             </select>
                         </div>
@@ -345,7 +337,11 @@
 </template>
 
 <script setup>
-import { reactive, watch } from 'vue'
+import { ref, reactive, onMounted,  watch } from 'vue'
+import {
+    erpApi,
+    getApiError,
+} from '@/services/api'
 
 const props = defineProps({
     show: {
@@ -368,6 +364,8 @@ const emit = defineEmits([
     'close',
     'saved',
 ])
+
+const employeeStatuses = ref([])
 
 function getToday() {
     const date = new Date()
@@ -432,6 +430,24 @@ watch(
 function close() {
     emit('close')
 }
+    
+
+async function loadEmployeeStatuses() {
+    try {
+        const response = await erpApi.master.general.list({
+            group       : 'employee_status',
+            is_active   : true,
+        })
+
+        const data = response?.data ?? response
+        employeeStatuses.value = Array.isArray(data)
+            ? data
+            : data?.data ?? []
+    } catch (error) {
+        console.error('Gagal memuat status karyawan:', error)
+        employeeStatuses.value = []
+    }
+}
 
 function submit() {
     const payload = {
@@ -457,6 +473,11 @@ function submit() {
 
     emit('saved', payload)
 }
+
+onMounted(() => {
+    loadEmployeeStatuses()
+})
+
 </script>
 
 <style scoped>

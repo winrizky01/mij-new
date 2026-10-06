@@ -756,23 +756,23 @@ export const erpApi = {
 
         trucks: {
             list(params = {}) {
-                return get('/erp/trucks', params)
+                return api.get('/erp/trucks', { params })
             },
 
-            show(id) {
-                return get(`/erp/trucks/${id}`)
+            get(id) {
+                return api.get(`/erp/trucks/${id}`)
             },
 
             create(data) {
-                return post('/erp/trucks', data)
+                return api.post('/erp/trucks', data)
             },
 
             update(id, data) {
-                return put(`/erp/trucks/${id}`, data)
+                return api.put(`/erp/trucks/${id}`, data)
             },
 
-            delete(id) {
-                return destroy(`/erp/trucks/${id}`)
+            remove(id) {
+                return api.delete(`/erp/trucks/${id}`)
             },
 
             plateHistory(id) {
@@ -784,6 +784,19 @@ export const erpApi = {
             changePlate(id, data) {
                 return api.post(
                     `/erp/trucks/${id}/change-plate`,
+                    data
+                )
+            },
+
+            kirHistory(id) {
+                return api.get(
+                    `/erp/trucks/${id}/kir-history`
+                )
+            },
+
+            updateKir(id, data) {
+                return api.post(
+                    `/erp/trucks/${id}/update-kir`,
                     data
                 )
             },
@@ -997,34 +1010,41 @@ export const erpApi = {
 
     shipments: {
         list(params = {}) {
-            return get(
+            return api.get(
                 '/erp/shipments',
-                params
+                { params }
             )
         },
 
-        show(id) {
-            return get(
+        get(id) {
+            return api.get(
                 `/erp/shipments/${id}`
             )
         },
 
         create(data) {
-            return post(
+            return api.post(
                 '/erp/shipments',
                 data
             )
         },
 
         update(id, data) {
-            return put(
+            return api.put(
                 `/erp/shipments/${id}`,
                 data
             )
         },
 
-        delete(id) {
-            return destroy(
+        correction(id, data) {
+            return api.post(
+                `/erp/shipments/${id}/correction`,
+                data
+            )
+        },
+
+        remove(id) {
+            return api.delete(
                 `/erp/shipments/${id}`
             )
         },

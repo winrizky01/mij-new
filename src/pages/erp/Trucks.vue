@@ -16,8 +16,8 @@
 
             <button
                 type="button"
-                class="inline-flex items-center justify-center rounded-xl bg-[#0052cc] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#003f9e] disabled:cursor-not-allowed disabled:opacity-60"
                 :disabled="loading"
+                class="inline-flex items-center justify-center rounded-xl bg-[#0052cc] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#003f9e] disabled:cursor-not-allowed disabled:opacity-60"
                 @click="openCreate"
             >
                 + Tambah Truk
@@ -26,7 +26,6 @@
 
         <!-- SUMMARY -->
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-4">
-            <!-- TOTAL -->
             <div
                 class="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"
             >
@@ -39,7 +38,6 @@
                 </p>
             </div>
 
-            <!-- AVAILABLE -->
             <div
                 class="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"
             >
@@ -52,7 +50,6 @@
                 </p>
             </div>
 
-            <!-- IN USE -->
             <div
                 class="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"
             >
@@ -65,7 +62,6 @@
                 </p>
             </div>
 
-            <!-- ATTENTION -->
             <div
                 class="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"
             >
@@ -76,6 +72,10 @@
                 <p class="mt-2 text-2xl font-bold text-amber-600">
                     {{ attentionCount }}
                 </p>
+
+                <p class="mt-1 text-xs text-gray-400">
+                    Pajak / KIR ≤ 30 hari atau belum diisi
+                </p>
             </div>
         </div>
 
@@ -83,17 +83,13 @@
         <div
             class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
         >
-            <div
-                class="grid grid-cols-1 gap-3 md:grid-cols-[1fr_200px]"
-            >
-                <div class="relative">
-                    <input
-                        v-model="search"
-                        type="text"
-                        placeholder="Cari kode, nomor polisi, merk, model, atau jenis..."
-                        class="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-[#0052cc] focus:ring-2 focus:ring-blue-100"
-                    />
-                </div>
+            <div class="grid grid-cols-1 gap-3 md:grid-cols-[1fr_200px]">
+                <input
+                    v-model="search"
+                    type="text"
+                    placeholder="Cari kode, nomor polisi, merk, model, atau jenis..."
+                    class="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-[#0052cc] focus:ring-2 focus:ring-blue-100"
+                />
 
                 <select
                     v-model="statusFilter"
@@ -124,65 +120,49 @@
 
         <!-- TABLE -->
         <div
-            class="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm"
+            class="rounded-2xl border border-gray-100 bg-white shadow-sm"
         >
-            <div class="overflow-x-auto">
-                <table class="min-w-[1100px] w-full text-sm">
-                    <thead
-                        class="border-b border-gray-100 bg-gray-50"
-                    >
+            <div class="w-full">
+                <table class="w-full table-fixed text-sm">
+                    <thead class="border-b border-gray-100 bg-gray-50">
                         <tr>
-                            <th
-                                class="px-5 py-4 text-left font-semibold text-gray-600"
-                            >
+                            <th class="px-5 py-4 text-left font-semibold text-gray-600">
                                 Kode
                             </th>
 
-                            <th
-                                class="px-5 py-4 text-left font-semibold text-gray-600"
-                            >
+                            <th class="px-5 py-4 text-left font-semibold text-gray-600">
                                 Nomor Polisi
                             </th>
 
-                            <th
-                                class="px-5 py-4 text-left font-semibold text-gray-600"
-                            >
+                            <th class="px-5 py-4 text-left font-semibold text-gray-600">
                                 Kendaraan
                             </th>
 
-                            <th
-                                class="px-5 py-4 text-left font-semibold text-gray-600"
-                            >
+                            <th class="px-5 py-4 text-left font-semibold text-gray-600">
                                 Jenis
                             </th>
 
-                            <th
-                                class="px-5 py-4 text-left font-semibold text-gray-600"
-                            >
+                            <th class="px-5 py-4 text-left font-semibold text-gray-600">
+                                Driver Default
+                            </th>
+
+                            <th class="px-5 py-4 text-left font-semibold text-gray-600">
                                 Kapasitas
                             </th>
 
-                            <th
-                                class="px-5 py-4 text-left font-semibold text-gray-600"
-                            >
+                            <th class="px-5 py-4 text-left font-semibold text-gray-600">
                                 Pajak
                             </th>
 
-                            <th
-                                class="px-5 py-4 text-left font-semibold text-gray-600"
-                            >
+                            <th class="px-5 py-4 text-left font-semibold text-gray-600">
                                 KIR
                             </th>
 
-                            <th
-                                class="px-5 py-4 text-left font-semibold text-gray-600"
-                            >
+                            <th class="px-5 py-4 text-left font-semibold text-gray-600">
                                 Status
                             </th>
 
-                            <th
-                                class="px-5 py-4 text-right font-semibold text-gray-600"
-                            >
+                            <th class="px-5 py-4 text-right font-semibold text-gray-600">
                                 Aksi
                             </th>
                         </tr>
@@ -194,7 +174,7 @@
                     >
                         <tr>
                             <td
-                                colspan="9"
+                                colspan="10"
                                 class="px-5 py-14 text-center text-sm text-gray-400"
                             >
                                 Memuat data truk...
@@ -220,9 +200,7 @@
 
                             <!-- PLATE -->
                             <td class="px-5 py-4">
-                                <div
-                                    class="font-bold text-gray-900"
-                                >
+                                <div class="font-bold text-gray-900">
                                     {{ truck.plate_number }}
                                 </div>
 
@@ -240,25 +218,20 @@
                                 <div class="font-medium">
                                     {{ vehicleName(truck) }}
                                 </div>
-
-                                <div
-                                    v-if="
-                                        truck.brand ||
-                                        truck.model
-                                    "
-                                    class="mt-0.5 text-xs text-gray-400"
-                                >
-                                    {{ truck.brand }}
-                                    {{ truck.model }}
-                                </div>
                             </td>
 
                             <!-- TYPE -->
                             <td class="px-5 py-4 text-gray-600">
-                                {{
-                                    truck.truck_type?.name ||
-                                    '-'
-                                }}
+                                {{ truck.truck_type?.name || '-' }}
+                            </td>
+
+                            <!-- DRIVER -->
+                            <td class="px-5 py-4">
+                                <div
+                                    class="font-medium text-gray-700"
+                                >
+                                    {{ truck.driver?.name || '-' }}
+                                </div>
                             </td>
 
                             <!-- CAPACITY -->
@@ -268,14 +241,8 @@
 
                             <!-- TAX -->
                             <td class="px-5 py-4">
-                                <div
-                                    class="text-xs text-gray-500"
-                                >
-                                    {{
-                                        formatDate(
-                                            truck.tax_expired_at
-                                        )
-                                    }}
+                                <div class="text-xs text-gray-500">
+                                    {{ formatDate(truck.tax_expired_at) }}
                                 </div>
 
                                 <span
@@ -296,14 +263,8 @@
 
                             <!-- KIR -->
                             <td class="px-5 py-4">
-                                <div
-                                    class="text-xs text-gray-500"
-                                >
-                                    {{
-                                        formatDate(
-                                            truck.kir_expired_at
-                                        )
-                                    }}
+                                <div class="text-xs text-gray-500">
+                                    {{ formatDate(truck.kir_expired_at) }}
                                 </div>
 
                                 <span
@@ -326,97 +287,84 @@
                             <td class="px-5 py-4">
                                 <span
                                     class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold"
-                                    :class="
-                                        statusClass(
-                                            truck.status
-                                        )
-                                    "
+                                    :class="statusClass(truck.status)"
                                 >
-                                    {{
-                                        statusLabel(
-                                            truck.status
-                                        )
-                                    }}
+                                    {{ statusLabel(truck.status) }}
                                 </span>
                             </td>
 
                             <!-- ACTION -->
-                            <td class="px-5 py-4">
-                                <div
-                                    class="flex justify-end gap-2"
-                                >
+                            <td class="relative px-5 py-4">
+                                <div class="flex justify-end">
                                     <button
                                         type="button"
-                                        class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
-                                        @click="
-                                            openEdit(truck)
-                                        "
+                                        class="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50"
+                                        @click.stop="toggleActionMenu(truck.id)"
                                     >
-                                        Edit
+                                        <span class="text-xl leading-none">⋮</span>
                                     </button>
 
-                                    <button
-                                        type="button"
-                                        class="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100"
-                                        @click="
-                                            openChangePlate(
-                                                truck
-                                            )
-                                        "
+                                    <div
+                                        v-if="openActionMenu === truck.id"
+                                        class="absolute right-3 top-11 z-50 w-40 rounded-xl border border-gray-200 bg-white p-1.5 shadow-xl"
+                                        @click.stop
                                     >
-                                        Ganti Plat
-                                    </button>
+                                        <button
+                                            type="button"
+                                            class="action-menu-item"
+                                            @click="handleAction('edit', truck)"
+                                        >
+                                            Edit
+                                        </button>
 
-                                    <button
-                                        type="button"
-                                        class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50"
-                                        @click="
-                                            openPlateHistory(
-                                                truck
-                                            )
-                                        "
-                                    >
-                                        Riwayat
-                                    </button>
+                                        <button
+                                            type="button"
+                                            class="action-menu-item"
+                                            @click="handleAction('plate', truck)"
+                                        >
+                                            Ganti Plat
+                                        </button>
 
-                                    <button
-                                        v-if="
-                                            truck.status !==
-                                            'in_use'
-                                        "
-                                        type="button"
-                                        class="rounded-lg px-3 py-1.5 text-xs font-semibold"
-                                        :class="
-                                            truck.status ===
-                                            'inactive'
-                                                ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
-                                                : 'bg-red-50 text-red-600 hover:bg-red-100'
-                                        "
-                                        @click="
-                                            toggleStatus(
-                                                truck
-                                            )
-                                        "
-                                    >
-                                        {{
-                                            truck.status ===
-                                            'inactive'
-                                                ? 'Aktifkan'
-                                                : 'Nonaktifkan'
-                                        }}
-                                    </button>
+                                        <button
+                                            type="button"
+                                            class="action-menu-item"
+                                            @click="handleAction('history', truck)"
+                                        >
+                                            Riwayat
+                                        </button>
+
+                                        <div
+                                            v-if="truck.status !== 'in_use'"
+                                            class="my-1 border-t border-gray-100"
+                                        ></div>
+
+                                        <button
+                                            v-if="truck.status !== 'in_use'"
+                                            type="button"
+                                            class="action-menu-item"
+                                            :class="
+                                                truck.status === 'inactive'
+                                                    ? 'text-emerald-600 hover:bg-emerald-50'
+                                                    : 'text-red-600 hover:bg-red-50'
+                                            "
+                                            @click="handleAction('status', truck)"
+                                        >
+                                            {{
+                                                truck.status === 'inactive'
+                                                    ? 'Aktifkan'
+                                                    : 'Nonaktifkan'
+                                            }}
+                                        </button>
+                                    </div>
                                 </div>
                             </td>
                         </tr>
 
-                        <tr
-                            v-if="
-                                filteredTrucks.length === 0
-                            "
-                        >
+                        <tr v-if="filteredTrucks.length === 0">
                             <td
-                                colspan="9"
+                                colspan="10"
                                 class="px-5 py-14 text-center text-gray-400"
+
                             >
                                 Tidak ada data truk.
                             </td>
@@ -438,26 +386,16 @@
             <div
                 class="w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-xl"
             >
-                <!-- HEADER -->
                 <div
                     class="flex items-center justify-between border-b border-gray-100 px-6 py-4"
                 >
                     <div>
-                        <h2
-                            class="text-lg font-bold text-[#003366]"
-                        >
-                            {{
-                                editingId
-                                    ? 'Edit Truk'
-                                    : 'Tambah Truk'
-                            }}
+                        <h2 class="text-lg font-bold text-[#003366]">
+                            {{ editingId ? 'Edit Truk' : 'Tambah Truk' }}
                         </h2>
 
-                        <p
-                            class="mt-1 text-xs text-gray-500"
-                        >
-                            Data armada kendaraan
-                            operasional.
+                        <p class="mt-1 text-xs text-gray-500">
+                            Data armada kendaraan operasional.
                         </p>
                     </div>
 
@@ -470,19 +408,13 @@
                     </button>
                 </div>
 
-                <!-- FORM -->
                 <form
                     class="max-h-[75vh] space-y-4 overflow-y-auto p-6"
                     @submit.prevent="saveTruck"
                 >
-                    <!-- CODE -->
-                    <div
-                        class="grid grid-cols-1 gap-4 sm:grid-cols-2"
-                    >
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
-                            <label
-                                class="mb-1.5 block text-sm font-medium text-gray-700"
-                            >
+                            <label class="form-label">
                                 Kode Truk
                             </label>
 
@@ -490,15 +422,12 @@
                                 v-model="form.code"
                                 required
                                 placeholder="TRK-001"
-                                class="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#0052cc] focus:ring-2 focus:ring-blue-100"
+                                class="form-input"
                             />
                         </div>
 
-                        <!-- PLATE -->
                         <div>
-                            <label
-                                class="mb-1.5 block text-sm font-medium text-gray-700"
-                            >
+                            <label class="form-label">
                                 Nomor Polisi
                             </label>
 
@@ -507,65 +436,63 @@
                                 required
                                 :disabled="!!editingId"
                                 placeholder="L 8123 AB"
-                                class="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm uppercase outline-none focus:border-[#0052cc] focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500"
+                                class="form-input uppercase disabled:bg-gray-50"
                             />
 
                             <p
                                 v-if="editingId"
                                 class="mt-1.5 text-xs text-gray-400"
                             >
-                                Untuk mengganti plat,
-                                gunakan tombol
-                                <strong>Ganti Plat</strong>.
+                                Gunakan Ganti Plat untuk mengganti nomor polisi.
                             </p>
                         </div>
                     </div>
 
-                    <!-- BRAND + MODEL -->
-                    <div
-                        class="grid grid-cols-1 gap-4 sm:grid-cols-2"
-                    >
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
-                            <label
-                                class="mb-1.5 block text-sm font-medium text-gray-700"
-                            >
+                            <label class="form-label">
                                 Merk
                             </label>
 
                             <input
                                 v-model="form.brand"
                                 placeholder="Mitsubishi"
-                                class="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#0052cc] focus:ring-2 focus:ring-blue-100"
+                                class="form-input"
                             />
                         </div>
 
                         <div>
-                            <label
-                                class="mb-1.5 block text-sm font-medium text-gray-700"
-                            >
+                            <label class="form-label">
                                 Model
                             </label>
 
                             <input
                                 v-model="form.model"
                                 placeholder="Canter FE 74"
-                                class="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#0052cc] focus:ring-2 focus:ring-blue-100"
+                                class="form-input"
                             />
                         </div>
                     </div>
 
-                    <!-- TYPE -->
                     <div>
-                        <label
-                            class="mb-1.5 block text-sm font-medium text-gray-700"
-                        >
-                            Jenis Truk
-                        </label>
+                        <div class="mb-1.5 flex items-center justify-between">
+                            <label class="form-label mb-0">
+                                Jenis Truk
+                            </label>
+
+                            <button
+                                type="button"
+                                class="text-xs font-semibold text-[#0052cc] hover:text-[#003f9e]"
+                                @click="openCreateTruckType"
+                            >
+                                + Kelola Jenis
+                            </button>
+                        </div>
 
                         <select
                             v-model="form.truck_type_id"
                             required
-                            class="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#0052cc]"
+                            class="form-input"
                         >
                             <option value="">
                                 Pilih jenis truk
@@ -576,30 +503,41 @@
                                 :key="type.id"
                                 :value="type.id"
                             >
-                                {{ type.code }} -
-                                {{ type.name }}
+                                {{ type.code }} - {{ type.name }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="form-label">
+                            Driver Default
+                        </label>
+
+                        <select
+                            v-model="form.driver_id"
+                            class="form-input"
+                        >
+                            <option value="">
+                                Tidak ada driver default
+                            </option>
+
+                            <option
+                                v-for="employee in employees"
+                                :key="employee.id"
+                                :value="employee.id"
+                            >
+                                {{ employee.name }}
                             </option>
                         </select>
 
-                        <p
-                            v-if="
-                                truckTypes.length === 0
-                            "
-                            class="mt-1.5 text-xs text-amber-600"
-                        >
-                            Belum ada master jenis
-                            truk.
+                        <p class="mt-1.5 text-xs text-gray-400">
+                            Driver ini akan otomatis dipilih saat truck digunakan pada pengiriman.
                         </p>
                     </div>
 
-                    <!-- CAPACITY -->
-                    <div
-                        class="grid grid-cols-1 gap-4 sm:grid-cols-2"
-                    >
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
-                            <label
-                                class="mb-1.5 block text-sm font-medium text-gray-700"
-                            >
+                            <label class="form-label">
                                 Kapasitas
                             </label>
 
@@ -609,92 +547,68 @@
                                 min="0"
                                 step="0.001"
                                 placeholder="5"
-                                class="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#0052cc]"
+                                class="form-input"
                             />
                         </div>
 
                         <div>
-                            <label
-                                class="mb-1.5 block text-sm font-medium text-gray-700"
-                            >
+                            <label class="form-label">
                                 Satuan Kapasitas
                             </label>
 
                             <input
                                 v-model="form.capacity_unit"
                                 placeholder="Ton"
-                                class="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#0052cc]"
+                                class="form-input"
                             />
                         </div>
                     </div>
 
-                    <!-- DOCUMENTS -->
-                    <div
-                        class="rounded-2xl border border-gray-100 bg-gray-50 p-4"
-                    >
-                        <div class="mb-3">
-                            <p
-                                class="text-sm font-semibold text-gray-800"
-                            >
-                                Dokumen Kendaraan
-                            </p>
+                    <!-- DOCUMENT -->
+                    <div class="rounded-2xl border border-gray-100 bg-gray-50 p-4">
+                        <p class="text-sm font-semibold text-gray-800">
+                            Dokumen Kendaraan
+                        </p>
 
-                            <p
-                                class="mt-0.5 text-xs text-gray-500"
-                            >
-                                Masukkan tanggal berlaku
-                                pajak dan KIR.
-                            </p>
-                        </div>
+                        <p class="mt-1 text-xs text-gray-500">
+                            Data berlaku dokumen kendaraan saat ini.
+                        </p>
 
-                        <div
-                            class="grid grid-cols-1 gap-4 sm:grid-cols-2"
-                        >
+                        <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div>
-                                <label
-                                    class="mb-1.5 block text-sm font-medium text-gray-700"
-                                >
+                                <label class="form-label">
                                     Pajak Berlaku Sampai
                                 </label>
 
                                 <input
-                                    v-model="
-                                        form.tax_expired_at
-                                    "
+                                    v-model="form.tax_expired_at"
                                     type="date"
-                                    class="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-[#0052cc]"
+                                    class="form-input bg-white"
                                 />
                             </div>
 
                             <div>
-                                <label
-                                    class="mb-1.5 block text-sm font-medium text-gray-700"
-                                >
+                                <label class="form-label">
                                     KIR Berlaku Sampai
                                 </label>
 
                                 <input
-                                    v-model="
-                                        form.kir_expired_at
-                                    "
+                                    v-model="form.kir_expired_at"
                                     type="date"
-                                    class="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-[#0052cc]"
+                                    class="form-input bg-white"
                                 />
                             </div>
                         </div>
                     </div>
 
-                    <!-- STATUS -->
                     <div>
-                        <label
-                            class="mb-1.5 block text-sm font-medium text-gray-700"
-                        >
+                        <label class="form-label">
                             Status
                         </label>
 
                         <select
                             v-model="form.status"
-                            class="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#0052cc]"
+                            class="form-input"
                         >
                             <option value="available">
                                 Tersedia
@@ -714,11 +628,8 @@
                         </select>
                     </div>
 
-                    <!-- NOTES -->
                     <div>
-                        <label
-                            class="mb-1.5 block text-sm font-medium text-gray-700"
-                        >
+                        <label class="form-label">
                             Keterangan
                         </label>
 
@@ -726,17 +637,14 @@
                             v-model="form.notes"
                             rows="3"
                             placeholder="Keterangan tambahan..."
-                            class="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#0052cc]"
+                            class="form-input resize-none"
                         ></textarea>
                     </div>
 
-                    <!-- ACTION -->
-                    <div
-                        class="flex justify-end gap-3 border-t border-gray-100 pt-4"
-                    >
+                    <div class="flex justify-end gap-3 border-t border-gray-100 pt-4">
                         <button
                             type="button"
-                            class="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                            class="btn-secondary"
                             @click="closeModal"
                         >
                             Batal
@@ -745,13 +653,9 @@
                         <button
                             type="submit"
                             :disabled="saving"
-                            class="rounded-xl bg-[#0052cc] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#003f9e] disabled:cursor-not-allowed disabled:opacity-60"
+                            class="btn-primary"
                         >
-                            {{
-                                saving
-                                    ? 'Menyimpan...'
-                                    : 'Simpan'
-                            }}
+                            {{ saving ? 'Menyimpan...' : 'Simpan' }}
                         </button>
                     </div>
                 </form>
@@ -770,27 +674,20 @@
             <div
                 class="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-xl"
             >
-                <!-- HEADER -->
-                <div
-                    class="flex items-center justify-between border-b border-gray-100 px-6 py-4"
-                >
+                <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
                     <div>
-                        <h2
-                            class="text-lg font-bold text-[#003366]"
-                        >
+                        <h2 class="text-lg font-bold text-[#003366]">
                             Ganti Plat Nomor
                         </h2>
 
-                        <p
-                            class="mt-1 text-xs text-gray-500"
-                        >
+                        <p class="mt-1 text-xs text-gray-500">
                             {{ selectedTruck?.code }}
                         </p>
                     </div>
 
                     <button
                         type="button"
-                        class="text-2xl leading-none text-gray-400 hover:text-gray-700"
+                        class="text-2xl leading-none text-gray-400"
                         @click="closePlateModal"
                     >
                         ×
@@ -801,47 +698,31 @@
                     class="space-y-4 p-6"
                     @submit.prevent="changePlate"
                 >
-                    <!-- CURRENT -->
-                    <div
-                        class="rounded-xl border border-gray-100 bg-gray-50 p-4"
-                    >
+                    <div class="rounded-xl border border-gray-100 bg-gray-50 p-4">
                         <p class="text-xs text-gray-500">
                             Plat Saat Ini
                         </p>
 
-                        <p
-                            class="mt-1 text-xl font-bold tracking-wide text-gray-900"
-                        >
-                            {{
-                                selectedTruck?.plate_number ||
-                                '-'
-                            }}
+                        <p class="mt-1 text-xl font-bold tracking-wide text-gray-900">
+                            {{ selectedTruck?.plate_number || '-' }}
                         </p>
                     </div>
 
-                    <!-- NEW -->
                     <div>
-                        <label
-                            class="mb-1.5 block text-sm font-medium text-gray-700"
-                        >
+                        <label class="form-label">
                             Plat Baru
                         </label>
 
                         <input
-                            v-model="
-                                plateForm.new_plate_number
-                            "
+                            v-model="plateForm.new_plate_number"
                             required
                             placeholder="L 8123 AB"
-                            class="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm uppercase outline-none focus:border-[#0052cc] focus:ring-2 focus:ring-blue-100"
+                            class="form-input uppercase"
                         />
                     </div>
 
-                    <!-- DATE -->
                     <div>
-                        <label
-                            class="mb-1.5 block text-sm font-medium text-gray-700"
-                        >
+                        <label class="form-label">
                             Tanggal Perubahan
                         </label>
 
@@ -849,48 +730,38 @@
                             v-model="plateForm.changed_at"
                             type="date"
                             required
-                            class="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#0052cc]"
+                            class="form-input"
                         />
                     </div>
 
-                    <!-- REASON -->
                     <div>
-                        <label
-                            class="mb-1.5 block text-sm font-medium text-gray-700"
-                        >
+                        <label class="form-label">
                             Alasan
                         </label>
 
                         <input
                             v-model="plateForm.reason"
-                            placeholder="Contoh: Perubahan administrasi"
-                            class="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#0052cc]"
+                            placeholder="Perubahan administrasi"
+                            class="form-input"
                         />
                     </div>
 
-                    <!-- NOTES -->
                     <div>
-                        <label
-                            class="mb-1.5 block text-sm font-medium text-gray-700"
-                        >
+                        <label class="form-label">
                             Catatan
                         </label>
 
                         <textarea
                             v-model="plateForm.notes"
                             rows="3"
-                            placeholder="Catatan tambahan..."
-                            class="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#0052cc]"
+                            class="form-input resize-none"
                         ></textarea>
                     </div>
 
-                    <!-- ACTION -->
-                    <div
-                        class="flex justify-end gap-3 border-t border-gray-100 pt-4"
-                    >
+                    <div class="flex justify-end gap-3 border-t border-gray-100 pt-4">
                         <button
                             type="button"
-                            class="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                            class="btn-secondary"
                             @click="closePlateModal"
                         >
                             Batal
@@ -899,13 +770,9 @@
                         <button
                             type="submit"
                             :disabled="changingPlate"
-                            class="rounded-xl bg-[#0052cc] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#003f9e] disabled:cursor-not-allowed disabled:opacity-60"
+                            class="btn-primary"
                         >
-                            {{
-                                changingPlate
-                                    ? 'Menyimpan...'
-                                    : 'Ganti Plat'
-                            }}
+                            {{ changingPlate ? 'Menyimpan...' : 'Ganti Plat' }}
                         </button>
                     </div>
                 </form>
@@ -913,171 +780,386 @@
         </div>
 
         <!-- ========================================================= -->
-        <!-- PLATE HISTORY MODAL -->
+        <!-- HISTORY MODAL -->
         <!-- ========================================================= -->
 
         <div
             v-if="showHistoryModal"
             class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
-            @click.self="
-                showHistoryModal = false
-            "
+            @click.self="closeHistory"
         >
             <div
-                class="w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-xl"
+                class="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-xl"
             >
                 <!-- HEADER -->
-                <div
-                    class="flex items-center justify-between border-b border-gray-100 px-6 py-4"
-                >
+                <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
                     <div>
-                        <h2
-                            class="text-lg font-bold text-[#003366]"
-                        >
-                            Riwayat Plat
+                        <h2 class="text-lg font-bold text-[#003366]">
+                            Riwayat Truk
                         </h2>
 
-                        <p
-                            class="mt-1 text-xs text-gray-500"
-                        >
+                        <p class="mt-1 text-xs text-gray-500">
                             {{ selectedTruck?.code }}
+                            ·
+                            {{ selectedTruck?.plate_number }}
                         </p>
                     </div>
 
                     <button
                         type="button"
-                        class="text-2xl leading-none text-gray-400 hover:text-gray-700"
-                        @click="
-                            showHistoryModal = false
-                        "
+                        class="text-2xl leading-none text-gray-400"
+                        @click="closeHistory"
                     >
                         ×
                     </button>
                 </div>
 
+                <!-- TABS -->
+                <div class="border-b border-gray-100 px-6">
+                    <div class="flex gap-6">
+                        <button
+                            type="button"
+                            class="relative py-3 text-sm font-semibold"
+                            :class="
+                                historyTab === 'plate'
+                                    ? 'text-[#0052cc]'
+                                    : 'text-gray-400 hover:text-gray-600'
+                            "
+                            @click="
+                                switchHistoryTab('plate')
+                            "
+                        >
+                            Plat
+
+                            <span
+                                v-if="historyTab === 'plate'"
+                                class="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-[#0052cc]"
+                            ></span>
+                        </button>
+
+                        <button
+                            type="button"
+                            class="relative py-3 text-sm font-semibold"
+                            :class="
+                                historyTab === 'kir'
+                                    ? 'text-[#0052cc]'
+                                    : 'text-gray-400 hover:text-gray-600'
+                            "
+                            @click="
+                                switchHistoryTab('kir')
+                            "
+                        >
+                            KIR
+
+                            <span
+                                v-if="historyTab === 'kir'"
+                                class="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-[#0052cc]"
+                            ></span>
+                        </button>
+                    </div>
+                </div>
+
                 <!-- CONTENT -->
-                <div
-                    class="max-h-[60vh] overflow-y-auto p-6"
-                >
-                    <!-- LOADING -->
-                    <div
-                        v-if="loadingHistory"
-                        class="py-12 text-center text-sm text-gray-400"
-                    >
-                        Memuat riwayat...
-                    </div>
-
-                    <!-- EMPTY -->
-                    <div
-                        v-else-if="
-                            plateHistory.length === 0
-                        "
-                        class="py-12 text-center"
-                    >
-                        <p
-                            class="text-sm font-medium text-gray-500"
-                        >
-                            Belum ada riwayat
-                            pergantian plat.
-                        </p>
-
-                        <p
-                            class="mt-1 text-xs text-gray-400"
-                        >
-                            Histori akan muncul setelah
-                            plat kendaraan diganti.
-                        </p>
-                    </div>
-
-                    <!-- HISTORY -->
-                    <div
-                        v-else
-                        class="space-y-3"
-                    >
+                <div class="max-h-[60vh] overflow-y-auto p-6">
+                    <!-- PLATE -->
+                    <template v-if="historyTab === 'plate'">
                         <div
-                            v-for="history in plateHistory"
-                            :key="history.id"
-                            class="rounded-xl border border-gray-100 bg-gray-50 p-4"
+                            v-if="loadingPlateHistory"
+                            class="py-12 text-center text-sm text-gray-400"
+                        >
+                            Memuat riwayat plat...
+                        </div>
+
+                        <div
+                            v-else-if="plateHistory.length === 0"
+                            class="py-12 text-center"
+                        >
+                            <p class="text-sm font-medium text-gray-500">
+                                Belum ada riwayat pergantian plat.
+                            </p>
+                        </div>
+
+                        <div
+                            v-else
+                            class="space-y-3"
                         >
                             <div
-                                class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+                                v-for="history in plateHistory"
+                                :key="history.id"
+                                class="rounded-xl border border-gray-100 bg-gray-50 p-4"
                             >
-                                <div
-                                    class="flex items-center gap-2"
-                                >
-                                    <span
-                                        class="font-semibold text-gray-700"
-                                    >
-                                        {{
-                                            history.old_plate_number
-                                        }}
-                                    </span>
+                                <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-semibold text-gray-700">
+                                            {{ history.old_plate_number }}
+                                        </span>
 
-                                    <span
-                                        class="text-gray-400"
-                                    >
-                                        →
-                                    </span>
+                                        <span class="text-gray-400">
+                                            →
+                                        </span>
 
-                                    <span
-                                        class="font-bold text-[#0052cc]"
-                                    >
-                                        {{
-                                            history.new_plate_number
-                                        }}
+                                        <span class="font-bold text-[#0052cc]">
+                                            {{ history.new_plate_number }}
+                                        </span>
+                                    </div>
+
+                                    <span class="text-xs text-gray-400">
+                                        {{ formatDate(history.changed_at) }}
                                     </span>
                                 </div>
 
-                                <span
-                                    class="text-xs text-gray-400"
-                                >
-                                    {{
-                                        formatDate(
-                                            history.changed_at
-                                        )
-                                    }}
-                                </span>
-                            </div>
-
-                            <p
-                                v-if="
-                                    history.reason
-                                "
-                                class="mt-2 text-xs text-gray-500"
-                            >
-                                <span
-                                    class="font-medium"
+                                <p
+                                    v-if="history.reason"
+                                    class="mt-2 text-xs text-gray-500"
                                 >
                                     Alasan:
-                                </span>
+                                    {{ history.reason }}
+                                </p>
 
-                                {{
-                                    history.reason
-                                }}
+                                <p
+                                    v-if="history.notes"
+                                    class="mt-1 text-xs text-gray-400"
+                                >
+                                    {{ history.notes }}
+                                </p>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- KIR -->
+                    <template v-else>
+                        <div class="mb-5 flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-semibold text-gray-800">
+                                    Riwayat Pemeriksaan KIR
+                                </p>
+
+                                <p class="mt-1 text-xs text-gray-400">
+                                    KIR aktif:
+                                    <strong>
+                                        {{
+                                            formatDate(
+                                                selectedTruck?.kir_expired_at
+                                            )
+                                        }}
+                                    </strong>
+                                </p>
+                            </div>
+
+                            <button
+                                type="button"
+                                class="rounded-xl bg-[#0052cc] px-4 py-2 text-xs font-semibold text-white hover:bg-[#003f9e]"
+                                @click="openUpdateKir"
+                            >
+                                + Perbarui KIR
+                            </button>
+                        </div>
+
+                        <div
+                            v-if="loadingKirHistory"
+                            class="py-12 text-center text-sm text-gray-400"
+                        >
+                            Memuat riwayat KIR...
+                        </div>
+
+                        <div
+                            v-else-if="kirHistory.length === 0"
+                            class="py-12 text-center"
+                        >
+                            <p class="text-sm font-medium text-gray-500">
+                                Belum ada riwayat KIR.
                             </p>
 
-                            <p
-                                v-if="
-                                    history.notes
-                                "
-                                class="mt-1 text-xs text-gray-400"
-                            >
-                                {{
-                                    history.notes
-                                }}
+                            <p class="mt-1 text-xs text-gray-400">
+                                Tambahkan riwayat saat kendaraan melakukan KIR.
                             </p>
                         </div>
-                    </div>
+
+                        <div
+                            v-else
+                            class="space-y-3"
+                        >
+                            <div
+                                v-for="history in kirHistory"
+                                :key="history.id"
+                                class="rounded-xl border border-gray-100 bg-gray-50 p-4"
+                            >
+                                <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <span
+                                                class="rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                                                :class="
+                                                    history.result === 'LULUS'
+                                                        ? 'bg-emerald-50 text-emerald-700'
+                                                        : 'bg-red-50 text-red-700'
+                                                "
+                                            >
+                                                {{ history.result }}
+                                            </span>
+
+                                            <span class="text-xs text-gray-400">
+                                                {{ formatDate(history.kir_date) }}
+                                            </span>
+                                        </div>
+
+                                        <p class="mt-2 text-sm font-semibold text-gray-800">
+                                            Berlaku sampai
+                                            {{ formatDate(history.expired_at) }}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <p
+                                    v-if="history.notes"
+                                    class="mt-2 text-xs text-gray-500"
+                                >
+                                    {{ history.notes }}
+                                </p>
+                            </div>
+                        </div>
+                    </template>
                 </div>
             </div>
         </div>
+
+        <!-- ========================================================= -->
+        <!-- UPDATE KIR MODAL -->
+        <!-- ========================================================= -->
+
+        <div
+            v-if="showKirModal"
+            class="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4"
+            @click.self="closeKirModal"
+        >
+            <div
+                class="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-xl"
+            >
+                <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-[#003366]">
+                            Perbarui KIR
+                        </h2>
+
+                        <p class="mt-1 text-xs text-gray-500">
+                            {{ selectedTruck?.code }}
+                            ·
+                            {{ selectedTruck?.plate_number }}
+                        </p>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="text-2xl leading-none text-gray-400"
+                        @click="closeKirModal"
+                    >
+                        ×
+                    </button>
+                </div>
+
+                <form
+                    class="space-y-4 p-6"
+                    @submit.prevent="saveKir"
+                >
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                            <label class="form-label">
+                                Tanggal KIR
+                            </label>
+
+                            <input
+                                v-model="kirForm.kir_date"
+                                type="date"
+                                required
+                                class="form-input"
+                            />
+                        </div>
+
+                        <div>
+                            <label class="form-label">
+                                Berlaku Sampai
+                            </label>
+
+                            <input
+                                v-model="kirForm.expired_at"
+                                type="date"
+                                required
+                                class="form-input"
+                            />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="form-label">
+                            Hasil
+                        </label>
+
+                        <select
+                            v-model="kirForm.result"
+                            class="form-input"
+                        >
+                            <option value="LULUS">
+                                LULUS
+                            </option>
+
+                            <option value="TIDAK_LULUS">
+                                TIDAK LULUS
+                            </option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="form-label">
+                            Catatan
+                        </label>
+
+                        <textarea
+                            v-model="kirForm.notes"
+                            rows="3"
+                            placeholder="Catatan pemeriksaan KIR..."
+                            class="form-input resize-none"
+                        ></textarea>
+                    </div>
+
+                    <div class="rounded-xl bg-amber-50 p-3 text-xs text-amber-700">
+                        Menyimpan KIR akan memperbarui tanggal KIR aktif kendaraan
+                        sekaligus membuat histori KIR baru.
+                    </div>
+
+                    <div class="flex justify-end gap-3 border-t border-gray-100 pt-4">
+                        <button
+                            type="button"
+                            class="btn-secondary"
+                            @click="closeKirModal"
+                        >
+                            Batal
+                        </button>
+
+                        <button
+                            type="submit"
+                            :disabled="savingKir"
+                            class="btn-primary"
+                        >
+                            {{ savingKir ? 'Menyimpan...' : 'Simpan KIR' }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
+
+    <TruckTypeModal
+        v-model="showTruckTypeModal"
+        :truck-type="editingTruckType"
+        @saved="handleTruckTypeSaved"
+    />
 </template>
 
 <script setup>
 import {
     computed,
     onMounted,
+    onUnmounted,
     reactive,
     ref,
 } from 'vue'
@@ -1087,6 +1169,8 @@ import {
     getApiError,
 } from '@/services/api'
 
+import TruckTypeModal from '../../components/erp/trucks/TruckTypeModal.vue'
+
 /*
 |--------------------------------------------------------------------------
 | STATE
@@ -1095,10 +1179,14 @@ import {
 
 const search = ref('')
 const statusFilter = ref('')
+const openActionMenu = ref(null)
 
 const showModal = ref(false)
 const showPlateModal = ref(false)
 const showHistoryModal = ref(false)
+const showKirModal = ref(false)
+const showTruckTypeModal = ref(false)
+const editingTruckType = ref(null)
 
 const editingId = ref(null)
 const selectedTruck = ref(null)
@@ -1106,17 +1194,25 @@ const selectedTruck = ref(null)
 const loading = ref(false)
 const saving = ref(false)
 const changingPlate = ref(false)
-const loadingHistory = ref(false)
+const loadingPlateHistory = ref(false)
+const loadingKirHistory = ref(false)
+const savingKir = ref(false)
+
+const historyTab = ref('plate')
 
 const trucks = ref([])
 const truckTypes = ref([])
+const employees = ref([])
+
 const plateHistory = ref([])
+const kirHistory = ref([])
 
 const form = reactive({
     code: '',
     plate_number: '',
     truck_type_id: '',
     brand: '',
+    driver_id: '',
     model: '',
     capacity: '',
     capacity_unit: '',
@@ -1133,6 +1229,13 @@ const plateForm = reactive({
     notes: '',
 })
 
+const kirForm = reactive({
+    kir_date: '',
+    expired_at: '',
+    result: 'LULUS',
+    notes: '',
+})
+
 /*
 |--------------------------------------------------------------------------
 | COMPUTED
@@ -1141,34 +1244,26 @@ const plateForm = reactive({
 
 const availableCount = computed(() =>
     trucks.value.filter(
-        truck =>
-            truck.status === 'available'
+        truck => truck.status === 'available'
     ).length
 )
 
 const inUseCount = computed(() =>
     trucks.value.filter(
-        truck =>
-            truck.status === 'in_use'
+        truck => truck.status === 'in_use'
     ).length
 )
 
-const attentionCount = computed(() => {
-    return trucks.value.filter(truck => {
-        const taxDays = getDaysRemaining(
+const attentionCount = computed(() =>
+    trucks.value.filter(truck =>
+        isDocumentAttention(
             truck.tax_expired_at
-        )
-
-        const kirDays = getDaysRemaining(
+        ) ||
+        isDocumentAttention(
             truck.kir_expired_at
         )
-
-        return (
-            (taxDays !== null && taxDays <= 30) ||
-            (kirDays !== null && kirDays <= 30)
-        )
-    }).length
-})
+    ).length
+)
 
 const filteredTrucks = computed(() => {
     const keyword =
@@ -1183,32 +1278,23 @@ const filteredTrucks = computed(() => {
 
         const matchesSearch =
             !keyword ||
-            String(
-                truck.code || ''
-            )
+            String(truck.code || '')
                 .toLowerCase()
                 .includes(keyword) ||
-            String(
-                truck.plate_number || ''
-            )
+            String(truck.plate_number || '')
                 .toLowerCase()
                 .includes(keyword) ||
-            String(
-                truck.brand || ''
-            )
+            String(truck.brand || '')
                 .toLowerCase()
                 .includes(keyword) ||
-            String(
-                truck.model || ''
-            )
+            String(truck.model || '')
                 .toLowerCase()
                 .includes(keyword) ||
             typeName.includes(keyword)
 
         const matchesStatus =
             !statusFilter.value ||
-            truck.status ===
-                statusFilter.value
+            truck.status === statusFilter.value
 
         return (
             matchesSearch &&
@@ -1224,7 +1310,7 @@ const filteredTrucks = computed(() => {
 */
 
 function unwrapData(response) {
-    return response?.data ?? response
+    return response?.data?.data ?? response
 }
 
 function formatDate(date) {
@@ -1260,11 +1346,7 @@ function getDaysRemaining(date) {
     const expiry =
         new Date(`${date}T00:00:00`)
 
-    if (
-        Number.isNaN(
-            expiry.getTime()
-        )
-    ) {
+    if (Number.isNaN(expiry.getTime())) {
         return null
     }
 
@@ -1278,6 +1360,10 @@ function getDaysRemaining(date) {
 }
 
 function isDocumentAttention(date) {
+    if (!date) {
+        return true
+    }
+
     const days =
         getDaysRemaining(date)
 
@@ -1346,8 +1432,7 @@ function vehicleName(truck) {
 
     return parts.length
         ? parts.join(' ')
-        : truck.truck_type?.name ||
-              '-'
+        : truck.truck_type?.name || '-'
 }
 
 function formatCapacity(truck) {
@@ -1368,16 +1453,11 @@ function statusLabel(status) {
     const labels = {
         available: 'Tersedia',
         in_use: 'Digunakan',
-        maintenance:
-            'Maintenance',
+        maintenance: 'Maintenance',
         inactive: 'Nonaktif',
     }
 
-    return (
-        labels[status] ||
-        status ||
-        '-'
-    )
+    return labels[status] || status || '-'
 }
 
 function statusClass(status) {
@@ -1401,9 +1481,82 @@ function statusClass(status) {
     )
 }
 
+function toggleActionMenu(id) {
+    openActionMenu.value =
+        openActionMenu.value === id
+            ? null
+            : id
+}
+
+function closeActionMenu() {
+    openActionMenu.value = null
+}
+
+function handleAction(action, truck) {
+    closeActionMenu()
+
+    if (action === 'edit') {
+        openEdit(truck)
+        return
+    }
+
+    if (action === 'plate') {
+        openChangePlate(truck)
+        return
+    }
+
+    if (action === 'history') {
+        openHistory(truck, 'plate')
+        return
+    }
+
+    if (action === 'status') {
+        toggleStatus(truck)
+    }
+}
+
+function handleDocumentClick() {
+    closeActionMenu()
+}
+
+onMounted(() => {
+    document.addEventListener(
+        'click',
+        handleDocumentClick
+    )
+
+    loadTrucks()
+    loadTruckTypes()
+    loadEmployees()
+})
+
+onUnmounted(() => {
+    document.removeEventListener(
+        'click',
+        handleDocumentClick
+    )
+})
+
+function openCreateTruckType() {
+    editingTruckType.value = null
+    showTruckTypeModal.value = true
+}
+
+function openEditTruckType(type) {
+    editingTruckType.value = type
+    showTruckTypeModal.value = true
+}
+
+async function handleTruckTypeSaved() {
+    showTruckTypeModal.value = false
+    editingTruckType.value = null
+
+    await loadTruckTypes()
+}
+
 /*
 |--------------------------------------------------------------------------
-| FORM
+| TRUCK FORM
 |--------------------------------------------------------------------------
 */
 
@@ -1412,6 +1565,7 @@ function resetForm() {
         code: '',
         plate_number: '',
         truck_type_id: '',
+        driver_id: '',
         brand: '',
         model: '',
         capacity: '',
@@ -1436,14 +1590,14 @@ function openEdit(truck) {
 
     Object.assign(form, {
         code: truck.code || '',
-        plate_number:
-            truck.plate_number || '',
+        plate_number: truck.plate_number || '',
         truck_type_id:
             truck.truck_type_id || '',
+        driver_id:
+            truck.driver_id || '',
         brand: truck.brand || '',
         model: truck.model || '',
-        capacity:
-            truck.capacity ?? '',
+        capacity: truck.capacity ?? '',
         capacity_unit:
             truck.capacity_unit || '',
         tax_expired_at:
@@ -1451,8 +1605,7 @@ function openEdit(truck) {
         kir_expired_at:
             truck.kir_expired_at || '',
         status:
-            truck.status ||
-            'available',
+            truck.status || 'available',
         notes: truck.notes || '',
     })
 
@@ -1469,18 +1622,16 @@ function closeModal() {
 
 /*
 |--------------------------------------------------------------------------
-| LOAD MASTER
+| LOAD
 |--------------------------------------------------------------------------
 */
 
 async function loadTruckTypes() {
     try {
         const response =
-            await erpApi.master.truckTypes.list(
-                {
-                    is_active: true,
-                }
-            )
+            await erpApi.master.truckTypes.list({
+                is_active: true,
+            })
 
         const data =
             unwrapData(response)
@@ -1523,7 +1674,7 @@ async function loadTrucks() {
 
         alert(
             getApiError(error)?.message ||
-                'Gagal memuat data truk.'
+            'Gagal memuat data truk.'
         )
     } finally {
         loading.value = false
@@ -1532,7 +1683,7 @@ async function loadTrucks() {
 
 /*
 |--------------------------------------------------------------------------
-| SAVE TRUCK
+| SAVE
 |--------------------------------------------------------------------------
 */
 
@@ -1543,16 +1694,12 @@ async function saveTruck() {
     }
 
     if (!form.plate_number.trim()) {
-        alert(
-            'Nomor polisi wajib diisi.'
-        )
+        alert('Nomor polisi wajib diisi.')
         return
     }
 
     if (!form.truck_type_id) {
-        alert(
-            'Jenis truk wajib dipilih.'
-        )
+        alert('Jenis truk wajib dipilih.')
         return
     }
 
@@ -1560,8 +1707,7 @@ async function saveTruck() {
 
     try {
         const payload = {
-            code:
-                form.code.trim(),
+            code: form.code.trim(),
 
             plate_number:
                 form.plate_number
@@ -1570,44 +1716,38 @@ async function saveTruck() {
 
             truck_type_id:
                 form.truck_type_id
-                    ? Number(
-                          form.truck_type_id
-                      )
+                    ? Number(form.truck_type_id)
+                    : null,
+
+            driver_id:
+                form.driver_id
+                    ? Number(form.driver_id)
                     : null,
 
             brand:
-                form.brand.trim() ||
-                null,
+                form.brand.trim() || null,
 
             model:
-                form.model.trim() ||
-                null,
+                form.model.trim() || null,
 
             capacity:
                 form.capacity !== ''
-                    ? Number(
-                          form.capacity
-                      )
+                    ? Number(form.capacity)
                     : null,
 
             capacity_unit:
-                form.capacity_unit
-                    .trim() ||
-                null,
+                form.capacity_unit.trim() || null,
 
             tax_expired_at:
-                form.tax_expired_at ||
-                null,
+                form.tax_expired_at || null,
 
             kir_expired_at:
-                form.kir_expired_at ||
-                null,
+                form.kir_expired_at || null,
 
             status: form.status,
 
             notes:
-                form.notes.trim() ||
-                null,
+                form.notes.trim() || null,
         }
 
         let response
@@ -1653,12 +1793,9 @@ async function saveTruck() {
             error
         )
 
-        const apiError =
-            getApiError(error)
-
         alert(
-            apiError?.message ||
-                'Gagal menyimpan data truk.'
+            getApiError(error)?.message ||
+            'Gagal menyimpan data truk.'
         )
     } finally {
         saving.value = false
@@ -1672,9 +1809,7 @@ async function saveTruck() {
 */
 
 async function toggleStatus(truck) {
-    if (
-        truck.status === 'in_use'
-    ) {
+    if (truck.status === 'in_use') {
         alert(
             'Truk yang sedang digunakan tidak dapat dinonaktifkan.'
         )
@@ -1692,8 +1827,7 @@ async function toggleStatus(truck) {
             await erpApi.master.trucks.update(
                 truck.id,
                 {
-                    status:
-                        newStatus,
+                    status: newStatus,
                 }
             )
 
@@ -1703,8 +1837,7 @@ async function toggleStatus(truck) {
         const index =
             trucks.value.findIndex(
                 item =>
-                    item.id ===
-                    truck.id
+                    item.id === truck.id
             )
 
         if (index !== -1) {
@@ -1712,45 +1845,33 @@ async function toggleStatus(truck) {
                 updatedTruck
         }
     } catch (error) {
-        console.error(
-            'Gagal mengubah status truk:',
-            error
-        )
-
-        const apiError =
-            getApiError(error)
-
         alert(
-            apiError?.message ||
-                'Gagal mengubah status truk.'
+            getApiError(error)?.message ||
+            'Gagal mengubah status truk.'
         )
     }
 }
 
 /*
 |--------------------------------------------------------------------------
-| CHANGE PLATE
+| PLATE
 |--------------------------------------------------------------------------
 */
 
 function resetPlateForm() {
-    Object.assign(
-        plateForm,
-        {
-            new_plate_number: '',
-            changed_at:
-                new Date()
-                    .toISOString()
-                    .slice(0, 10),
-            reason: '',
-            notes: '',
-        }
-    )
+    Object.assign(plateForm, {
+        new_plate_number: '',
+        changed_at:
+            new Date()
+                .toISOString()
+                .slice(0, 10),
+        reason: '',
+        notes: '',
+    })
 }
 
 function openChangePlate(truck) {
-    selectedTruck.value =
-        truck
+    selectedTruck.value = truck
 
     resetPlateForm()
 
@@ -1783,20 +1904,6 @@ async function changePlate() {
         return
     }
 
-    if (
-        newPlate ===
-        String(
-            selectedTruck.value
-                .plate_number || ''
-        ).toUpperCase()
-    ) {
-        alert(
-            'Plat nomor baru sama dengan plat saat ini.'
-        )
-
-        return
-    }
-
     changingPlate.value = true
 
     try {
@@ -1811,13 +1918,11 @@ async function changePlate() {
                         plateForm.changed_at,
 
                     reason:
-                        plateForm.reason
-                            .trim() ||
+                        plateForm.reason.trim() ||
                         null,
 
                     notes:
-                        plateForm.notes
-                            .trim() ||
+                        plateForm.notes.trim() ||
                         null,
                 }
             )
@@ -1825,36 +1930,16 @@ async function changePlate() {
         const updatedTruck =
             unwrapData(response)
 
-        const index =
-            trucks.value.findIndex(
-                item =>
-                    item.id ===
-                    selectedTruck.value
-                        .id
-            )
-
-        if (index !== -1) {
-            trucks.value[index] =
-                updatedTruck
-        }
+        updateTruckInList(updatedTruck)
 
         selectedTruck.value =
             updatedTruck
 
-        showPlateModal.value =
-            false
+        showPlateModal.value = false
     } catch (error) {
-        console.error(
-            'Gagal mengganti plat:',
-            error
-        )
-
-        const apiError =
-            getApiError(error)
-
         alert(
-            apiError?.message ||
-                'Gagal mengganti plat nomor.'
+            getApiError(error)?.message ||
+            'Gagal mengganti plat nomor.'
         )
     } finally {
         changingPlate.value = false
@@ -1863,24 +1948,72 @@ async function changePlate() {
 
 /*
 |--------------------------------------------------------------------------
-| PLATE HISTORY
+| HISTORY
 |--------------------------------------------------------------------------
 */
 
-async function openPlateHistory(
-    truck
-) {
-    selectedTruck.value =
-        truck
+function updateTruckInList(truck) {
+    const index =
+        trucks.value.findIndex(
+            item => item.id === truck.id
+        )
 
-    showHistoryModal.value = true
-    loadingHistory.value = true
+    if (index !== -1) {
+        trucks.value[index] = truck
+    }
+}
+
+function resetHistory() {
     plateHistory.value = []
+    kirHistory.value = []
+}
+
+async function openHistory(
+    truck,
+    tab = 'plate'
+) {
+    selectedTruck.value = truck
+    historyTab.value = tab
+    showHistoryModal.value = true
+
+    resetHistory()
+
+    if (tab === 'plate') {
+        await loadPlateHistory(truck.id)
+    } else {
+        await loadKirHistory(truck.id)
+    }
+}
+
+function closeHistory() {
+    showHistoryModal.value = false
+}
+
+async function switchHistoryTab(tab) {
+    historyTab.value = tab
+
+    if (!selectedTruck.value) {
+        return
+    }
+
+    if (tab === 'plate') {
+        await loadPlateHistory(
+            selectedTruck.value.id
+        )
+    } else {
+        await loadKirHistory(
+            selectedTruck.value.id
+        )
+    }
+}
+
+async function loadPlateHistory(id) {
+    loadingPlateHistory.value = true
 
     try {
         const response =
             await erpApi.master.trucks.plateHistory(
-                truck.id
+                id
             )
 
         const data =
@@ -1891,17 +2024,172 @@ async function openPlateHistory(
                 ? data
                 : []
     } catch (error) {
+        console.error(error)
+
+        plateHistory.value = []
+
+        alert(
+            getApiError(error)?.message ||
+            'Gagal memuat riwayat plat.'
+        )
+    } finally {
+        loadingPlateHistory.value = false
+    }
+}
+
+async function loadKirHistory(id) {
+    loadingKirHistory.value = true
+
+    try {
+        const response =
+            await erpApi.master.trucks.kirHistory(
+                id
+            )
+
+        const data =
+            unwrapData(response)
+
+        kirHistory.value =
+            Array.isArray(data)
+                ? data
+                : []
+    } catch (error) {
+        console.error(error)
+
+        kirHistory.value = []
+
+        alert(
+            getApiError(error)?.message ||
+            'Gagal memuat riwayat KIR.'
+        )
+    } finally {
+        loadingKirHistory.value = false
+    }
+}
+
+async function loadEmployees() {
+    try {
+        const response =
+            await erpApi.master.employees.list({
+                is_active: true,
+            })
+
+        const data =
+            unwrapData(response)
+
+        employees.value =
+            Array.isArray(data)
+                ? data
+                : []
+    } catch (error) {
         console.error(
-            'Gagal memuat riwayat plat:',
+            'Gagal memuat employee:',
+            error
+        )
+
+        employees.value = []
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| KIR
+|--------------------------------------------------------------------------
+*/
+
+function resetKirForm() {
+    Object.assign(kirForm, {
+        kir_date:
+            new Date()
+                .toISOString()
+                .slice(0, 10),
+
+        expired_at: '',
+
+        result: 'LULUS',
+
+        notes: '',
+    })
+}
+
+function openUpdateKir() {
+    resetKirForm()
+
+    showKirModal.value = true
+}
+
+function closeKirModal() {
+    if (savingKir.value) {
+        return
+    }
+
+    showKirModal.value = false
+}
+
+async function saveKir() {
+    if (!selectedTruck.value) {
+        return
+    }
+
+    if (!kirForm.kir_date) {
+        alert('Tanggal KIR wajib diisi.')
+        return
+    }
+
+    if (!kirForm.expired_at) {
+        alert(
+            'Tanggal berlaku KIR wajib diisi.'
+        )
+        return
+    }
+
+    savingKir.value = true
+
+    try {
+        const response =
+            await erpApi.master.trucks.updateKir(
+                selectedTruck.value.id,
+                {
+                    kir_date:
+                        kirForm.kir_date,
+
+                    expired_at:
+                        kirForm.expired_at,
+
+                    result:
+                        kirForm.result,
+
+                    notes:
+                        kirForm.notes.trim() ||
+                        null,
+                }
+            )
+
+        const updatedTruck =
+            unwrapData(response)
+
+        updateTruckInList(updatedTruck)
+
+        selectedTruck.value =
+            updatedTruck
+
+        showKirModal.value = false
+
+        await loadKirHistory(
+            updatedTruck.id
+        )
+    } catch (error) {
+        console.error(
+            'Gagal menyimpan KIR:',
             error
         )
 
         alert(
             getApiError(error)?.message ||
-                'Gagal memuat riwayat plat.'
+            'Gagal menyimpan KIR.'
         )
     } finally {
-        loadingHistory.value = false
+        savingKir.value = false
     }
 }
 
@@ -1915,6 +2203,87 @@ onMounted(async () => {
     await Promise.all([
         loadTrucks(),
         loadTruckTypes(),
+        loadEmployees(),
     ])
 })
 </script>
+
+<style scoped>
+.form-label {
+    display: block;
+    margin-bottom: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+}
+
+.form-input {
+    width: 100%;
+    border-radius: 0.75rem;
+    border: 1px solid #e5e7eb;
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    outline: none;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.form-input:focus {
+    border-color: #0052cc;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.btn-primary {
+    border-radius: 0.75rem;
+    background-color: #0052cc;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #ffffff;
+    transition: background-color 0.2s ease;
+}
+
+.btn-primary:hover {
+    background-color: #003f9e;
+}
+
+.btn-primary:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.btn-secondary {
+    border-radius: 0.75rem;
+    border: 1px solid #e5e7eb;
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+    transition: background-color 0.2s ease;
+}
+
+.btn-secondary:hover {
+    background-color: #f9fafb;
+}
+
+/* ACTION DROPDOWN */
+.action-menu-item {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #374151;
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease;
+}
+
+.action-menu-item:hover {
+    background-color: #f9fafb;
+}
+</style>

@@ -322,7 +322,7 @@
                                     <p
                                         class="font-semibold text-[#003366]"
                                     >
-                                        Tagihan Vendor
+                                        Biaya Sewa
                                     </p>
 
                                     <p
@@ -378,7 +378,7 @@
                                     <p
                                         class="font-semibold text-[#003366]"
                                     >
-                                        Pembayaran Driver
+                                        Uang Saku Driver
                                     </p>
 
                                     <p

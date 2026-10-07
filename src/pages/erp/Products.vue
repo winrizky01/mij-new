@@ -722,7 +722,6 @@
             :units="units"
             @close="closeModal"
             @saved="handleSaved"
-            @category-created="handleCategoryCreated"
         />
 
     </div>
@@ -944,8 +943,7 @@ async function loadProductTypes() {
             is_active: true,
         })
 
-    productTypes.value =
-        response.data?.data ?? []
+    productTypes.value = response.data?.data ?? []
 }
 
 
@@ -1031,23 +1029,6 @@ async function handleSaved(product) {
     closeModal()
 
     await loadProducts()
-}
-
-
-/*
-|--------------------------------------------------------------------------
-| CATEGORY CREATED
-|--------------------------------------------------------------------------
-*/
-
-async function handleCategoryCreated(category) {
-
-    console.log(
-        'Category created:',
-        category
-    )
-
-    await loadCategories()
 }
 
 

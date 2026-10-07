@@ -6,7 +6,7 @@
             @click.self="close"
         >
             <div
-                class="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+                class="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
             >
                 <!-- Header -->
                 <div
@@ -14,18 +14,18 @@
                 >
                     <div>
                         <h2 class="text-lg font-bold text-gray-900">
-                            Buat Pembelian
+                            Buat Purchase Request
                         </h2>
 
                         <p class="mt-1 text-xs text-gray-500">
-                            Buat draft kebutuhan pembelian baru.
+                            Buat permintaan kebutuhan pembelian baru.
                         </p>
                     </div>
 
                     <button
                         type="button"
                         @click="close"
-                        class="grid h-9 w-9 place-items-center rounded-lg text-gray-500 hover:bg-gray-100"
+                        class="grid h-9 w-9 place-items-center rounded-lg text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
                     >
                         ✕
                     </button>
@@ -33,103 +33,107 @@
 
                 <!-- Body -->
                 <div class="flex-1 overflow-y-auto p-5 sm:p-6">
+                    <!-- Informasi PR -->
                     <div class="grid gap-5 sm:grid-cols-2">
-                        <!-- Nomor PR -->
+                        <!-- Tipe Produk -->
                         <div>
                             <label class="text-sm font-medium text-gray-700">
-                                Nomor PR
-                            </label>
-
-                            <input
-                                v-model="form.prNumber"
-                                readonly
-                                class="mt-1.5 w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm font-medium text-gray-600"
-                            />
-
-                            <p class="mt-1 text-xs text-gray-400">
-                                Nomor dibuat otomatis berdasarkan jenis
-                                pembelian.
-                            </p>
-                        </div>
-
-                        <!-- Jenis Pembelian -->
-                        <div>
-                            <label class="text-sm font-medium text-gray-700">
-                                Jenis Pembelian
+                                Tipe Pengadaan
                             </label>
 
                             <select
-                                v-model="form.purchaseType"
-                                @change="syncDocumentNumber"
-                                class="mt-1.5 w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#0052cc]"
+                                v-model="form.productTypeId"
+                                @change="handleProductTypeChange"
+                                :disabled="saving || loadingTypes"
+                                class="mt-1.5 w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-[#0052cc] focus:ring-2 focus:ring-blue-100 disabled:bg-gray-50"
                             >
+                                <option :value="null">
+                                    {{
+                                        loadingTypes
+                                            ? 'Memuat tipe...'
+                                            : 'Pilih tipe pengadaan'
+                                    }}
+                                </option>
+
                                 <option
-                                    v-for="type in purchaseTypes"
-                                    :key="type.value"
-                                    :value="type.value"
+                                    v-for="type in productTypes"
+                                    :key="type.id"
+                                    :value="type.id"
                                 >
-                                    {{ type.label }}
+                                    {{ type.name }}
+                                    <template v-if="type.code">
+                                        ({{ type.code }})
+                                    </template>
                                 </option>
                             </select>
 
                             <p class="mt-1 text-xs text-gray-400">
-                                Jenis menentukan kode pada nomor dokumen.
+                                Diambil dari Master Product Type.
                             </p>
                         </div>
 
                         <!-- Tanggal -->
                         <div>
                             <label class="text-sm font-medium text-gray-700">
-                                Tanggal
+                                Tanggal Permintaan
                             </label>
 
                             <input
-                                v-model="form.date"
+                                v-model="form.requestDate"
                                 type="date"
-                                class="mt-1.5 w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-[#0052cc]"
+                                :disabled="saving"
+                                class="mt-1.5 w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-[#0052cc] focus:ring-2 focus:ring-blue-100 disabled:bg-gray-50"
                             />
                         </div>
 
-                        <!-- Supplier -->
+                        <!-- Nomor PR -->
                         <div>
                             <label class="text-sm font-medium text-gray-700">
-                                Supplier
+                                Nomor PR
                             </label>
 
-                            <select
-                                v-model="form.supplierId"
-                                class="mt-1.5 w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#0052cc]"
+                            <div
+                                class="mt-1.5 flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5"
                             >
-                                <option :value="null">
-                                    Belum ditentukan
-                                </option>
-
-                                <option
-                                    v-for="supplier in suppliers"
-                                    :key="supplier.id"
-                                    :value="supplier.id"
+                                <span
+                                    class="rounded-md bg-gray-200 px-2 py-1 text-xs font-semibold text-gray-600"
                                 >
-                                    {{ supplier.name }}
-                                </option>
-                            </select>
+                                    AUTO
+                                </span>
+
+                                <span class="text-sm text-gray-500">
+                                    Dibuat otomatis saat disimpan
+                                </span>
+                            </div>
 
                             <p class="mt-1 text-xs text-gray-400">
-                                Supplier boleh dikosongkan pada tahap awal.
+                                Nomor PR dibuat oleh server.
                             </p>
                         </div>
 
-                        <!-- Keperluan -->
+                        <!-- Status -->
                         <div>
                             <label class="text-sm font-medium text-gray-700">
-                                Keperluan
+                                Status
                             </label>
 
-                            <input
-                                v-model="form.purpose"
-                                type="text"
-                                placeholder="Contoh: Kebutuhan sparepart kendaraan"
-                                class="mt-1.5 w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-[#0052cc]"
-                            />
+                            <div
+                                class="mt-1.5 flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5"
+                            >
+                                <span
+                                    class="h-2 w-2 rounded-full bg-gray-400"
+                                ></span>
+
+                                <span
+                                    class="text-sm font-medium text-gray-600"
+                                >
+                                    Draft
+                                </span>
+                            </div>
+
+                            <p class="mt-1 text-xs text-gray-400">
+                                PR baru selalu dibuat sebagai draft.
+                            </p>
                         </div>
 
                         <!-- Catatan -->
@@ -140,15 +144,16 @@
 
                             <textarea
                                 v-model="form.notes"
-                                rows="2"
-                                placeholder="Catatan tambahan..."
-                                class="mt-1.5 w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-[#0052cc]"
+                                rows="3"
+                                :disabled="saving"
+                                placeholder="Catatan atau keterangan kebutuhan..."
+                                class="mt-1.5 w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-[#0052cc] focus:ring-2 focus:ring-blue-100 disabled:bg-gray-50"
                             ></textarea>
                         </div>
                     </div>
 
                     <!-- Items -->
-                    <div class="mt-6">
+                    <div class="mt-7">
                         <div class="mb-3 flex items-center justify-between">
                             <div>
                                 <h3 class="text-sm font-bold text-gray-900">
@@ -156,14 +161,15 @@
                                 </h3>
 
                                 <p class="mt-1 text-xs text-gray-500">
-                                    Harga boleh dikosongkan.
+                                    Tentukan produk dan jumlah yang dibutuhkan.
                                 </p>
                             </div>
 
                             <button
                                 type="button"
                                 @click="addItem"
-                                class="rounded-lg bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-600 hover:bg-blue-100"
+                                :disabled="saving"
+                                class="rounded-lg bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-600 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 + Tambah Barang
                             </button>
@@ -172,7 +178,7 @@
                         <div
                             class="overflow-x-auto rounded-xl border border-gray-200"
                         >
-                            <table class="w-full min-w-[720px]">
+                            <table class="w-full min-w-[760px]">
                                 <thead class="bg-gray-50">
                                     <tr>
                                         <th
@@ -188,78 +194,110 @@
                                         </th>
 
                                         <th
-                                            class="w-40 px-3 py-3 text-right text-xs font-semibold text-gray-500"
+                                            class="w-32 px-3 py-3 text-left text-xs font-semibold text-gray-500"
                                         >
-                                            Harga
+                                            Satuan
                                         </th>
 
                                         <th
-                                            class="w-40 px-3 py-3 text-right text-xs font-semibold text-gray-500"
+                                            class="w-64 px-3 py-3 text-left text-xs font-semibold text-gray-500"
                                         >
-                                            Subtotal
+                                            Catatan
                                         </th>
 
-                                        <th
-                                            class="w-12 px-3 py-3"
-                                        ></th>
+                                        <th class="w-12 px-3 py-3"></th>
                                     </tr>
                                 </thead>
 
                                 <tbody class="divide-y divide-gray-100">
                                     <tr
                                         v-for="(item, index) in form.items"
-                                        :key="index"
+                                        :key="item.key"
                                     >
+                                        <!-- Produk -->
                                         <td class="px-3 py-3">
                                             <select
                                                 v-model="item.productId"
                                                 @change="syncProduct(item)"
-                                                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                                                :disabled="saving"
+                                                class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#0052cc] focus:ring-2 focus:ring-blue-100 disabled:bg-gray-50"
                                             >
                                                 <option :value="null">
                                                     Pilih barang
                                                 </option>
 
                                                 <option
-                                                    v-for="product in products"
+                                                    v-for="product in filteredProducts"
                                                     :key="product.id"
                                                     :value="product.id"
                                                 >
                                                     {{ product.name }}
+                                                    <template
+                                                        v-if="product.code"
+                                                    >
+                                                        —
+                                                        {{ product.code }}
+                                                    </template>
                                                 </option>
                                             </select>
+
+                                            <p
+                                                v-if="
+                                                    form.productTypeId &&
+                                                    !filteredProducts.length
+                                                "
+                                                class="mt-1 text-xs text-amber-600"
+                                            >
+                                                Belum ada produk untuk tipe
+                                                ini.
+                                            </p>
                                         </td>
 
+                                        <!-- Qty -->
                                         <td class="px-3 py-3">
                                             <input
                                                 v-model.number="item.quantity"
                                                 type="number"
-                                                min="1"
-                                                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-right text-sm"
+                                                min="0.001"
+                                                step="0.001"
+                                                :disabled="saving"
+                                                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-right text-sm outline-none focus:border-[#0052cc] focus:ring-2 focus:ring-blue-100 disabled:bg-gray-50"
                                             />
                                         </td>
 
+                                        <!-- Unit -->
+                                        <td class="px-3 py-3">
+                                            <div
+                                                class="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-600"
+                                            >
+                                                {{
+                                                    item.unitName ||
+                                                    '—'
+                                                }}
+                                            </div>
+                                        </td>
+
+                                        <!-- Notes -->
                                         <td class="px-3 py-3">
                                             <input
-                                                v-model.number="item.price"
-                                                type="number"
-                                                min="0"
+                                                v-model="item.notes"
+                                                type="text"
+                                                :disabled="saving"
                                                 placeholder="Opsional"
-                                                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-right text-sm"
+                                                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#0052cc] focus:ring-2 focus:ring-blue-100 disabled:bg-gray-50"
                                             />
                                         </td>
 
-                                        <td
-                                            class="px-3 py-3 text-right text-sm font-semibold"
-                                        >
-                                            {{ formatCurrency(subtotal(item)) }}
-                                        </td>
-
+                                        <!-- Remove -->
                                         <td class="px-3 py-3 text-center">
                                             <button
                                                 type="button"
                                                 @click="removeItem(index)"
-                                                class="text-red-500 hover:text-red-700"
+                                                :disabled="
+                                                    saving ||
+                                                    form.items.length === 1
+                                                "
+                                                class="text-red-500 transition hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-30"
                                             >
                                                 ✕
                                             </button>
@@ -268,26 +306,19 @@
                                 </tbody>
                             </table>
                         </div>
+                    </div>
 
-                        <!-- Total -->
-                        <div class="mt-4 flex justify-end">
-                            <div
-                                class="w-full max-w-sm rounded-xl bg-gray-50 p-4"
-                            >
-                                <div
-                                    class="flex items-center justify-between"
-                                >
-                                    <span class="text-sm text-gray-500">
-                                        Total
-                                    </span>
+                    <!-- Error -->
+                    <div
+                        v-if="errorMessage"
+                        class="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3"
+                    >
+                        <div
+                            class="flex items-start gap-2 text-sm text-red-700"
+                        >
+                            <span class="font-semibold">Gagal:</span>
 
-                                    <span
-                                        class="text-lg font-bold text-gray-900"
-                                    >
-                                        {{ formatCurrency(total) }}
-                                    </span>
-                                </div>
-                            </div>
+                            <span>{{ errorMessage }}</span>
                         </div>
                     </div>
                 </div>
@@ -299,7 +330,8 @@
                     <button
                         type="button"
                         @click="close"
-                        class="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                        :disabled="saving"
+                        class="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         Batal
                     </button>
@@ -307,9 +339,16 @@
                     <button
                         type="button"
                         @click="save"
-                        class="rounded-lg bg-[#0052cc] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0047b3]"
+                        :disabled="saving"
+                        class="rounded-lg bg-[#0052cc] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0047b3] disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                        Simpan Draft
+                        <span v-if="saving">
+                            Menyimpan...
+                        </span>
+
+                        <span v-else>
+                            Simpan Draft
+                        </span>
                     </button>
                 </div>
             </div>
@@ -318,241 +357,167 @@
 </template>
 
 <script setup>
-import { computed, reactive, watch } from 'vue'
+import {
+    computed,
+    reactive,
+    ref,
+    watch,
+} from 'vue'
+
+import {
+    erpApi,
+    getApiError,
+} from '@/services/api'
 
 const props = defineProps({
-    show: Boolean,
-
-    products: {
-        type: Array,
-        default: () => [],
-    },
-
-    suppliers: {
-        type: Array,
-        default: () => [],
-    },
-
-    /**
-     * Dipakai untuk menentukan sequence nomor PR.
-     * Parent cukup mengirimkan data purchases yang sudah ada.
-     */
-    purchases: {
-        type: Array,
-        default: () => [],
+    show: {
+        type: Boolean,
+        default: false,
     },
 })
 
-const emit = defineEmits(['close', 'saved'])
+const emit = defineEmits([
+    'close',
+    'saved',
+])
 
 /*
 |--------------------------------------------------------------------------
-| Jenis Pembelian
+| State
 |--------------------------------------------------------------------------
 */
 
-const purchaseTypes = [
-    {
-        value: 'barang',
-        label: 'Barang Dagangan',
-        code: 'BRG',
-    },
-    {
-        value: 'sparepart',
-        label: 'Sparepart',
-        code: 'SPR',
-    },
-    {
-        value: 'consumable',
-        label: 'Consumable',
-        code: 'CON',
-    },
-    {
-        value: 'asset',
-        label: 'Asset',
-        code: 'AST',
-    },
-    {
-        value: 'service',
-        label: 'Jasa',
-        code: 'JSA',
-    },
-]
+const productTypes      = ref([])
+const products          = ref([])
+const loadingTypes      = ref(false)
+const loadingProducts   = ref(false)
+const saving            = ref(false)
+const errorMessage      = ref('')
 
-/*
-|--------------------------------------------------------------------------
-| Form
-|--------------------------------------------------------------------------
-*/
+let itemKey = 0
 
 const form = reactive({
-    prNumber: '',
-    purchaseType: 'barang',
-    date: '',
-    supplierId: null,
-    purpose: '',
+    productTypeId: null,
+
+    requestDate: '',
+
     notes: '',
+
     items: [],
 })
 
 /*
 |--------------------------------------------------------------------------
-| Reset ketika modal dibuka
+| Computed
 |--------------------------------------------------------------------------
 */
 
-watch(
-    () => props.show,
-    (value) => {
-        if (value) {
-            reset()
-        }
+const filteredProducts = computed(() => {
+    if (!form.productTypeId) {
+        return products.value
     }
-)
 
-/*
-|--------------------------------------------------------------------------
-| Total
-|--------------------------------------------------------------------------
-*/
-
-const total = computed(() => {
-    return form.items.reduce(
-        (sum, item) => sum + subtotal(item),
-        0
+    return products.value.filter(
+        product =>
+            Number(product.type_id) ===
+            Number(form.productTypeId)
     )
 })
 
 /*
 |--------------------------------------------------------------------------
-| Reset Form
+| Watch Modal
 |--------------------------------------------------------------------------
 */
 
-function reset() {
-    form.purchaseType = 'barang'
+watch(
+    () => props.show,
+    async (value) => {
+        if (!value) {
+            return
+        }
 
-    form.prNumber = generateDocumentNumber(
-        'PR',
-        form.purchaseType
-    )
+        reset()
 
-    form.date = new Date().toISOString().slice(0, 10)
-
-    form.supplierId = null
-    form.purpose = ''
-    form.notes = ''
-
-    form.items = [
-        {
-            productId: null,
-            productName: '',
-            quantity: 1,
-            unit: '',
-            price: null,
-            subtotal: null,
-            receivedQuantity: 0,
-        },
-    ]
-}
+        await Promise.all([
+            loadProductTypes(),
+            loadProducts(),
+        ])
+    }
+)
 
 /*
 |--------------------------------------------------------------------------
-| Generate Nomor PR
+| Load Product Types
 |--------------------------------------------------------------------------
-|
-| Contoh:
-|
-| PR-BRG-2026-0001
-| PR-SPR-2026-0001
-| PR-CON-2026-0001
-| PR-AST-2026-0001
-| PR-JSA-2026-0001
-|
 */
 
-function generateDocumentNumber(documentType, purchaseType) {
-    const year = new Date().getFullYear()
+async function loadProductTypes() {
+    loadingTypes.value = true
+    errorMessage.value = ''
 
-    const type = purchaseTypes.find(
-        (item) => item.value === purchaseType
-    )
+    try {
+        const response =
+            await erpApi.master.productTypes.list({
+                is_active: true,
+            })
 
-    const typeCode = type?.code || 'BRG'
+        productTypes.value =
+            response?.data?.data || []
+    } catch (error) {
+        console.error(error)
 
-    const prefix = `${documentType}-${typeCode}-${year}`
-
-    const numbers = props.purchases
-        .map((purchase) => {
-            const number = getDocumentNumber(
-                purchase,
-                documentType
-            )
-
-            if (!number) return 0
-
-            if (!number.startsWith(`${prefix}-`)) {
-                return 0
-            }
-
-            const sequence = Number(
-                number.split('-').pop()
-            )
-
-            return Number.isFinite(sequence)
-                ? sequence
-                : 0
-        })
-        .filter(Boolean)
-
-    const nextNumber =
-        numbers.length > 0
-            ? Math.max(...numbers) + 1
-            : 1
-
-    return `${prefix}-${String(nextNumber).padStart(4, '0')}`
+        errorMessage.value =
+            getApiError(error) ||
+            'Gagal memuat Product Type.'
+    } finally {
+        loadingTypes.value = false
+    }
 }
 
-/*
-|--------------------------------------------------------------------------
-| Ambil nomor berdasarkan jenis dokumen
-|--------------------------------------------------------------------------
-*/
+async function loadProducts() {
+    loadingProducts.value = true
 
-function getDocumentNumber(purchase, documentType) {
-    switch (documentType) {
-        case 'PR':
-            return (
-                purchase.prNumber ||
-                purchase.documentNumber ||
-                null
-            )
+    try {
+        const response =
+            await erpApi.master.products.list({
+                is_active: true,
+            })
 
-        case 'REQ':
-            return purchase.requestNumber || null
+        products.value =
+            response?.data?.data || []
+    } catch (error) {
+        console.error(error)
 
-        case 'PO':
-            return purchase.purchaseOrderNumber || null
-
-        case 'GR':
-            return purchase.receiptNumber || null
-
-        default:
-            return null
+        errorMessage.value =
+            getApiError(error) ||
+            'Gagal memuat produk.'
+    } finally {
+        loadingProducts.value = false
     }
 }
 
 /*
 |--------------------------------------------------------------------------
-| Ketika jenis pembelian berubah
+| Reset
 |--------------------------------------------------------------------------
 */
 
-function syncDocumentNumber() {
-    form.prNumber = generateDocumentNumber(
-        'PR',
-        form.purchaseType
-    )
+function reset() {
+    errorMessage.value = ''
+
+    form.productTypeId = null
+
+    form.requestDate =
+        new Date()
+            .toISOString()
+            .slice(0, 10)
+
+    form.notes = ''
+
+    form.items = [
+        createItem(),
+    ]
 }
 
 /*
@@ -561,16 +526,30 @@ function syncDocumentNumber() {
 |--------------------------------------------------------------------------
 */
 
-function addItem() {
-    form.items.push({
+function createItem() {
+    itemKey += 1
+
+    return {
+        key: itemKey,
+
         productId: null,
+
         productName: '',
+
         quantity: 1,
-        unit: '',
-        price: null,
-        subtotal: null,
-        receivedQuantity: 0,
-    })
+
+        unitId: null,
+
+        unitName: '',
+
+        notes: '',
+    }
+}
+
+function addItem() {
+    form.items.push(
+        createItem()
+    )
 }
 
 function removeItem(index) {
@@ -581,38 +560,106 @@ function removeItem(index) {
     form.items.splice(index, 1)
 }
 
-function syncProduct(item) {
-    const product = props.products.find(
-        (itemProduct) => itemProduct.id === item.productId
-    )
+/*
+|--------------------------------------------------------------------------
+| Product Type
+|--------------------------------------------------------------------------
+*/
 
-    if (!product) {
-        return
-    }
+function handleProductTypeChange() {
+    /*
+     * Ketika tipe berubah, produk yang sudah dipilih
+     * dan tidak sesuai tipe akan dikosongkan.
+     */
 
-    item.productName = product.name
-    item.unit = product.unit
+    form.items.forEach((item) => {
+        if (!item.productId) {
+            return
+        }
+
+        const product =
+            props.products.find(
+                (product) =>
+                    product.id === item.productId
+            )
+
+        if (!product) {
+            return
+        }
+
+        const typeId =
+            product.type_id ??
+            product.product_type_id ??
+            product.type?.id ??
+            null
+
+        if (
+            Number(typeId) !==
+            Number(form.productTypeId)
+        ) {
+            item.productId = null
+            item.productName = ''
+            item.unitId = null
+            item.unitName = ''
+        }
+    })
 }
 
 /*
 |--------------------------------------------------------------------------
-| Subtotal
+| Product
 |--------------------------------------------------------------------------
 */
 
-function subtotal(item) {
-    if (
-        item.price === null ||
-        item.price === '' ||
-        !item.quantity
-    ) {
-        return 0
+function syncProduct(item) {
+    const product = products.value.find(
+        product => Number(product.id) === Number(item.productId)
+    )
+
+    if (!product) {
+        item.unitId = null
+        return
     }
 
-    return (
-        Number(item.price) *
-        Number(item.quantity)
-    )
+    item.unitId =
+        product.unit_id ??
+        product.unit?.id ??
+        null
+}
+
+/*
+|--------------------------------------------------------------------------
+| Validation
+|--------------------------------------------------------------------------
+*/
+
+function validate() {
+    if (!form.productTypeId) {
+        return 'Tipe pengadaan wajib dipilih.'
+    }
+
+    if (!form.requestDate) {
+        return 'Tanggal permintaan wajib diisi.'
+    }
+
+    const validItems =
+        form.items.filter(
+            (item) =>
+                item.productId &&
+                Number(item.quantity) > 0
+        )
+
+    if (!validItems.length) {
+        return 'Minimal tambahkan satu barang.'
+    }
+
+    for (const item of validItems) {
+        if (!item.unitId) {
+            return `Satuan untuk ${item.productName || 'produk'} belum tersedia.`
+        }
+    }
+
+    return null
 }
 
 /*
@@ -621,122 +668,92 @@ function subtotal(item) {
 |--------------------------------------------------------------------------
 */
 
-function save() {
-    if (!form.purpose.trim()) {
-        alert('Keperluan pembelian wajib diisi.')
+async function save() {
+    errorMessage.value = ''
+
+    const validationError =
+        validate()
+
+    if (validationError) {
+        errorMessage.value =
+            validationError
+
         return
     }
 
-    const validItems = form.items.filter(
-        (item) =>
-            item.productId &&
-            Number(item.quantity) > 0
-    )
+    saving.value = true
 
-    if (!validItems.length) {
-        alert('Minimal tambahkan satu barang.')
-        return
+    try {
+        const payload = {
+            product_type_id:
+                form.productTypeId,
+
+            request_date:
+                form.requestDate,
+
+            status: 'draft',
+
+            notes:
+                form.notes.trim() || null,
+
+            items:
+                form.items
+                    .filter(
+                        (item) =>
+                            item.productId &&
+                            Number(item.quantity) > 0
+                    )
+                    .map((item) => ({
+                        product_id:
+                            item.productId,
+
+                        quantity:
+                            Number(item.quantity),
+
+                        unit_id:
+                            item.unitId,
+
+                        notes:
+                            item.notes.trim() ||
+                            null,
+                    })),
+        }
+
+        const response =
+            await erpApi.purchases.requests.create(
+                payload
+            )
+
+        const purchaseRequest =
+            response?.data?.data
+
+        emit(
+            'saved',
+            purchaseRequest
+        )
+    } catch (error) {
+        console.error(error)
+
+        errorMessage.value =
+            getApiError(error) ||
+            'Gagal membuat Purchase Request.'
+    } finally {
+        saving.value = false
     }
-
-    const supplier = props.suppliers.find(
-        (item) => item.id === form.supplierId
-    )
-
-    const purchaseType = purchaseTypes.find(
-        (type) => type.value === form.purchaseType
-    )
-
-    const purchase = {
-        id: Date.now(),
-
-        /*
-        |--------------------------------------------------------------------------
-        | Identitas Jenis Pembelian
-        |--------------------------------------------------------------------------
-        */
-
-        purchaseType: form.purchaseType,
-
-        purchaseTypeLabel:
-            purchaseType?.label || '',
-
-        typeCode:
-            purchaseType?.code || 'BRG',
-
-        /*
-        |--------------------------------------------------------------------------
-        | Nomor Dokumen
-        |--------------------------------------------------------------------------
-        */
-
-        prNumber: form.prNumber,
-
-        requestNumber: null,
-
-        purchaseOrderNumber: null,
-
-        receiptNumber: null,
-
-        /*
-        |--------------------------------------------------------------------------
-        | Informasi Pembelian
-        |--------------------------------------------------------------------------
-        */
-
-        date: form.date,
-
-        supplierId: form.supplierId,
-
-        supplierName:
-            supplier?.name || null,
-
-        purpose:
-            form.purpose.trim(),
-
-        notes:
-            form.notes.trim(),
-
-        status: 'draft',
-
-        /*
-        |--------------------------------------------------------------------------
-        | Items
-        |--------------------------------------------------------------------------
-        */
-
-        items: validItems.map((item) => ({
-            ...item,
-
-            subtotal:
-                item.price !== null &&
-                item.price !== ''
-                    ? Number(item.price) *
-                      Number(item.quantity)
-                    : null,
-
-            receivedQuantity: 0,
-        })),
-
-        total: total.value,
-    }
-
-    emit('saved', purchase)
 }
+
+/*
+|--------------------------------------------------------------------------
+| Close
+|--------------------------------------------------------------------------
+*/
 
 function close() {
-    emit('close')
-}
-
-function formatCurrency(value) {
-    if (!value) {
-        return '-'
+    if (saving.value) {
+        return
     }
 
-    return new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        minimumFractionDigits: 0,
-    }).format(value)
+    emit('close')
 }
 </script>
 

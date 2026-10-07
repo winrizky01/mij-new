@@ -6,19 +6,28 @@
             @click.self="close"
         >
             <div
-                class="max-h-[92vh] w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl"
+                class="max-h-[92vh] w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl"
             >
                 <!-- Header -->
                 <div
-                    class="flex items-center justify-between border-b border-gray-100 px-5 py-4"
+                    class="flex items-start justify-between border-b border-gray-100 px-5 py-4 sm:px-6"
                 >
                     <div>
-                        <h2 class="text-lg font-bold text-gray-900">
-                            Approval Pembelian
-                        </h2>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <h2 class="text-lg font-bold text-gray-900">
+                                {{ purchase.request_number || 'Purchase Request' }}
+                            </h2>
 
-                        <p class="mt-1 text-xs text-gray-500">
-                            {{ purchase.requestNumber }}
+                            <span
+                                class="rounded-full px-3 py-1 text-xs font-medium"
+                                :class="statusClass(purchase.status)"
+                            >
+                                {{ statusLabel(purchase.status) }}
+                            </span>
+                        </div>
+
+                        <p class="mt-1 text-sm text-gray-500">
+                            Detail Purchase Request
                         </p>
                     </div>
 
@@ -31,81 +40,110 @@
                     </button>
                 </div>
 
-                <!-- Body -->
-                <div
-                    class="max-h-[70vh] overflow-y-auto p-5 sm:p-6"
-                >
-                    <!-- Document Information -->
-                    <div class="grid gap-3 sm:grid-cols-3">
-                        <div class="rounded-xl bg-gray-50 p-3">
-                            <p class="text-[11px] text-gray-500">
-                                Nomor PR
-                            </p>
+                <div class="max-h-[75vh] overflow-y-auto p-5 sm:p-6">
+                    <!-- Document -->
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <DocumentCard
+                            label="Nomor PR"
+                            :value="purchase.request_number || '—'"
+                        />
 
-                            <p class="mt-1 text-sm font-semibold text-gray-900">
-                                {{ purchase.prNumber || '-' }}
-                            </p>
-                        </div>
-
-                        <div class="rounded-xl bg-blue-50 p-3">
-                            <p class="text-[11px] text-blue-600">
-                                Nomor REQ
-                            </p>
-
-                            <p class="mt-1 text-sm font-semibold text-gray-900">
-                                {{ purchase.requestNumber || '-' }}
-                            </p>
-                        </div>
-
-                        <div class="rounded-xl bg-green-50 p-3">
-                            <p class="text-[11px] text-green-600">
-                                Jenis Pembelian
-                            </p>
-
-                            <p class="mt-1 text-sm font-semibold text-gray-900">
-                                {{ purchase.purchaseTypeLabel || '-' }}
-                            </p>
-                        </div>
+                        <DocumentCard
+                            label="Status"
+                            :value="statusLabel(purchase.status)"
+                        />
                     </div>
 
-                    <!-- Purpose -->
-                    <div class="mt-5 rounded-xl bg-blue-50 p-4">
-                        <p class="text-xs text-blue-600">
-                            Keperluan
-                        </p>
+                    <!-- Info -->
+                    <div class="mt-6 grid gap-4 sm:grid-cols-3">
+                        <InfoItem
+                            label="Tanggal Pengajuan"
+                            :value="formatDate(purchase.request_date)"
+                        />
 
-                        <p class="mt-1 font-semibold text-gray-900">
-                            {{ purchase.purpose }}
-                        </p>
+                        <InfoItem
+                            label="Diminta Oleh"
+                            :value="
+                                purchase.requested_by?.name ||
+                                purchase.requestedBy?.name ||
+                                'Belum ditentukan'
+                            "
+                        />
+
+                        <InfoItem
+                            label="Jumlah Item"
+                            :value="`${purchase.items?.length || 0} item`"
+                        />
                     </div>
 
-                    <!-- Supplier -->
+                    <!-- Timeline -->
                     <div
-                        class="mt-4 rounded-xl border border-gray-200 p-4"
+                        class="mt-6 rounded-xl border border-gray-100 bg-gray-50 p-5"
                     >
-                        <p class="text-xs text-gray-500">
-                            Supplier
-                        </p>
+                        <h3 class="text-sm font-bold text-gray-900">
+                            Progress Purchase Request
+                        </h3>
 
-                        <p class="mt-1 text-sm font-semibold text-gray-900">
-                            {{ purchase.supplierName || 'Belum ditentukan' }}
-                        </p>
+                        <div class="mt-5 space-y-4">
+                            <TimelineItem
+                                label="Dibuat"
+                                :active="true"
+                                :date="formatDate(purchase.created_at)"
+                            />
+
+                            <TimelineItem
+                                label="Diajukan"
+                                :active="
+                                    ['submitted', 'approved', 'rejected', 'cancelled']
+                                        .includes(purchase.status)
+                                "
+                                :date="
+                                    ['submitted', 'approved', 'rejected', 'cancelled']
+                                        .includes(purchase.status)
+                                        ? 'Purchase Request telah diajukan'
+                                        : 'Menunggu pengajuan'
+                                "
+                            />
+
+                            <TimelineItem
+                                label="Disetujui"
+                                :active="purchase.status === 'approved'"
+                                :date="
+                                    purchase.status === 'approved'
+                                        ? 'Purchase Request telah disetujui'
+                                        : 'Menunggu approval'
+                                "
+                            />
+
+                            <TimelineItem
+                                label="Selesai"
+                                :active="
+                                    ['rejected', 'cancelled'].includes(
+                                        purchase.status
+                                    )
+                                "
+                                :date="
+                                    purchase.status === 'rejected'
+                                        ? 'Purchase Request ditolak'
+                                        : purchase.status === 'cancelled'
+                                            ? 'Purchase Request dibatalkan'
+                                            : 'Belum selesai'
+                                "
+                                :last="true"
+                            />
+                        </div>
                     </div>
 
                     <!-- Items -->
-                    <div
-                        class="mt-5 overflow-hidden rounded-xl border border-gray-200"
-                    >
-                        <div
-                            class="border-b border-gray-100 px-4 py-3"
-                        >
-                            <h3 class="text-sm font-bold text-gray-900">
-                                Detail Barang
-                            </h3>
-                        </div>
+                    <div class="mt-6">
+                        <h3 class="mb-3 text-sm font-bold text-gray-900">
+                            Detail Barang
+                        </h3>
 
-                        <div class="overflow-x-auto">
-                            <table class="w-full min-w-[520px]">
+                        <div
+                            class="overflow-x-auto rounded-xl border border-gray-200"
+                        >
+                            <table class="w-full min-w-[600px]">
                                 <thead class="bg-gray-50">
                                     <tr>
                                         <th
@@ -121,47 +159,74 @@
                                         </th>
 
                                         <th
-                                            class="px-4 py-3 text-right text-xs font-semibold text-gray-500"
+                                            class="px-4 py-3 text-left text-xs font-semibold text-gray-500"
                                         >
-                                            Harga
+                                            Satuan
                                         </th>
 
                                         <th
-                                            class="px-4 py-3 text-right text-xs font-semibold text-gray-500"
+                                            class="px-4 py-3 text-left text-xs font-semibold text-gray-500"
                                         >
-                                            Subtotal
+                                            Catatan
                                         </th>
                                     </tr>
                                 </thead>
 
-                                <tbody
-                                    class="divide-y divide-gray-100"
-                                >
+                                <tbody class="divide-y divide-gray-100">
                                     <tr
-                                        v-for="item in purchase.items"
-                                        :key="item.productId"
+                                        v-for="(item, index) in purchase.items || []"
+                                        :key="item.id || index"
                                     >
-                                        <td class="px-4 py-3 text-sm font-medium">
-                                            {{ item.productName }}
+                                        <td class="px-4 py-3">
+                                            <p
+                                                class="text-sm font-medium text-gray-900"
+                                            >
+                                                {{
+                                                    item.product?.name ||
+                                                    item.product?.product_name ||
+                                                    'Produk tidak ditemukan'
+                                                }}
+                                            </p>
+
+                                            <p
+                                                v-if="item.product?.code"
+                                                class="mt-0.5 text-xs text-gray-400"
+                                            >
+                                                {{ item.product.code }}
+                                            </p>
                                         </td>
 
                                         <td
-                                            class="px-4 py-3 text-right text-sm"
+                                            class="px-4 py-3 text-right text-sm font-medium text-gray-900"
                                         >
                                             {{ item.quantity }}
-                                            {{ item.unit }}
                                         </td>
 
                                         <td
-                                            class="px-4 py-3 text-right text-sm"
+                                            class="px-4 py-3 text-sm text-gray-600"
                                         >
-                                            {{ formatCurrency(item.price) }}
+                                            {{
+                                                item.unit?.name ||
+                                                item.unit?.code ||
+                                                '—'
+                                            }}
                                         </td>
 
                                         <td
-                                            class="px-4 py-3 text-right text-sm font-semibold"
+                                            class="px-4 py-3 text-sm text-gray-500"
                                         >
-                                            {{ formatCurrency(item.subtotal) }}
+                                            {{ item.notes || '—' }}
+                                        </td>
+                                    </tr>
+
+                                    <tr
+                                        v-if="!purchase.items?.length"
+                                    >
+                                        <td
+                                            colspan="4"
+                                            class="px-4 py-8 text-center text-sm text-gray-400"
+                                        >
+                                            Tidak ada barang.
                                         </td>
                                     </tr>
                                 </tbody>
@@ -169,74 +234,53 @@
                         </div>
                     </div>
 
-                    <!-- Total -->
-                    <div class="mt-5 flex justify-end">
-                        <div class="text-right">
-                            <p class="text-xs text-gray-500">
-                                Total Pembelian
-                            </p>
-
-                            <p
-                                class="text-xl font-bold text-[#003366]"
-                            >
-                                {{ formatCurrency(purchase.total) }}
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Approval Information -->
+                    <!-- Notes -->
                     <div
-                        class="mt-5 rounded-xl border border-orange-100 bg-orange-50 p-4"
+                        v-if="purchase.notes"
+                        class="mt-6 rounded-xl border border-gray-100 bg-gray-50 p-4"
                     >
                         <p
-                            class="text-sm font-semibold text-orange-800"
+                            class="text-xs font-semibold uppercase text-gray-400"
                         >
-                            Setelah disetujui
+                            Catatan
                         </p>
 
-                        <p
-                            class="mt-1 text-xs leading-5 text-orange-700"
-                        >
-                            Pembelian akan berubah menjadi status
-                            <strong>Dibeli</strong> dan sistem membuat
-                            nomor Purchase Order baru.
+                        <p class="mt-2 text-sm text-gray-700">
+                            {{ purchase.notes }}
                         </p>
-
-                        <div
-                            class="mt-3 rounded-lg bg-white/70 px-3 py-2"
-                        >
-                            <p class="text-[11px] text-orange-600">
-                                Nomor PO yang akan dibuat
-                            </p>
-
-                            <p
-                                class="mt-1 text-sm font-bold text-gray-900"
-                            >
-                                {{ previewPurchaseOrderNumber }}
-                            </p>
-                        </div>
                     </div>
                 </div>
 
                 <!-- Footer -->
-                <div
-                    class="flex flex-col-reverse gap-2 border-t border-gray-100 px-5 py-4 sm:flex-row sm:justify-end"
-                >
+                <div class="flex items-center justify-between border-t border-slate-200 px-6 py-4">
                     <button
                         type="button"
-                        @click="close"
-                        class="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium"
+                        @click="reject"
+                        :disabled="saving"
+                        class="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                        Batal
+                        Tolak
                     </button>
 
-                    <button
-                        type="button"
-                        @click="approve"
-                        class="rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700"
-                    >
-                        ✓ Setujui Pembelian
-                    </button>
+                    <div class="flex items-center gap-3">
+                        <button
+                            type="button"
+                            @click="close"
+                            :disabled="saving"
+                            class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                        >
+                            Batal
+                        </button>
+
+                        <button
+                            type="button"
+                            @click="approve"
+                            :disabled="saving"
+                            class="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            {{ saving ? 'Memproses...' : 'Setujui Purchase Request' }}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -244,7 +288,14 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref } from 'vue'
+import DocumentCard from './DocumentCard.vue'
+import InfoItem from './InfoItem.vue'
+import TimelineItem from './TimelineItem.vue'
+import {
+    erpApi,
+    getApiError,
+} from '@/services/api'
 
 const props = defineProps({
     show: Boolean,
@@ -253,183 +304,164 @@ const props = defineProps({
         type: Object,
         default: null,
     },
-
-    /**
-     * Semua transaksi pembelian.
-     * Digunakan untuk mencari sequence PO berikutnya.
-     */
-    purchases: {
-        type: Array,
-        default: () => [],
-    },
 })
 
 const emit = defineEmits([
     'close',
     'approved',
+    'rejected'
 ])
 
-/*
-|--------------------------------------------------------------------------
-| Preview Nomor PO
-|--------------------------------------------------------------------------
-*/
-
-const previewPurchaseOrderNumber = computed(() => {
-    if (!props.purchase) {
-        return '-'
-    }
-
-    if (props.purchase.purchaseOrderNumber) {
-        return props.purchase.purchaseOrderNumber
-    }
-
-    return generatePurchaseOrderNumber(
-        props.purchase
-    )
-})
-
-/*
-|--------------------------------------------------------------------------
-| Generate Nomor PO
-|--------------------------------------------------------------------------
-|
-| Contoh:
-|
-| PR-SPR-2026-0001
-| REQ-SPR-2026-0001
-| PO-SPR-2026-0001
-|
-| PO mempunyai sequence sendiri.
-|--------------------------------------------------------------------------
-*/
-
-function generatePurchaseOrderNumber(purchase) {
-    const year = new Date().getFullYear()
-
-    const typeCode =
-        purchase.typeCode ||
-        getTypeCode(purchase.purchaseType)
-
-    const prefix =
-        `PO-${typeCode}-${year}`
-
-    const numbers = props.purchases
-        .map((item) => {
-            const number =
-                item.purchaseOrderNumber
-
-            if (!number) {
-                return 0
-            }
-
-            if (!number.startsWith(`${prefix}-`)) {
-                return 0
-            }
-
-            const sequence = Number(
-                number.split('-').pop()
-            )
-
-            return Number.isFinite(sequence)
-                ? sequence
-                : 0
-        })
-        .filter(Boolean)
-
-    const nextNumber =
-        numbers.length > 0
-            ? Math.max(...numbers) + 1
-            : 1
-
-    return `${prefix}-${String(nextNumber).padStart(4, '0')}`
-}
-
-/*
-|--------------------------------------------------------------------------
-| Fallback type code
-|--------------------------------------------------------------------------
-*/
-
-function getTypeCode(purchaseType) {
-    const codes = {
-        barang: 'BRG',
-        sparepart: 'SPR',
-        consumable: 'CON',
-        asset: 'AST',
-        service: 'JSA',
-    }
-
-    return codes[purchaseType] || 'BRG'
-}
-
-/*
-|--------------------------------------------------------------------------
-| Approve
-|--------------------------------------------------------------------------
-*/
-
-function approve() {
-    if (!props.purchase) {
-        return
-    }
-
-    const purchaseOrderNumber =
-        props.purchase.purchaseOrderNumber ||
-        generatePurchaseOrderNumber(
-            props.purchase
-        )
-
-    emit('approved', {
-        ...props.purchase,
-
-        status: 'purchased',
-
-        purchaseOrderNumber,
-
-        /*
-         * GR belum dibuat.
-         * Akan dibuat nanti ketika barang diterima.
-         */
-        receiptNumber:
-            props.purchase.receiptNumber ||
-            null,
-    })
-}
-
-/*
-|--------------------------------------------------------------------------
-| Close
-|--------------------------------------------------------------------------
-*/
+const saving = ref(false)
+const errorMessage = ref('')
 
 function close() {
     emit('close')
 }
 
-/*
-|--------------------------------------------------------------------------
-| Currency
-|--------------------------------------------------------------------------
-*/
+function statusLabel(status) {
+    return {
+        draft: 'Draft',
+        submitted: 'Diajukan',
+        approved: 'Disetujui',
+        rejected: 'Ditolak',
+        cancelled: 'Dibatalkan',
+    }[status] || status || '—'
+}
 
-function formatCurrency(value) {
-    if (
-        value === null ||
-        value === undefined ||
-        value === ''
-    ) {
+function statusClass(status) {
+    return {
+        draft: 'bg-gray-100 text-gray-600',
+        submitted: 'bg-blue-50 text-blue-700',
+        approved: 'bg-green-50 text-green-700',
+        rejected: 'bg-red-50 text-red-700',
+        cancelled: 'bg-gray-100 text-gray-500',
+    }[status] || 'bg-gray-100 text-gray-600'
+}
+
+function formatDate(value) {
+    if (!value) return '-'
+
+    const date = new Date(value)
+
+    if (Number.isNaN(date.getTime())) {
         return '-'
     }
 
-    if (Number(value) === 0) {
-        return '-'
-    }
+    return new Intl.DateTimeFormat('id-ID', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+    }).format(date)
+}
 
-    return new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        minimumFractionDigits: 0,
-    }).format(value)
+async function approve() {
+    if (!props.purchase?.id) return
+
+    saving.value = true
+    errorMessage.value = ''
+
+    try {
+        const response =
+            await erpApi.purchases.requests.update(
+                props.purchase.id,
+                {
+                    requested_by:
+                        props.purchase.requested_by?.id ??
+                        props.purchase.requested_by ??
+                        null,
+
+                    request_date:
+                        props.purchase.request_date,
+
+                    status: 'approved',
+
+                    notes:
+                        props.purchase.notes || null,
+
+                    items: (props.purchase.items || []).map(item => ({
+                        product_id: Number(
+                            item.product_id ??
+                            item.product?.id
+                        ),
+
+                        quantity: Number(item.quantity),
+
+                        unit_id:
+                            item.unit_id ??
+                            item.unit?.id ??
+                            null,
+
+                        notes: item.notes || null,
+                    })),
+                }
+            )
+
+        emit('approved', response?.data?.data)
+
+    } catch (error) {
+        console.error(error)
+
+        errorMessage.value =
+            getApiError(error) ||
+            'Purchase Request gagal disetujui.'
+    } finally {
+        saving.value = false
+    }
+}
+
+async function reject() {
+    if (!props.purchase?.id) return
+
+    saving.value = true
+    errorMessage.value = ''
+
+    try {
+        const response =
+            await erpApi.purchases.requests.update(
+                props.purchase.id,
+                {
+                    requested_by:
+                        props.purchase.requested_by?.id ??
+                        props.purchase.requested_by ??
+                        null,
+
+                    request_date:
+                        props.purchase.request_date,
+
+                    status: 'rejected',
+
+                    notes:
+                        props.purchase.notes || null,
+
+                    items: (props.purchase.items || []).map(item => ({
+                        product_id: Number(
+                            item.product_id ??
+                            item.product?.id
+                        ),
+
+                        quantity: Number(item.quantity),
+
+                        unit_id:
+                            item.unit_id ??
+                            item.unit?.id ??
+                            null,
+
+                        notes: item.notes || null,
+                    })),
+                }
+            )
+
+        emit('rejected', response?.data?.data)
+
+    } catch (error) {
+        console.error(error)
+
+        errorMessage.value =
+            getApiError(error) ||
+            'Purchase Request gagal ditolak.'
+    } finally {
+        saving.value = false
+    }
 }
 </script>

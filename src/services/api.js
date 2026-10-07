@@ -674,34 +674,34 @@ export const erpApi = {
         partners: {
             list(params = {}) {
                 return get(
-                    '/erp/master/partners',
+                    '/erp/partners',
                     params
                 )
             },
 
             show(id) {
                 return get(
-                    `/erp/master/partners/${id}`
+                    `/erp/partners/${id}`
                 )
             },
 
             create(data) {
                 return post(
-                    '/erp/master/partners',
+                    '/erp/partners',
                     data
                 )
             },
 
             update(id, data) {
                 return put(
-                    `/erp/master/partners/${id}`,
+                    `/erp/partners/${id}`,
                     data
                 )
             },
 
             delete(id) {
                 return destroy(
-                    `/erp/master/partners/${id}`
+                    `/erp/partners/${id}`
                 )
             },
         },
@@ -977,34 +977,34 @@ export const erpApi = {
         requests: {
             list(params = {}) {
                 return get(
-                    '/erp/purchases/requests',
+                    '/erp/purchase-requests',
                     params
                 )
             },
 
             show(id) {
                 return get(
-                    `/erp/purchases/requests/${id}`
+                    `/erp/purchase-requests/${id}`
                 )
             },
 
             create(data) {
                 return post(
-                    '/erp/purchases/requests',
+                    '/erp/purchase-requests',
                     data
                 )
             },
 
             update(id, data) {
                 return put(
-                    `/erp/purchases/requests/${id}`,
+                    `/erp/purchase-requests/${id}`,
                     data
                 )
             },
 
             delete(id) {
                 return destroy(
-                    `/erp/purchases/requests/${id}`
+                    `/erp/purchase-requests/${id}`
                 )
             },
         },
@@ -1012,34 +1012,38 @@ export const erpApi = {
         orders: {
             list(params = {}) {
                 return get(
-                    '/erp/purchases/orders',
+                    '/erp/purchase-orders',
                     params
                 )
             },
 
             show(id) {
                 return get(
-                    `/erp/purchases/orders/${id}`
+                    `/erp/purchase-orders/${id}`
                 )
             },
 
             create(data) {
                 return post(
-                    '/erp/purchases/orders',
+                    '/erp/purchase-orders',
                     data
                 )
             },
 
             update(id, data) {
                 return put(
-                    `/erp/purchases/orders/${id}`,
+                    `/erp/purchase-orders/${id}`,
                     data
                 )
             },
 
+            order(id) {
+                return api.post(`/erp/purchase-orders/${id}/order`)
+            },
+
             delete(id) {
                 return destroy(
-                    `/erp/purchases/orders/${id}`
+                    `/erp/purchase-orders/${id}`
                 )
             },
         },
@@ -1047,27 +1051,34 @@ export const erpApi = {
         receipts: {
             list(params = {}) {
                 return get(
-                    '/erp/purchases/receipts',
+                    '/erp/purchase-receipts',
                     params
                 )
             },
 
             show(id) {
                 return get(
-                    `/erp/purchases/receipts/${id}`
+                    `/erp/purchase-receipts/${id}`
                 )
             },
 
             create(data) {
                 return post(
-                    '/erp/purchases/receipts',
+                    '/erp/purchase-receipts',
+                    data
+                )
+            },
+
+            receive(id, data) {
+                return post(
+                    `/erp/purchase-receipts/${id}/receive`,
                     data
                 )
             },
 
             update(id, data) {
                 return put(
-                    `/erp/purchases/receipts/${id}`,
+                    `/erp/purchase-receipts/${id}`,
                     data
                 )
             },
@@ -1164,27 +1175,27 @@ export const erpApi = {
         issues: {
             list(params = {}) {
                 return get(
-                    '/erp/inventory/issues',
+                    '/erp/stock-issues',
                     params
                 )
             },
 
             show(id) {
                 return get(
-                    `/erp/inventory/issues/${id}`
+                    `/erp/stock-issues/${id}`
                 )
             },
 
             create(data) {
                 return post(
-                    '/erp/inventory/issues',
+                    '/erp/stock-issues',
                     data
                 )
             },
 
             update(id, data) {
                 return put(
-                    `/erp/inventory/issues/${id}`,
+                    `/erp/stock-issues/${id}`,
                     data
                 )
             },

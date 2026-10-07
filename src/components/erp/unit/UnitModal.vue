@@ -149,13 +149,11 @@ async function submit() {
 
         if (isEdit.value) {
             response = await erpApi.master.units.update(
-                `/units/${props.unit.id}`,
+                props.unit.id,
                 payload
             )
         } else {
-            response = await erpApi.master.units.create(
-                {payload}
-            )
+            response = await erpApi.master.units.create(payload)
         }
 
         emit(

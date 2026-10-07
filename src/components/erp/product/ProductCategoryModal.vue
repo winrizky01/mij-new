@@ -189,22 +189,19 @@ import {
     Loader2Icon,
 } from 'lucide-vue-next'
 
-// Nanti ganti import ini sesuai lokasi API project kamu
-// import erpApi from '@/services/erpApi'
-
+import {
+    erpApi,
+    getApiError,
+} from '@/services/api'
 
 const emit = defineEmits([
     'close',
     'saved',
 ])
 
-
-const saving = ref(false)
-
-const errors = reactive({})
-
-
-const form = reactive({
+const saving    = ref(false)
+const errors    = reactive({})
+const form      = reactive({
     code: '',
     name: '',
     description: '',
@@ -263,29 +260,10 @@ async function submit() {
                 Boolean(form.is_active),
         }
 
+        const response = await erpApi.master.productCategories.create(payload)
+        const category = response.data.data
 
-        /*
-         * API KATEGORI DI SINI
-         *
-         * Contoh:
-         *
-         * const response =
-         *     await erpApi.master.productCategories.create(
-         *         payload
-         *     )
-         *
-         * const category =
-         *     response.data.data
-         *
-         * emit('saved', category)
-         */
-
-
-        // sementara sebelum API disambungkan
-        emit('saved', {
-            id: Date.now(),
-            ...payload,
-        })
+        emit('saved', category)
 
     } catch (error) {
 

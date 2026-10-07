@@ -1,6 +1,9 @@
 <template>
     <div class="space-y-6">
-        <!-- Header -->
+
+        <!-- ===================================================== -->
+        <!-- HEADER -->
+        <!-- ===================================================== -->
         <div
             class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
         >
@@ -8,23 +11,76 @@
                 <h1 class="text-2xl font-bold text-gray-900">
                     Pembelian
                 </h1>
+
                 <p class="mt-1 text-sm text-gray-500">
-                    Kelola pengajuan, persetujuan, pembelian, dan penerimaan
-                    barang.
+                    Kelola proses pembelian dari Purchase Request,
+                    Purchase Order hingga Goods Receipt.
                 </p>
             </div>
 
             <button
                 type="button"
                 @click="openCreateModal"
-                class="rounded-xl bg-[#0052cc] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0047b3]"
+                class="rounded-xl bg-[#0052cc] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0047b3]"
             >
-                + Buat Pembelian
+                + Buat Purchase Request
             </button>
         </div>
 
-        <!-- Summary -->
-        <div class="grid grid-cols-2 gap-4 lg:grid-cols-5">
+
+        <!-- ===================================================== -->
+        <!-- PROCUREMENT FLOW -->
+        <!-- ===================================================== -->
+        <div
+            class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
+        >
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <p class="text-sm font-semibold text-gray-900">
+                        Alur Pembelian
+                    </p>
+
+                    <p class="mt-1 text-xs text-gray-500">
+                        Pantau proses setiap pengajuan sampai barang diterima.
+                    </p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                    <span
+                        class="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-600"
+                    >
+                        PR
+                    </span>
+
+                    <span class="text-gray-300">
+                        →
+                    </span>
+
+                    <span
+                        class="rounded-lg bg-purple-50 px-3 py-1.5 text-xs font-semibold text-purple-700"
+                    >
+                        PO
+                    </span>
+
+                    <span class="text-gray-300">
+                        →
+                    </span>
+
+                    <span
+                        class="rounded-lg bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-700"
+                    >
+                        GR
+                    </span>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- ===================================================== -->
+        <!-- SUMMARY -->
+        <!-- ===================================================== -->
+        <div class="grid grid-cols-2 gap-4 lg:grid-cols-6">
+
             <div
                 v-for="item in summaryCards"
                 :key="item.label"
@@ -41,240 +97,505 @@
                     {{ item.value }}
                 </p>
             </div>
+
         </div>
 
-        <!-- Filters -->
+
+        <!-- ===================================================== -->
+        <!-- FILTER -->
+        <!-- ===================================================== -->
         <div
             class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
         >
             <div class="grid gap-3 md:grid-cols-4">
+
                 <div class="md:col-span-2">
                     <input
                         v-model="search"
                         type="text"
-                        placeholder="Cari nomor dokumen, keperluan, supplier..."
-                        class="h-10 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 text-sm outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
+                        placeholder="Cari nomor PR..."
+                        class="h-10 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 text-sm outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
+                        @keyup.enter="loadPurchases"
                     />
                 </div>
 
                 <select
                     v-model="statusFilter"
-                    class="h-10 rounded-xl border border-gray-200 bg-white px-3 text-sm outline-none focus:border-blue-500"
+                    class="h-10 rounded-xl border border-gray-200 bg-white px-3 text-sm outline-none transition focus:border-blue-500"
+                    @change="loadPurchases"
                 >
                     <option value="all">
-                        Semua Status
+                        Semua Status PR
                     </option>
+
                     <option value="draft">
-                        Dibuat
+                        PR · Dibuat
                     </option>
+
                     <option value="submitted">
-                        Diajukan
+                        PR · Diajukan
                     </option>
-                    <option value="purchased">
-                        Dibeli
+
+                    <option value="approved">
+                        PR · Disetujui
                     </option>
-                    <option value="received">
-                        Diterima
+
+                    <option value="rejected">
+                        PR · Ditolak
+                    </option>
+
+                    <option value="cancelled">
+                        PR · Dibatalkan
                     </option>
                 </select>
 
-                <select
-                    v-model="supplierFilter"
-                    class="h-10 rounded-xl border border-gray-200 bg-white px-3 text-sm outline-none focus:border-blue-500"
+                <button
+                    type="button"
+                    @click="loadPurchases"
+                    :disabled="loading"
+                    class="h-10 rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                    <option value="all">
-                        Semua Supplier
-                    </option>
-                    <option
-                        v-for="supplier in suppliers"
-                        :key="supplier.id"
-                        :value="supplier.id"
-                    >
-                        {{ supplier.name }}
-                    </option>
-                </select>
+                    {{ loading ? 'Memuat...' : 'Refresh' }}
+                </button>
+
             </div>
         </div>
 
-        <!-- Table -->
+
+        <!-- ===================================================== -->
+        <!-- ERROR -->
+        <!-- ===================================================== -->
+        <div
+            v-if="errorMessage"
+            class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+        >
+            {{ errorMessage }}
+        </div>
+
+
+        <!-- ===================================================== -->
+        <!-- TABLE -->
+        <!-- ===================================================== -->
         <div
             class="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm"
         >
+
             <div class="overflow-x-auto">
-                <table class="w-full min-w-[1100px] text-left">
+
+                <table class="w-full min-w-[1250px] text-left">
+
                     <thead class="border-b border-gray-100 bg-gray-50">
+
                         <tr>
-                            <th class="px-5 py-4 text-xs font-semibold uppercase text-gray-500">
-                                Dokumen
+
+                            <th
+                                class="px-5 py-4 text-xs font-semibold uppercase text-gray-500"
+                            >
+                                Purchase Request
                             </th>
-                            <th class="px-5 py-4 text-xs font-semibold uppercase text-gray-500">
-                                Keperluan
+
+                            <th
+                                class="px-5 py-4 text-xs font-semibold uppercase text-gray-500"
+                            >
+                                Peminta
                             </th>
-                            <th class="px-5 py-4 text-xs font-semibold uppercase text-gray-500">
-                                Supplier
-                            </th>
-                            <th class="px-5 py-4 text-xs font-semibold uppercase text-gray-500">
+
+                            <th
+                                class="px-5 py-4 text-xs font-semibold uppercase text-gray-500"
+                            >
                                 Tanggal
                             </th>
-                            <th class="px-5 py-4 text-right text-xs font-semibold uppercase text-gray-500">
-                                Total
+
+                            <th
+                                class="px-5 py-4 text-center text-xs font-semibold uppercase text-gray-500"
+                            >
+                                Item
                             </th>
-                            <th class="px-5 py-4 text-xs font-semibold uppercase text-gray-500">
-                                Status
+
+                            <th
+                                class="px-5 py-4 text-center text-xs font-semibold uppercase text-gray-500"
+                            >
+                                PR
                             </th>
-                            <th class="px-5 py-4 text-right text-xs font-semibold uppercase text-gray-500">
+
+                            <th
+                                class="px-5 py-4 text-center text-xs font-semibold uppercase text-gray-500"
+                            >
+                                PO
+                            </th>
+
+                            <th
+                                class="px-5 py-4 text-center text-xs font-semibold uppercase text-gray-500"
+                            >
+                                GR
+                            </th>
+
+                            <th
+                                class="px-5 py-4 text-right text-xs font-semibold uppercase text-gray-500"
+                            >
                                 Aksi
                             </th>
+
                         </tr>
+
                     </thead>
 
+
                     <tbody class="divide-y divide-gray-100">
+
                         <tr
-                            v-for="purchase in filteredPurchases"
+                            v-for="purchase in purchases"
                             :key="purchase.id"
-                            class="hover:bg-gray-50"
+                            class="transition hover:bg-gray-50"
                         >
+
+                            <!-- PR -->
                             <td class="px-5 py-4">
+
                                 <div>
                                     <p class="font-semibold text-gray-900">
-                                        {{ purchase.documentNumber }}
+                                        {{ purchase.request_number }}
                                     </p>
 
                                     <p class="mt-1 text-xs text-gray-400">
-                                        {{ documentNumberLabel(purchase) }}
+                                        Purchase Request
                                     </p>
                                 </div>
+
                             </td>
 
+
+                            <!-- REQUESTER -->
                             <td class="px-5 py-4">
+
                                 <p class="text-sm font-medium text-gray-800">
-                                    {{ purchase.purpose }}
+                                    {{
+                                        purchase.requested_by?.name ||
+                                        purchase.requestedBy?.name ||
+                                        purchase.created_by?.name ||
+                                        purchase.created_by?.full_name ||
+                                        '-'
+                                    }}
                                 </p>
 
-                                <p class="mt-1 text-xs text-gray-500">
-                                    {{ purchase.items.length }} item
-                                </p>
                             </td>
 
+
+                            <!-- DATE -->
                             <td class="px-5 py-4 text-sm text-gray-600">
-                                {{ purchase.supplierName || '-' }}
+                                {{ formatDate(purchase.request_date) }}
                             </td>
 
-                            <td class="px-5 py-4 text-sm text-gray-600">
-                                {{ formatDate(purchase.date) }}
-                            </td>
 
-                            <td class="px-5 py-4 text-right">
-                                <span class="text-sm font-semibold text-gray-900">
-                                    {{ formatCurrency(purchase.total) }}
-                                </span>
-                            </td>
+                            <!-- ITEMS -->
+                            <td class="px-5 py-4 text-center">
 
-                            <td class="px-5 py-4">
                                 <span
-                                    class="rounded-full px-3 py-1 text-xs font-medium"
+                                    class="inline-flex min-w-8 items-center justify-center rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700"
+                                >
+                                    {{ purchase.items?.length || 0 }}
+                                </span>
+
+                            </td>
+
+
+                            <!-- PR STATUS -->
+                            <td class="px-5 py-4 text-center">
+
+                                <span
+                                    class="inline-flex rounded-lg px-2.5 py-1 text-xs font-semibold"
                                     :class="statusClass(purchase.status)"
                                 >
                                     {{ statusLabel(purchase.status) }}
                                 </span>
+
                             </td>
 
+
+                            <!-- PO STATUS -->
+                            <td class="px-5 py-4 text-center">
+
+                                <span
+                                    class="inline-flex rounded-lg px-2.5 py-1 text-xs font-semibold"
+                                    :class="poStatusClass(getPurchaseOrder(purchase))"
+                                >
+                                    {{ poStatusLabel(getPurchaseOrder(purchase)) }}
+                                </span>
+
+                            </td>
+
+
+                            <!-- GR STATUS -->
+                            <td class="px-5 py-4 text-center">
+
+                                <span
+                                    class="inline-flex rounded-lg px-2.5 py-1 text-xs font-semibold"
+                                    :class="grStatusClass(getGoodsReceipt(purchase))"
+                                >
+                                    {{ grStatusLabel(getGoodsReceipt(purchase)) }}
+                                </span>
+
+                            </td>
+
+
+                            <!-- ACTION -->
                             <td class="px-5 py-4">
+
                                 <div class="flex justify-end gap-2">
+
+                                    <!-- LIHAT -->
                                     <button
                                         type="button"
                                         @click="openShowModal(purchase)"
-                                        class="rounded-lg bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100"
+                                        class="rounded-lg bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-600 transition hover:bg-gray-100"
                                     >
                                         Lihat
                                     </button>
 
+
+                                    <!-- EDIT PR -->
                                     <button
-                                        v-if="purchase.status === 'draft'"
+                                        v-if="
+                                            purchase.status === 'draft' ||
+                                            purchase.status === 'submitted'
+                                        "
                                         type="button"
                                         @click="openEditModal(purchase)"
-                                        class="rounded-lg bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-600 hover:bg-blue-100"
+                                        class="rounded-lg bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-600 transition hover:bg-blue-100"
                                     >
                                         Edit
                                     </button>
 
+
+                                    <!-- APPROVAL PR -->
                                     <button
-                                        v-if="purchase.status === 'submitted'"
+                                        v-if="
+                                            purchase.status === 'submitted'
+                                        "
                                         type="button"
                                         @click="openApprovalModal(purchase)"
-                                        class="rounded-lg bg-green-50 px-3 py-2 text-xs font-semibold text-green-700 hover:bg-green-100"
+                                        class="rounded-lg bg-green-50 px-3 py-2 text-xs font-semibold text-green-700 transition hover:bg-green-100"
                                     >
                                         Approval
                                     </button>
 
+
+                                    <!-- ================================================= -->
+                                    <!-- PURCHASE ORDER -->
+                                    <!-- ================================================= -->
+
+                                    <!-- BUAT PO -->
                                     <button
-                                        v-if="purchase.status === 'purchased'"
+                                        v-if="
+                                            purchase.status === 'approved' &&
+                                            !getPurchaseOrder(purchase)
+                                        "
+                                        type="button"
+                                        @click="openPOModal(purchase)"
+                                        class="rounded-lg bg-purple-50 px-3 py-2 text-xs font-semibold text-purple-700 transition hover:bg-purple-100"
+                                    >
+                                        Buat PO
+                                    </button>
+
+
+                                    <!-- EDIT PO DRAFT -->
+                                    <button
+                                        v-if="
+                                            purchase.status === 'approved' &&
+                                            getPurchaseOrder(purchase)?.status === 'draft'
+                                        "
+                                        type="button"
+                                        @click="openPOModal(purchase)"
+                                        class="rounded-lg bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100"
+                                    >
+                                        Edit PO
+                                    </button>
+
+
+                                    <!-- PESAN PO -->
+                                    <button
+                                        v-if="
+                                            purchase.status === 'approved' &&
+                                            getPurchaseOrder(purchase)?.status === 'draft'
+                                        "
+                                        type="button"
+                                        @click="orderPurchaseOrder(purchase)"
+                                        class="rounded-lg bg-green-50 px-3 py-2 text-xs font-semibold text-green-700 transition hover:bg-green-100"
+                                    >
+                                        Pesan PO
+                                    </button>
+
+
+                                    <!-- BUAT GR -->
+                                    <button
+                                        v-if="
+                                            getPurchaseOrder(purchase) &&
+                                            canCreateGoodsReceipt(purchase) &&
+                                            !getGoodsReceipt(purchase)
+                                        "
                                         type="button"
                                         @click="openReceiveModal(purchase)"
-                                        class="rounded-lg bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-700 hover:bg-orange-100"
+                                        class="rounded-lg bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-700 transition hover:bg-orange-100"
                                     >
-                                        Terima
+                                        Buat GR
                                     </button>
+
+
+                                    <!-- EDIT / LANJUTKAN GR DRAFT -->
+                                    <button
+                                        v-if="
+                                            getGoodsReceipt(purchase)?.status === 'draft'
+                                        "
+                                        type="button"
+                                        @click="openReceiveModal(purchase)"
+                                        class="rounded-lg bg-yellow-50 px-3 py-2 text-xs font-semibold text-yellow-700 transition hover:bg-yellow-100"
+                                    >
+                                        Lanjutkan GR
+                                    </button>
+
+
+                                    <!-- TERIMA BARANG -->
+                                    <button
+                                        v-if="
+                                            getGoodsReceipt(purchase)?.status === 'draft'
+                                        "
+                                        type="button"
+                                        @click="receiveGoodsReceipt(purchase)"
+                                        class="rounded-lg bg-green-50 px-3 py-2 text-xs font-semibold text-green-700 transition hover:bg-green-100"
+                                    >
+                                        Terima Barang
+                                    </button>
+
+
+                                    <!-- GR SUDAH DITERIMA -->
+                                    <span
+                                        v-if="
+                                            getGoodsReceipt(purchase)?.status === 'received'
+                                        "
+                                        class="inline-flex items-center rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700"
+                                    >
+                                        GR Diterima
+                                    </span>
+
+
+                                    <!-- PO SELESAI -->
+                                    <span
+                                        v-if="
+                                            getPurchaseOrder(purchase)?.status === 'received'
+                                        "
+                                        class="inline-flex items-center rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700"
+                                    >
+                                        Selesai
+                                    </span>
+
                                 </div>
+
                             </td>
+
                         </tr>
 
-                        <tr v-if="filteredPurchases.length === 0">
+
+                        <!-- LOADING -->
+                        <tr v-if="loading">
+
                             <td
-                                colspan="7"
+                                colspan="8"
                                 class="px-5 py-14 text-center"
                             >
+
+                                <div
+                                    class="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-gray-200 border-t-blue-600"
+                                ></div>
+
+                                <p class="mt-4 text-sm text-gray-500">
+                                    Memuat data pembelian...
+                                </p>
+
+                            </td>
+
+                        </tr>
+
+
+                        <!-- EMPTY -->
+                        <tr
+                            v-else-if="purchases.length === 0"
+                        >
+
+                            <td
+                                colspan="8"
+                                class="px-5 py-14 text-center"
+                            >
+
                                 <div class="text-4xl">
                                     🧾
                                 </div>
 
-                                <p class="mt-4 text-sm font-semibold text-gray-900">
+                                <p
+                                    class="mt-4 text-sm font-semibold text-gray-900"
+                                >
                                     Data pembelian tidak ditemukan
                                 </p>
 
                                 <p class="mt-1 text-xs text-gray-500">
-                                    Coba ubah pencarian atau filter.
+                                    Belum ada Purchase Request atau filter
+                                    tidak menemukan data.
                                 </p>
+
                             </td>
+
                         </tr>
+
                     </tbody>
+
                 </table>
+
             </div>
 
+
+            <!-- FOOTER -->
             <div class="border-t border-gray-100 px-5 py-4">
+
                 <p class="text-xs text-gray-500">
+
                     Menampilkan
-                    <span class="font-semibold text-gray-700">
-                        {{ filteredPurchases.length }}
-                    </span>
-                    dari
+
                     <span class="font-semibold text-gray-700">
                         {{ purchases.length }}
                     </span>
-                    pembelian
+
+                    Purchase Request
+
                 </p>
+
             </div>
+
         </div>
 
-        <!-- Modals -->
+
+        <!-- ===================================================== -->
+        <!-- CREATE -->
+        <!-- ===================================================== -->
         <PurchaseCreateModal
             :show="showCreateModal"
-            :products="products"
-            :suppliers="suppliers"
-            :purchases="purchases"
             @close="showCreateModal = false"
-            @saved="handleCreateSaved"
+            @saved="handleCreated"
         />
 
+
+        <!-- ===================================================== -->
+        <!-- EDIT -->
+        <!-- ===================================================== -->
         <PurchaseEditModal
             :show="showEditModal"
             :purchase="selectedPurchase"
-            :products="products"
-            :suppliers="suppliers"
             @close="showEditModal = false"
             @saved="handleEdited"
         />
 
+
+        <!-- ===================================================== -->
+        <!-- SHOW -->
+        <!-- ===================================================== -->
         <PurchaseShowModal
             :show="showShowModal"
             :purchase="selectedPurchase"
@@ -282,418 +603,748 @@
             @edit="handleShowEdit"
         />
 
+
+        <!-- ===================================================== -->
+        <!-- APPROVAL -->
+        <!-- ===================================================== -->
         <PurchaseApprovalModal
             :show="showApprovalModal"
             :purchase="selectedPurchase"
-            :purchases="purchases"
             @close="showApprovalModal = false"
             @approved="handleApproval"
+            @rejected="handleRejected"
         />
 
+
+        <!-- ===================================================== -->
+        <!-- PURCHASE ORDER -->
+        <!-- ===================================================== -->
+        <PurchaseOrderModal
+            :show="showPOModal"
+            :purchase="selectedPurchase"
+            @close="showPOModal = false"
+            @saved="handlePOSaved"
+        />
+
+
+        <!-- ===================================================== -->
+        <!-- GOODS RECEIPT -->
+        <!-- ===================================================== -->
         <PurchaseReceiveModal
             :show="showReceiveModal"
             :purchase="selectedPurchase"
-            :warehouses="warehouses"
             @close="showReceiveModal = false"
             @received="handleReceived"
         />
+
     </div>
 </template>
 
-<script setup>
-import { computed, ref } from 'vue'
 
-import PurchaseCreateModal from '../../components/erp/purchases/PurchaseCreateModal.vue'
-import PurchaseEditModal from '../../components/erp/purchases/PurchaseEditModal.vue'
-import PurchaseShowModal from '../../components/erp/purchases/PurchaseShowModal.vue'
-import PurchaseApprovalModal from '../../components/erp/purchases/PurchaseApprovalModal.vue'
-import PurchaseReceiveModal from '../../components/erp/purchases/PurchaseReceiveModal.vue'
+<script setup>
+
+import {
+    computed,
+    onMounted,
+    ref,
+} from 'vue'
+
+
+import {
+    erpApi,
+    getApiError,
+} from '@/services/api'
+
+
+import PurchaseCreateModal
+    from '../../components/erp/purchases/PurchaseCreateModal.vue'
+
+import PurchaseEditModal
+    from '../../components/erp/purchases/PurchaseEditModal.vue'
+
+import PurchaseShowModal
+    from '../../components/erp/purchases/PurchaseShowModal.vue'
+
+import PurchaseApprovalModal
+    from '../../components/erp/purchases/PurchaseApprovalModal.vue'
+
+import PurchaseOrderModal
+    from '../../components/erp/purchases/PurchaseOrderModal.vue'
+
+import PurchaseReceiveModal
+    from '../../components/erp/purchases/PurchaseReceiveModal.vue'
+
+
+// =========================================================
+// STATE
+// =========================================================
+
+const purchases = ref([])
+
+const loading = ref(false)
+
+const errorMessage = ref('')
 
 const search = ref('')
-const statusFilter = ref('all')
-const supplierFilter = ref('all')
 
-const showCreateModal = ref(false)
-const showEditModal = ref(false)
-const showShowModal = ref(false)
-const showApprovalModal = ref(false)
-const showReceiveModal = ref(false)
+const statusFilter = ref('all')
 
 const selectedPurchase = ref(null)
 
-const suppliers = ref([
-    {
-        id: 1,
-        name: 'PT Supplier Jaya',
-    },
-    {
-        id: 2,
-        name: 'CV Sumber Makmur',
-    },
-    {
-        id: 3,
-        name: 'PT Maju Bersama',
-    },
-])
 
-const products = ref([
-    {
-        id: 1,
-        name: 'Ban Truk',
-        code: 'PRD-0001',
-        unit: 'PCS',
-    },
-    {
-        id: 2,
-        name: 'Oli Mesin 15W-40',
-        code: 'PRD-0002',
-        unit: 'LITER',
-    },
-    {
-        id: 3,
-        name: 'Kampas Rem',
-        code: 'PRD-0003',
-        unit: 'SET',
-    },
-    {
-        id: 4,
-        name: 'Saklar Single',
-        code: 'PRD-0004',
-        unit: 'PCS',
-    },
-])
+// =========================================================
+// MODAL STATE
+// =========================================================
 
-const warehouses = ref([
-    {
-        id: 1,
-        name: 'Gudang Utama',
-    },
-    {
-        id: 2,
-        name: 'Gudang Sparepart',
-    },
-])
+const showCreateModal = ref(false)
 
-const purchases = ref([
-    {
-        id: 1,
-        documentNumber: 'PR-2026-0001',
-        requestNumber: null,
-        purchaseOrderNumber: null,
-        receiptNumber: null,
-        date: '2026-10-02',
-        supplierId: null,
-        supplierName: null,
-        purpose: 'Kebutuhan sparepart kendaraan',
-        notes: 'Pengadaan untuk stok operasional.',
-        status: 'draft',
-        items: [
-            {
-                productId: 1,
-                productName: 'Ban Truk',
-                quantity: 4,
-                unit: 'PCS',
-                price: null,
-                subtotal: null,
-                receivedQuantity: 0,
-            },
-            {
-                productId: 2,
-                productName: 'Oli Mesin 15W-40',
-                quantity: 10,
-                unit: 'LITER',
-                price: null,
-                subtotal: null,
-                receivedQuantity: 0,
-            },
-        ],
-        total: 0,
-    },
+const showEditModal = ref(false)
 
-    {
-        id: 2,
-        documentNumber: 'REQ-2026-0001',
-        requestNumber: 'REQ-2026-0001',
-        purchaseOrderNumber: null,
-        receiptNumber: null,
-        date: '2026-10-01',
-        supplierId: 1,
-        supplierName: 'PT Supplier Jaya',
-        purpose: 'Pembelian kebutuhan maintenance',
-        notes: '',
-        status: 'submitted',
-        items: [
-            {
-                productId: 3,
-                productName: 'Kampas Rem',
-                quantity: 2,
-                unit: 'SET',
-                price: 350000,
-                subtotal: 700000,
-                receivedQuantity: 0,
-            },
-        ],
-        total: 700000,
-    },
+const showShowModal = ref(false)
 
-    {
-        id: 3,
-        documentNumber: 'PO-2026-0001',
-        requestNumber: 'REQ-2026-0002',
-        purchaseOrderNumber: 'PO-2026-0001',
-        receiptNumber: null,
-        date: '2026-09-30',
-        supplierId: 2,
-        supplierName: 'CV Sumber Makmur',
-        purpose: 'Pengadaan oli kendaraan',
-        notes: '',
-        status: 'purchased',
-        items: [
-            {
-                productId: 2,
-                productName: 'Oli Mesin 15W-40',
-                quantity: 20,
-                unit: 'LITER',
-                price: 85000,
-                subtotal: 1700000,
-                receivedQuantity: 0,
-            },
-        ],
-        total: 1700000,
-    },
+const showApprovalModal = ref(false)
 
-    {
-        id: 4,
-        documentNumber: 'GR-2026-0001',
-        requestNumber: 'REQ-2026-0003',
-        purchaseOrderNumber: 'PO-2026-0002',
-        receiptNumber: 'GR-2026-0001',
-        date: '2026-09-28',
-        supplierId: 3,
-        supplierName: 'PT Maju Bersama',
-        purpose: 'Pengadaan tools workshop',
-        notes: 'Barang sudah diterima lengkap.',
-        status: 'received',
-        items: [
-            {
-                productId: 4,
-                productName: 'Saklar Single',
-                quantity: 10,
-                unit: 'PCS',
-                price: 15000,
-                subtotal: 150000,
-                receivedQuantity: 10,
-            },
-        ],
-        total: 150000,
-        receivedDate: '2026-09-29',
-        warehouseId: 1,
-        warehouseName: 'Gudang Utama',
-    },
-])
+const showPOModal = ref(false)
 
-const filteredPurchases = computed(() => {
-    const keyword = search.value.toLowerCase().trim()
+const showReceiveModal = ref(false)
 
-    return purchases.value.filter((purchase) => {
-        const matchesSearch =
-            !keyword ||
-            purchase.documentNumber
-                ?.toLowerCase()
-                .includes(keyword) ||
-            purchase.requestNumber
-                ?.toLowerCase()
-                .includes(keyword) ||
-            purchase.purchaseOrderNumber
-                ?.toLowerCase()
-                .includes(keyword) ||
-            purchase.purpose
-                ?.toLowerCase()
-                .includes(keyword) ||
-            purchase.supplierName
-                ?.toLowerCase()
-                .includes(keyword)
 
-        const matchesStatus =
-            statusFilter.value === 'all' ||
-            purchase.status === statusFilter.value
-
-        const matchesSupplier =
-            supplierFilter.value === 'all' ||
-            purchase.supplierId === Number(supplierFilter.value)
-
-        return (
-            matchesSearch &&
-            matchesStatus &&
-            matchesSupplier
-        )
-    })
-})
+// =========================================================
+// SUMMARY
+// =========================================================
 
 const summaryCards = computed(() => [
+
     {
-        label: 'Dibuat',
+        label: 'PR Aktif',
         value: purchases.value.filter(
-            (item) => item.status === 'draft'
+            item =>
+                ![
+                    'rejected',
+                    'cancelled',
+                ].includes(item.status)
         ).length,
-        color: 'text-gray-900',
+        color: 'text-[#003366]',
     },
+
     {
-        label: 'Diajukan',
+        label: 'Menunggu Approval',
         value: purchases.value.filter(
-            (item) => item.status === 'submitted'
+            item => item.status === 'submitted'
         ).length,
         color: 'text-blue-600',
     },
+
     {
-        label: 'Dibeli',
+        label: 'PR Disetujui',
         value: purchases.value.filter(
-            (item) => item.status === 'purchased'
-        ).length,
-        color: 'text-orange-600',
-    },
-    {
-        label: 'Diterima',
-        value: purchases.value.filter(
-            (item) => item.status === 'received'
+            item => item.status === 'approved'
         ).length,
         color: 'text-green-600',
     },
+
     {
-        label: 'Total Pembelian',
-        value: formatCurrency(
-            purchases.value.reduce(
-                (total, item) => total + Number(item.total || 0),
-                0
-            )
-        ),
-        color: 'text-[#003366]',
+        label: 'PO Berjalan',
+        value: purchases.value.filter(
+            item => {
+                const po = getPurchaseOrder(item)
+
+                return po &&
+                    ![
+                        'received',
+                        'cancelled',
+                    ].includes(po.status)
+            }
+        ).length,
+        color: 'text-purple-600',
     },
+
+    {
+        label: 'Menunggu GR',
+        value: purchases.value.filter(
+            item => {
+                const po = getPurchaseOrder(item)
+
+                if (!po) {
+                    return false
+                }
+
+                return canCreateGoodsReceipt(item)
+            }
+        ).length,
+        color: 'text-orange-600',
+    },
+
+    {
+        label: 'Selesai',
+        value: purchases.value.filter(
+            item => {
+                const po = getPurchaseOrder(item)
+                const gr = getGoodsReceipt(item)
+
+                return (
+                    po?.status === 'received' ||
+                    gr?.status === 'received'
+                )
+            }
+        ).length,
+        color: 'text-emerald-600',
+    },
+
 ])
 
-function openCreateModal() {
-    showCreateModal.value = true
+
+// =========================================================
+// LOAD DATA
+// =========================================================
+
+async function loadPurchases() {
+
+    loading.value = true
+
+    errorMessage.value = ''
+
+    try {
+
+        const params = {}
+
+        if (search.value.trim()) {
+            params.search =
+                search.value.trim()
+        }
+
+        if (statusFilter.value !== 'all') {
+            params.status =
+                statusFilter.value
+        }
+
+        const response =
+            await erpApi.purchases.requests.list(
+                params
+            )
+
+        purchases.value =
+            response?.data?.data ||
+            response?.data ||
+            []
+
+    } catch (error) {
+
+        console.error(
+            'Gagal memuat Purchase Request:',
+            error
+        )
+
+        errorMessage.value =
+            getApiError(error) ||
+            'Gagal memuat data pembelian.'
+
+        purchases.value = []
+
+    } finally {
+
+        loading.value = false
+
+    }
+
 }
+
+
+// =========================================================
+// PURCHASE ORDER
+// =========================================================
+
+function getPurchaseOrder(purchase) {
+
+    return (
+        purchase?.purchase_order ||
+        purchase?.purchaseOrder ||
+        purchase?.purchase_orders?.[0] ||
+        purchase?.purchaseOrders?.[0] ||
+        null
+    )
+
+}
+
+async function orderPurchaseOrder(purchase) {
+    const po = getPurchaseOrder(purchase)
+
+    if (!po?.id) {
+        return
+    }
+
+    if (po.status !== 'draft') {
+        return
+    }
+
+    const confirmed = window.confirm(
+        `Pesan ${po.po_number}? Setelah dipesan, PO tidak dapat diedit lagi.`
+    )
+
+    if (!confirmed) {
+        return
+    }
+
+    try {
+        errorMessage.value = ''
+
+        await erpApi.purchases.orders.order(po.id)
+
+        await loadPurchases()
+    } catch (error) {
+        console.error(
+            'Gagal memesan Purchase Order:',
+            error
+        )
+
+        errorMessage.value =
+            getApiError(error) ||
+            'Purchase Order gagal dipesan.'
+    }
+}
+
+
+// =========================================================
+// GOODS RECEIPT
+// =========================================================
+
+function getGoodsReceipt(purchase) {
+
+    const po =
+        getPurchaseOrder(purchase)
+
+    if (!po) {
+        return null
+    }
+
+    return (
+        po?.goods_receipt ||
+        po?.goodsReceipt ||
+        po?.goods_receipts?.[
+            po.goods_receipts.length - 1
+        ] ||
+        po?.goodsReceipts?.[
+            po.goodsReceipts.length - 1
+        ] ||
+        null
+    )
+
+}
+
+async function receiveGoodsReceipt(purchase) {
+    const gr = getGoodsReceipt(purchase)
+
+    if (!gr?.id) {
+        return
+    }
+
+    if (gr.status !== 'draft') {
+        return
+    }
+
+    const confirmed = window.confirm(
+        `Terima barang untuk ${gr.receipt_number}?`
+    )
+
+    if (!confirmed) {
+        return
+    }
+
+    try {
+        errorMessage.value = ''
+
+        await erpApi.purchases.receipts.receive(
+            gr.id
+        )
+
+        await loadPurchases()
+    } catch (error) {
+        console.error(
+            'Gagal menerima Goods Receipt:',
+            error
+        )
+
+        errorMessage.value =
+            getApiError(error) ||
+            'Barang gagal diterima.'
+    }
+}
+
+// =========================================================
+// CREATE
+// =========================================================
+
+function openCreateModal() {
+
+    showCreateModal.value = true
+
+}
+
+
+async function handleCreated() {
+
+    showCreateModal.value = false
+
+    await loadPurchases()
+
+}
+
+
+// =========================================================
+// EDIT
+// =========================================================
 
 function openEditModal(purchase) {
+
     selectedPurchase.value = purchase
+
     showEditModal.value = true
+
 }
 
-function openShowModal(purchase) {
-    selectedPurchase.value = purchase
-    showShowModal.value = true
-}
 
-function openApprovalModal(purchase) {
-    selectedPurchase.value = purchase
-    showApprovalModal.value = true
-}
-
-function openReceiveModal(purchase) {
-    selectedPurchase.value = purchase
-    showReceiveModal.value = true
-}
-
-function handleCreated(purchase) {
-    purchases.value.unshift(purchase)
-    showCreateModal.value = false
-}
-
-function handleEdited(updatedPurchase) {
-    const index = purchases.value.findIndex(
-        (item) => item.id === updatedPurchase.id
-    )
-
-    if (index !== -1) {
-        purchases.value[index] = updatedPurchase
-    }
+async function handleEdited() {
 
     showEditModal.value = false
+
+    selectedPurchase.value = null
+
+    await loadPurchases()
+
 }
+
+
+// =========================================================
+// SHOW
+// =========================================================
+
+function openShowModal(purchase) {
+
+    selectedPurchase.value = purchase
+
+    showShowModal.value = true
+
+}
+
 
 function handleShowEdit(purchase) {
+
     showShowModal.value = false
+
     openEditModal(purchase)
+
 }
 
-function handleApproved(updatedPurchase) {
-    const index = purchases.value.findIndex(
-        (item) => item.id === updatedPurchase.id
-    )
 
-    if (index !== -1) {
-        purchases.value[index] = updatedPurchase
-    }
+// =========================================================
+// APPROVAL
+// =========================================================
+
+function openApprovalModal(purchase) {
+
+    selectedPurchase.value = purchase
+
+    showApprovalModal.value = true
+
+}
+
+
+async function handleApproval() {
 
     showApprovalModal.value = false
+
+    selectedPurchase.value = null
+
+    await loadPurchases()
+
 }
 
-function handleReceived(updatedPurchase) {
-    const index = purchases.value.findIndex(
-        (item) => item.id === updatedPurchase.id
-    )
 
-    if (index !== -1) {
-        purchases.value[index] = updatedPurchase
-    }
+async function handleRejected() {
+
+    showApprovalModal.value = false
+
+    selectedPurchase.value = null
+
+    await loadPurchases()
+
+}
+
+
+// =========================================================
+// PURCHASE ORDER
+// =========================================================
+
+function openPOModal(purchase) {
+
+    selectedPurchase.value = purchase
+
+    showPOModal.value = true
+
+}
+
+
+async function handlePOSaved() {
+
+    showPOModal.value = false
+
+    selectedPurchase.value = null
+
+    await loadPurchases()
+
+}
+
+
+// =========================================================
+// GOODS RECEIPT
+// =========================================================
+
+function openReceiveModal(purchase) {
+
+    selectedPurchase.value = purchase
+
+    showReceiveModal.value = true
+
+}
+
+
+async function handleReceived() {
 
     showReceiveModal.value = false
+
+    selectedPurchase.value = null
+
+    await loadPurchases()
+
 }
+
+
+// =========================================================
+// PR STATUS
+// =========================================================
 
 function statusLabel(status) {
+
     return {
+
         draft: 'Dibuat',
+
         submitted: 'Diajukan',
-        purchased: 'Dibeli',
-        received: 'Diterima',
+
+        approved: 'Disetujui',
+
+        rejected: 'Ditolak',
+
+        cancelled: 'Dibatalkan',
+
     }[status] || status
+
 }
+
 
 function statusClass(status) {
+
     return {
-        draft: 'bg-gray-100 text-gray-600',
-        submitted: 'bg-blue-50 text-blue-700',
-        purchased: 'bg-orange-50 text-orange-700',
-        received: 'bg-green-50 text-green-700',
-    }[status]
+
+        draft:
+            'bg-gray-100 text-gray-600',
+
+        submitted:
+            'bg-blue-50 text-blue-700',
+
+        approved:
+            'bg-green-50 text-green-700',
+
+        rejected:
+            'bg-red-50 text-red-700',
+
+        cancelled:
+            'bg-orange-50 text-orange-700',
+
+    }[status] ||
+        'bg-gray-100 text-gray-600'
+
 }
 
-function documentNumberLabel(purchase) {
-    if (purchase.status === 'draft') {
-        return 'Purchase Request'
+
+// =========================================================
+// PO STATUS
+// =========================================================
+
+function poStatusLabel(po) {
+
+    if (!po) {
+        return 'Belum PO'
     }
 
-    if (purchase.status === 'submitted') {
-        return 'Request Approval'
-    }
+    return {
 
-    if (purchase.status === 'purchased') {
-        return 'Purchase Order'
-    }
+        draft: 'Draft',
 
-    return 'Goods Receipt'
+        submitted: 'Diajukan',
+
+        approved: 'Disetujui',
+
+        ordered: 'Dipesan',
+
+        partial: 'Partial',
+
+        received: 'Selesai',
+
+        cancelled: 'Dibatalkan',
+
+    }[po.status] ||
+        po.status ||
+        '-'
+
 }
 
-function formatCurrency(value) {
-    if (value === null || value === undefined) {
+
+function poStatusClass(po) {
+
+    if (!po) {
+        return 'bg-gray-100 text-gray-400'
+    }
+
+    return {
+
+        draft:
+            'bg-gray-100 text-gray-600',
+
+        submitted:
+            'bg-blue-50 text-blue-700',
+
+        approved:
+            'bg-green-50 text-green-700',
+
+        ordered:
+            'bg-purple-50 text-purple-700',
+
+        partial:
+            'bg-yellow-50 text-yellow-700',
+
+        received:
+            'bg-emerald-50 text-emerald-700',
+
+        cancelled:
+            'bg-red-50 text-red-700',
+
+    }[po.status] ||
+        'bg-gray-100 text-gray-600'
+
+}
+
+
+// =========================================================
+// GR STATUS
+// =========================================================
+
+function grStatusLabel(gr) {
+
+    if (!gr) {
+        return 'Belum GR'
+    }
+
+    return {
+
+        draft: 'Draft',
+
+        received: 'Diterima',
+
+        cancelled: 'Dibatalkan',
+
+    }[gr.status] ||
+        gr.status ||
+        '-'
+
+}
+
+
+function grStatusClass(gr) {
+
+    if (!gr) {
+        return 'bg-gray-100 text-gray-400'
+    }
+
+    return {
+
+        draft:
+            'bg-gray-100 text-gray-600',
+
+        received:
+            'bg-emerald-50 text-emerald-700',
+
+        cancelled:
+            'bg-red-50 text-red-700',
+
+    }[gr.status] ||
+        'bg-gray-100 text-gray-600'
+
+}
+
+
+// =========================================================
+// GR ACTION
+// =========================================================
+
+function canCreateGoodsReceipt(purchase) {
+
+    const po =
+        getPurchaseOrder(purchase)
+
+    if (!po) {
+        return false
+    }
+
+    return [
+        'ordered',
+        'partial',
+    ].includes(po.status)
+
+}
+
+
+// =========================================================
+// FORMAT
+// =========================================================
+
+function formatDate(value) {
+
+    if (!value) {
         return '-'
     }
 
-    return new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        minimumFractionDigits: 0,
-    }).format(value)
+    const date =
+        new Date(value)
+
+    if (
+        Number.isNaN(
+            date.getTime()
+        )
+    ) {
+        return '-'
+    }
+
+    return new Intl.DateTimeFormat(
+        'id-ID',
+        {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+        }
+    ).format(date)
+
 }
 
-function formatDate(value) {
-    if (!value) return '-'
 
-    return new Intl.DateTimeFormat('id-ID', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-    }).format(new Date(value))
-}
+// =========================================================
+// INIT
+// =========================================================
+
+onMounted(() => {
+
+    loadPurchases()
+
+})
+
 </script>

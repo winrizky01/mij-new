@@ -9,15 +9,21 @@
                 class="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
             >
                 <!-- Header -->
-                <div class="flex items-start justify-between border-b border-gray-100 px-6 py-5">
+                <div
+                    class="flex items-start justify-between border-b border-gray-100 px-6 py-5"
+                >
                     <div class="flex min-w-0 items-center gap-4">
-                        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-lg font-bold text-[#0052cc]">
+                        <div
+                            class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-lg font-bold text-[#0052cc]"
+                        >
                             {{ getInitial(partner.name) }}
                         </div>
 
                         <div class="min-w-0">
                             <div class="flex flex-wrap items-center gap-2">
-                                <h2 class="truncate text-lg font-semibold text-[#003366]">
+                                <h2
+                                    class="truncate text-lg font-semibold text-[#003366]"
+                                >
                                     {{ partner.name }}
                                 </h2>
 
@@ -59,38 +65,51 @@
                 <!-- Body -->
                 <div class="overflow-y-auto px-6 py-5">
                     <!-- Status -->
-                    <div class="mb-6 rounded-xl border border-gray-100 bg-gray-50 p-4">
-                        <div class="flex items-center justify-between gap-4">
+                    <div
+                        class="mb-6 rounded-xl border border-gray-100 bg-gray-50 p-4"
+                    >
+                        <div
+                            class="flex items-center justify-between gap-4"
+                        >
                             <div>
                                 <p class="text-sm font-medium text-gray-700">
                                     Status Partner
                                 </p>
 
                                 <p class="mt-1 text-xs text-gray-400">
-                                    Status menentukan apakah partner dapat digunakan dalam transaksi.
+                                    Status menentukan apakah partner dapat
+                                    digunakan dalam transaksi.
                                 </p>
                             </div>
 
                             <span
                                 class="shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold"
                                 :class="
-                                    partner.active
+                                    partner.is_active
                                         ? 'bg-green-50 text-green-700'
                                         : 'bg-gray-200 text-gray-500'
                                 "
                             >
-                                {{ partner.active ? 'Aktif' : 'Nonaktif' }}
+                                {{
+                                    partner.is_active
+                                        ? 'Aktif'
+                                        : 'Nonaktif'
+                                }}
                             </span>
                         </div>
                     </div>
 
-                    <!-- Informasi Utama -->
+                    <!-- Informasi Partner -->
                     <section>
-                        <h3 class="mb-3 text-sm font-semibold text-[#003366]">
+                        <h3
+                            class="mb-3 text-sm font-semibold text-[#003366]"
+                        >
                             Informasi Partner
                         </h3>
 
-                        <div class="grid grid-cols-1 gap-4 rounded-xl border border-gray-100 p-4 sm:grid-cols-2">
+                        <div
+                            class="grid grid-cols-1 gap-4 rounded-xl border border-gray-100 p-4 sm:grid-cols-2"
+                        >
                             <DetailItem
                                 label="Kode Partner"
                                 :value="partner.code"
@@ -102,13 +121,18 @@
                             />
 
                             <DetailItem
-                                label="NPWP"
-                                :value="partner.taxNumber"
+                                label="Nama Partner"
+                                :value="partner.name"
                             />
 
                             <DetailItem
-                                label="Contact Person"
-                                :value="partner.contactPerson"
+                                label="Nama Perusahaan"
+                                :value="partner.company"
+                            />
+
+                            <DetailItem
+                                label="NPWP"
+                                :value="partner.tax_number"
                             />
 
                             <DetailItem
@@ -123,53 +147,56 @@
                         </div>
                     </section>
 
-                    <!-- Alamat -->
-                    <section class="mt-6">
-                        <h3 class="mb-3 text-sm font-semibold text-[#003366]">
-                            Alamat
-                        </h3>
-
-                        <div class="rounded-xl border border-gray-100 p-4">
-                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                <DetailItem
-                                    label="Provinsi"
-                                    :value="partner.provinceName"
-                                />
-
-                                <DetailItem
-                                    label="Kota / Kabupaten"
-                                    :value="partner.cityName"
-                                />
-                            </div>
-
-                            <div class="mt-4">
-                                <DetailItem
-                                    label="Alamat Lengkap"
-                                    :value="partner.address"
-                                />
-                            </div>
-                        </div>
-                    </section>
-
                     <!-- Catatan -->
                     <section
                         v-if="partner.notes"
                         class="mt-6"
                     >
-                        <h3 class="mb-3 text-sm font-semibold text-[#003366]">
+                        <h3
+                            class="mb-3 text-sm font-semibold text-[#003366]"
+                        >
                             Catatan
                         </h3>
 
-                        <div class="rounded-xl border border-gray-100 bg-gray-50 p-4">
-                            <p class="whitespace-pre-line text-sm leading-6 text-gray-600">
+                        <div
+                            class="rounded-xl border border-gray-100 bg-gray-50 p-4"
+                        >
+                            <p
+                                class="whitespace-pre-line text-sm leading-6 text-gray-600"
+                            >
                                 {{ partner.notes }}
                             </p>
+                        </div>
+                    </section>
+
+                    <!-- Metadata -->
+                    <section class="mt-6">
+                        <h3
+                            class="mb-3 text-sm font-semibold text-[#003366]"
+                        >
+                            Informasi Sistem
+                        </h3>
+
+                        <div
+                            class="grid grid-cols-1 gap-4 rounded-xl border border-gray-100 p-4 sm:grid-cols-2"
+                        >
+                            <DetailItem
+                                label="Dibuat"
+                                :value="formatDate(partner.created_at)"
+                            />
+
+                            <DetailItem
+                                label="Terakhir Diubah"
+                                :value="formatDate(partner.updated_at)"
+                            />
                         </div>
                     </section>
                 </div>
 
                 <!-- Footer -->
-                <div class="flex flex-col-reverse gap-3 border-t border-gray-100 px-6 py-4 sm:flex-row sm:justify-end">
+                <div
+                    class="flex flex-col-reverse gap-3 border-t border-gray-100 px-6 py-4 sm:flex-row sm:justify-end"
+                >
                     <button
                         type="button"
                         class="rounded-xl border border-gray-200 px-5 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
@@ -194,7 +221,7 @@
 <script setup>
 import DetailItem from './DetailItem.vue'
 
-defineProps({
+const props = defineProps({
     show: {
         type: Boolean,
         default: false,
@@ -220,13 +247,17 @@ function edit() {
 }
 
 function getInitial(name) {
-    if (!name) return '?'
+    if (!name) {
+        return '?'
+    }
 
     return name
         .trim()
         .split(' ')
         .slice(0, 2)
-        .map(word => word.charAt(0))
+        .map(word =>
+            word.charAt(0)
+        )
         .join('')
         .toUpperCase()
 }
@@ -243,11 +274,39 @@ function typeLabel(type) {
 
 function typeBadgeClass(type) {
     const classes = {
-        customer: 'bg-green-50 text-green-700',
-        supplier: 'bg-orange-50 text-orange-700',
-        both: 'bg-purple-50 text-purple-700',
+        customer:
+            'bg-green-50 text-green-700',
+
+        supplier:
+            'bg-orange-50 text-orange-700',
+
+        both:
+            'bg-purple-50 text-purple-700',
     }
 
-    return classes[type] || 'bg-gray-100 text-gray-600'
+    return (
+        classes[type] ||
+        'bg-gray-100 text-gray-600'
+    )
+}
+
+function formatDate(value) {
+    if (!value) {
+        return '-'
+    }
+
+    const date = new Date(value)
+
+    if (Number.isNaN(date.getTime())) {
+        return '-'
+    }
+
+    return new Intl.DateTimeFormat(
+        'id-ID',
+        {
+            dateStyle: 'medium',
+            timeStyle: 'short',
+        }
+    ).format(date)
 }
 </script>

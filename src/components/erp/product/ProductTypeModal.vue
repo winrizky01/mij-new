@@ -265,28 +265,13 @@ async function submit() {
         }
 
 
-        /*
-         * API KATEGORI DI SINI
-         *
-         * Contoh:
-         *
-         * const response =
-         *     await erpApi.master.productCategories.create(
-         *         payload
-         *     )
-         *
-         * const category =
-         *     response.data.data
-         *
-         * emit('saved', category)
-         */
+        
+        const response = await erpApi.master.productTypes.create(payload)
+         
+        const types = response.data.data
+         
+        emit('saved', types)
 
-
-        // sementara sebelum API disambungkan
-        emit('saved', {
-            id: Date.now(),
-            ...payload,
-        })
 
     } catch (error) {
 

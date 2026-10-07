@@ -9,11 +9,13 @@
                 class="max-h-[92vh] w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl"
             >
                 <!-- Header -->
-                <div class="flex items-start justify-between border-b border-gray-100 px-5 py-4 sm:px-6">
+                <div
+                    class="flex items-start justify-between border-b border-gray-100 px-5 py-4 sm:px-6"
+                >
                     <div>
                         <div class="flex flex-wrap items-center gap-2">
                             <h2 class="text-lg font-bold text-gray-900">
-                                {{ purchase.documentNumber }}
+                                {{ purchase.request_number || 'Purchase Request' }}
                             </h2>
 
                             <span
@@ -25,7 +27,7 @@
                         </div>
 
                         <p class="mt-1 text-sm text-gray-500">
-                            {{ purchase.purpose }}
+                            Detail Purchase Request
                         </p>
                     </div>
 
@@ -39,78 +41,94 @@
                 </div>
 
                 <div class="max-h-[75vh] overflow-y-auto p-5 sm:p-6">
-                    <!-- Document numbers -->
-                    <div class="grid gap-3 sm:grid-cols-4">
+                    <!-- Document -->
+                    <div class="grid gap-3 sm:grid-cols-2">
                         <DocumentCard
-                            label="PR"
-                            :value="purchase.documentNumber?.startsWith('PR-')
-                                ? purchase.documentNumber
-                                : '—'"
+                            label="Nomor PR"
+                            :value="purchase.request_number || '—'"
                         />
 
                         <DocumentCard
-                            label="REQ"
-                            :value="purchase.requestNumber || '—'"
-                        />
-
-                        <DocumentCard
-                            label="PO"
-                            :value="purchase.purchaseOrderNumber || '—'"
-                        />
-
-                        <DocumentCard
-                            label="GR"
-                            :value="purchase.receiptNumber || '—'"
+                            label="Status"
+                            :value="statusLabel(purchase.status)"
                         />
                     </div>
 
                     <!-- Info -->
                     <div class="mt-6 grid gap-4 sm:grid-cols-3">
                         <InfoItem
-                            label="Tanggal"
-                            :value="formatDate(purchase.date)"
+                            label="Tanggal Pengajuan"
+                            :value="formatDate(purchase.request_date)"
                         />
 
                         <InfoItem
-                            label="Supplier"
-                            :value="purchase.supplierName || 'Belum ditentukan'"
+                            label="Diminta Oleh"
+                            :value="
+                                purchase.requested_by?.name ||
+                                purchase.requestedBy?.name ||
+                                'Belum ditentukan'
+                            "
                         />
 
                         <InfoItem
                             label="Jumlah Item"
-                            :value="`${purchase.items.length} item`"
+                            :value="`${purchase.items?.length || 0} item`"
                         />
                     </div>
 
                     <!-- Timeline -->
-                    <div class="mt-6 rounded-xl border border-gray-100 bg-gray-50 p-5">
+                    <div
+                        class="mt-6 rounded-xl border border-gray-100 bg-gray-50 p-5"
+                    >
                         <h3 class="text-sm font-bold text-gray-900">
-                            Progress Pembelian
+                            Progress Purchase Request
                         </h3>
 
                         <div class="mt-5 space-y-4">
                             <TimelineItem
                                 label="Dibuat"
                                 :active="true"
-                                :date="formatDate(purchase.date)"
+                                :date="formatDate(purchase.created_at)"
                             />
 
                             <TimelineItem
                                 label="Diajukan"
-                                :active="['submitted', 'purchased', 'received'].includes(purchase.status)"
-                                :date="purchase.requestNumber ? 'Pengajuan telah dibuat' : 'Menunggu pengajuan'"
+                                :active="
+                                    ['submitted', 'approved', 'rejected', 'cancelled']
+                                        .includes(purchase.status)
+                                "
+                                :date="
+                                    ['submitted', 'approved', 'rejected', 'cancelled']
+                                        .includes(purchase.status)
+                                        ? 'Purchase Request telah diajukan'
+                                        : 'Menunggu pengajuan'
+                                "
                             />
 
                             <TimelineItem
-                                label="Dibeli"
-                                :active="['purchased', 'received'].includes(purchase.status)"
-                                :date="purchase.purchaseOrderNumber || 'Menunggu approval'"
+                                label="Disetujui"
+                                :active="purchase.status === 'approved'"
+                                :date="
+                                    purchase.status === 'approved'
+                                        ? 'Purchase Request telah disetujui'
+                                        : 'Menunggu approval'
+                                "
                             />
 
                             <TimelineItem
-                                label="Diterima"
-                                :active="purchase.status === 'received'"
-                                :date="purchase.receiptNumber || 'Menunggu penerimaan'"
+                                label="Selesai"
+                                :active="
+                                    ['rejected', 'cancelled'].includes(
+                                        purchase.status
+                                    )
+                                "
+                                :date="
+                                    purchase.status === 'rejected'
+                                        ? 'Purchase Request ditolak'
+                                        : purchase.status === 'cancelled'
+                                            ? 'Purchase Request dibatalkan'
+                                            : 'Belum selesai'
+                                "
                                 :last="true"
                             />
                         </div>
@@ -122,69 +140,97 @@
                             Detail Barang
                         </h3>
 
-                        <div class="overflow-x-auto rounded-xl border border-gray-200">
-                            <table class="w-full min-w-[650px]">
+                        <div
+                            class="overflow-x-auto rounded-xl border border-gray-200"
+                        >
+                            <table class="w-full min-w-[600px]">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">
+                                        <th
+                                            class="px-4 py-3 text-left text-xs font-semibold text-gray-500"
+                                        >
                                             Barang
                                         </th>
 
-                                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500">
+                                        <th
+                                            class="px-4 py-3 text-right text-xs font-semibold text-gray-500"
+                                        >
                                             Qty
                                         </th>
 
-                                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500">
-                                            Harga
+                                        <th
+                                            class="px-4 py-3 text-left text-xs font-semibold text-gray-500"
+                                        >
+                                            Satuan
                                         </th>
 
-                                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500">
-                                            Subtotal
+                                        <th
+                                            class="px-4 py-3 text-left text-xs font-semibold text-gray-500"
+                                        >
+                                            Catatan
                                         </th>
                                     </tr>
                                 </thead>
 
                                 <tbody class="divide-y divide-gray-100">
                                     <tr
-                                        v-for="(item, index) in purchase.items"
-                                        :key="index"
+                                        v-for="(item, index) in purchase.items || []"
+                                        :key="item.id || index"
                                     >
                                         <td class="px-4 py-3">
-                                            <p class="text-sm font-medium text-gray-900">
-                                                {{ item.productName }}
+                                            <p
+                                                class="text-sm font-medium text-gray-900"
+                                            >
+                                                {{
+                                                    item.product?.name ||
+                                                    item.product?.product_name ||
+                                                    'Produk tidak ditemukan'
+                                                }}
                                             </p>
 
-                                            <p class="text-xs text-gray-400">
-                                                {{ item.unit }}
+                                            <p
+                                                v-if="item.product?.code"
+                                                class="mt-0.5 text-xs text-gray-400"
+                                            >
+                                                {{ item.product.code }}
                                             </p>
                                         </td>
 
-                                        <td class="px-4 py-3 text-right text-sm">
+                                        <td
+                                            class="px-4 py-3 text-right text-sm font-medium text-gray-900"
+                                        >
                                             {{ item.quantity }}
                                         </td>
 
-                                        <td class="px-4 py-3 text-right text-sm">
-                                            {{ formatCurrency(item.price) }}
+                                        <td
+                                            class="px-4 py-3 text-sm text-gray-600"
+                                        >
+                                            {{
+                                                item.unit?.name ||
+                                                item.unit?.code ||
+                                                '—'
+                                            }}
                                         </td>
 
-                                        <td class="px-4 py-3 text-right text-sm font-semibold">
-                                            {{ formatCurrency(item.subtotal) }}
+                                        <td
+                                            class="px-4 py-3 text-sm text-gray-500"
+                                        >
+                                            {{ item.notes || '—' }}
+                                        </td>
+                                    </tr>
+
+                                    <tr
+                                        v-if="!purchase.items?.length"
+                                    >
+                                        <td
+                                            colspan="4"
+                                            class="px-4 py-8 text-center text-sm text-gray-400"
+                                        >
+                                            Tidak ada barang.
                                         </td>
                                     </tr>
                                 </tbody>
                             </table>
-                        </div>
-
-                        <div class="mt-4 flex justify-end">
-                            <div class="text-right">
-                                <p class="text-xs text-gray-500">
-                                    Total
-                                </p>
-
-                                <p class="text-xl font-bold text-[#003366]">
-                                    {{ formatCurrency(purchase.total) }}
-                                </p>
-                            </div>
                         </div>
                     </div>
 
@@ -193,7 +239,9 @@
                         v-if="purchase.notes"
                         class="mt-6 rounded-xl border border-gray-100 bg-gray-50 p-4"
                     >
-                        <p class="text-xs font-semibold uppercase text-gray-400">
+                        <p
+                            class="text-xs font-semibold uppercase text-gray-400"
+                        >
                             Catatan
                         </p>
 
@@ -204,20 +252,26 @@
                 </div>
 
                 <!-- Footer -->
-                <div class="flex justify-end gap-2 border-t border-gray-100 px-5 py-4 sm:px-6">
+                <div
+                    class="flex justify-end gap-2 border-t border-gray-100 px-5 py-4 sm:px-6"
+                >
                     <button
                         type="button"
                         @click="close"
-                        class="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700"
+                        class="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
                     >
                         Tutup
                     </button>
 
                     <button
-                        v-if="purchase.status === 'draft'"
+                        v-if="
+                            ['draft', 'submitted'].includes(
+                                purchase.status
+                            )
+                        "
                         type="button"
                         @click="edit"
-                        class="rounded-lg bg-[#0052cc] px-4 py-2.5 text-sm font-semibold text-white"
+                        class="rounded-lg bg-[#0052cc] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0047b3]"
                     >
                         Edit
                     </button>
@@ -234,13 +288,17 @@ import TimelineItem from './TimelineItem.vue'
 
 const props = defineProps({
     show: Boolean,
+
     purchase: {
         type: Object,
         default: null,
     },
 })
 
-const emit = defineEmits(['close', 'edit'])
+const emit = defineEmits([
+    'close',
+    'edit',
+])
 
 function close() {
     emit('close')
@@ -252,39 +310,37 @@ function edit() {
 
 function statusLabel(status) {
     return {
-        draft: 'Dibuat',
+        draft: 'Draft',
         submitted: 'Diajukan',
-        purchased: 'Dibeli',
-        received: 'Diterima',
-    }[status]
+        approved: 'Disetujui',
+        rejected: 'Ditolak',
+        cancelled: 'Dibatalkan',
+    }[status] || status || '—'
 }
 
 function statusClass(status) {
     return {
         draft: 'bg-gray-100 text-gray-600',
         submitted: 'bg-blue-50 text-blue-700',
-        purchased: 'bg-orange-50 text-orange-700',
-        received: 'bg-green-50 text-green-700',
-    }[status]
-}
-
-function formatCurrency(value) {
-    if (!value) return '-'
-
-    return new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        minimumFractionDigits: 0,
-    }).format(value)
+        approved: 'bg-green-50 text-green-700',
+        rejected: 'bg-red-50 text-red-700',
+        cancelled: 'bg-gray-100 text-gray-500',
+    }[status] || 'bg-gray-100 text-gray-600'
 }
 
 function formatDate(value) {
     if (!value) return '-'
 
+    const date = new Date(value)
+
+    if (Number.isNaN(date.getTime())) {
+        return '-'
+    }
+
     return new Intl.DateTimeFormat('id-ID', {
         day: '2-digit',
         month: 'short',
         year: 'numeric',
-    }).format(new Date(value))
+    }).format(date)
 }
 </script>

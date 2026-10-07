@@ -58,23 +58,15 @@
                             <div>
                                 <label class="form-label">
                                     Kode Produk
-                                    <span class="text-red-500">*</span>
                                 </label>
 
                                 <input
                                     v-model="form.code"
                                     type="text"
                                     class="form-input"
-                                    placeholder="Contoh: PRD-0001"
+                                    placeholder="Generated automatically if left empty"
                                     :disabled="saving"
                                 />
-
-                                <p
-                                    v-if="errors.code"
-                                    class="form-error"
-                                >
-                                    {{ errors.code }}
-                                </p>
                             </div>
 
                             <!-- NAME -->
@@ -126,7 +118,7 @@
                                     </option>
 
                                     <option
-                                        v-for="type in productTypes"
+                                        v-for="type in localProductTypes"
                                         :key="type.id"
                                         :value="type.id"
                                     >
@@ -168,7 +160,7 @@
                                     </option>
 
                                     <option
-                                        v-for="category in categories"
+                                        v-for="category in localCategories"
                                         :key="category.id"
                                         :value="category.id"
                                     >
@@ -267,87 +259,83 @@
                     </section>
 
                     <!-- HARGA -->
-                    <section
-                        class="border-t border-slate-100 pt-6"
-                    >
-                        <div class="mb-4">
-                            <h3 class="text-sm font-semibold text-slate-800">
-                                Harga
-                            </h3>
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 
-                            <p class="mt-1 text-xs text-slate-400">
-                                Harga default yang digunakan dalam transaksi.
+                        <!-- PURCHASE -->
+                        <div>
+                            <label class="form-label">
+                                Harga Beli
+                            </label>
+
+                            <div
+                                class="flex overflow-hidden rounded-lg border border-slate-300 bg-white
+                                    focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-100"
+                            >
+                                <div
+                                    class="flex items-center border-r border-slate-200 bg-slate-50 px-3
+                                        text-sm font-medium text-slate-500"
+                                >
+                                    Rp
+                                </div>
+
+                                <input
+                                    v-model="form.purchase_price"
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    class="min-w-0 flex-1 border-0 bg-transparent px-3 py-2.5
+                                        text-sm text-slate-700 outline-none focus:ring-0"
+                                    placeholder="0"
+                                    :disabled="saving"
+                                />
+                            </div>
+
+                            <p
+                                v-if="errors.purchase_price"
+                                class="form-error"
+                            >
+                                {{ errors.purchase_price }}
                             </p>
                         </div>
 
-                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <!-- SELLING -->
+                        <div>
+                            <label class="form-label">
+                                Harga Jual
+                            </label>
 
-                            <!-- PURCHASE -->
-                            <div>
-                                <label class="form-label">
-                                    Harga Beli
-                                </label>
-
-                                <div class="relative">
-                                    <span
-                                        class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400"
-                                    >
-                                        Rp
-                                    </span>
-
-                                    <input
-                                        v-model="form.purchase_price"
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        class="form-input pl-10"
-                                        placeholder="0"
-                                        :disabled="saving"
-                                    />
+                            <div
+                                class="flex overflow-hidden rounded-lg border border-slate-300 bg-white
+                                    focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-100"
+                            >
+                                <div
+                                    class="flex items-center border-r border-slate-200 bg-slate-50 px-3
+                                        text-sm font-medium text-slate-500"
+                                >
+                                    Rp
                                 </div>
 
-                                <p
-                                    v-if="errors.purchase_price"
-                                    class="form-error"
-                                >
-                                    {{ errors.purchase_price }}
-                                </p>
+                                <input
+                                    v-model="form.selling_price"
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    class="min-w-0 flex-1 border-0 bg-transparent px-3 py-2.5
+                                        text-sm text-slate-700 outline-none focus:ring-0"
+                                    placeholder="0"
+                                    :disabled="saving"
+                                />
                             </div>
 
-                            <!-- SELLING -->
-                            <div>
-                                <label class="form-label">
-                                    Harga Jual
-                                </label>
-
-                                <div class="relative">
-                                    <span
-                                        class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400"
-                                    >
-                                        Rp
-                                    </span>
-
-                                    <input
-                                        v-model="form.selling_price"
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        class="form-input pl-10"
-                                        placeholder="0"
-                                        :disabled="saving"
-                                    />
-                                </div>
-
-                                <p
-                                    v-if="errors.selling_price"
-                                    class="form-error"
-                                >
-                                    {{ errors.selling_price }}
-                                </p>
-                            </div>
-
+                            <p
+                                v-if="errors.selling_price"
+                                class="form-error"
+                            >
+                                {{ errors.selling_price }}
+                            </p>
                         </div>
-                    </section>
+
+                    </div>
 
                     <!-- INVENTORY -->
                     <section
@@ -577,6 +565,8 @@ import {
     Loader2Icon,
 } from 'lucide-vue-next'
 
+import { erpApi, } from '@/services/api'
+
 import ProductTypeModal from './ProductTypeModal.vue'
 import ProductCategoryModal from './ProductCategoryModal.vue'
 
@@ -611,48 +601,95 @@ const emit = defineEmits([
 
 const saving = ref(false)
 const errors = reactive({})
+const localProductTypes = ref([])
+const localCategories = ref([])
 
 const showProductCategoryModal = ref(false)
 function openCreateProductCategory() {
     showProductCategoryModal.value = true
 }
-function handleProductCategorySaved(category) {
+async function handleProductCategorySaved(category) {
     showProductCategoryModal.value = false
+    await loadCategories()
+    if (category?.id) {
+        form.category_id = category.id
+    }
+}
+async function loadCategories() {
+    try {
+        const response =
+            await erpApi.master.productCategories.list({
+                is_active: true,
+            })
 
-    emit('saved', {
-        type: 'category_created',
-        category,
-    })
+        const data =
+            response?.data?.data ??
+            response?.data ??
+            []
+
+        localCategories.value = Array.isArray(data)
+            ? data
+            : []
+    } catch (error) {
+        console.error(
+            'Gagal reload kategori:',
+            error
+        )
+    }
 }
 
 const showProductTypeModal = ref(false)
 function openCreateProductType() {
     showProductTypeModal.value = true
 }
-function handleProductTypeSaved(type) {
+async function handleProductTypeSaved(type) {
     showProductTypeModal.value = false
+    await loadProductTypes()
 
-    emit('saved', {
-        type: 'product_type',
-        type,
-    })
+    if (type?.id) {
+        form.type_id = type.id
+    }
+
+}
+async function loadProductTypes() {
+    try {
+        const response =
+            await erpApi.master.productTypes.list({
+                is_active: true,
+            })
+
+        const data =
+            response?.data?.data ??
+            response?.data ??
+            []
+
+        localProductTypes.value =
+            Array.isArray(data)
+                ? data
+                : []
+    } catch (error) {
+        console.error(
+            'Gagal reload tipe produk:',
+            error
+        )
+    }
 }
 
 
 const emptyForm = () => ({
-    code: '',
-    name: '',
-    category_id: '',
-    type_id: '',
-    unit_id: '',
-    brand: '',
-    barcode: '',
-    description: '',
-    purchase_price: 0,
-    selling_price: 0,
-    minimum_stock: 0,
-    track_stock: true,
-    is_active: true,
+    code            : '',
+    name            : '',
+    category_id     : '',
+    type_id         : '',
+    unit_id         : '',
+    brand           : '',
+    barcode         : '',
+    description     : '',
+    purchase_price  : 0,
+    selling_price   : 0,
+    minimum_stock   : 0,
+    track_stock     : true,
+    is_active       : true,
 })
 
 
@@ -706,6 +743,28 @@ function clearErrors() {
 
 
 watch(
+    () => props.productTypes,
+    value => {
+        localProductTypes.value = [...value]
+    },
+    {
+        immediate: true,
+    }
+)
+
+
+watch(
+    () => props.categories,
+    value => {
+        localCategories.value = [...value]
+    },
+    {
+        immediate: true,
+    }
+)
+
+
+watch(
     () => props.product,
     product => {
         clearErrors()
@@ -730,10 +789,6 @@ function validate() {
 
     clearErrors()
 
-    if (!form.code.trim()) {
-        errors.code = 'Kode produk wajib diisi.'
-    }
-
     if (!form.name.trim()) {
         errors.name = 'Nama produk wajib diisi.'
     }
@@ -753,7 +808,7 @@ async function submit() {
     try {
 
         const payload = {
-            code: form.code.trim(),
+            code: form.code ? form.code : null,
             name: form.name.trim(),
 
             category_id:
@@ -796,22 +851,16 @@ async function submit() {
                 Boolean(form.is_active),
         }
 
-        /*
-         * API create/update kita sambungkan di tahap berikutnya.
-         *
-         * Setelah API siap:
-         *
-         * if (isEdit.value) {
-         *     await erpApi.master.products.update(
-         *         props.product.id,
-         *         payload
-         *     )
-         * } else {
-         *     await erpApi.master.products.create(
-         *         payload
-         *     )
-         * }
-         */
+        if (isEdit.value) {
+            await erpApi.master.products.update(
+                props.product.id,
+                payload
+            )
+        } else {
+            await erpApi.master.products.create(
+                payload
+            )
+        }
 
         emit('saved', payload)
 

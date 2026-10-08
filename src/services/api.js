@@ -939,35 +939,57 @@ export const erpApi = {
     sales: {
         invoices: {
             list(params = {}) {
-                return get(
-                    '/erp/sales/invoices',
-                    params
+                return api.get(
+                    '/erp/sales-invoices',
+                    { params }
                 )
             },
 
             show(id) {
-                return get(
-                    `/erp/sales/invoices/${id}`
+                return api.get(
+                    `/erp/sales-invoices/${id}`
                 )
             },
 
-            create(data) {
-                return post(
-                    '/erp/sales/invoices',
-                    data
+            store(payload) {
+                return api.post(
+                    '/erp/sales-invoices',
+                    payload
                 )
             },
 
-            update(id, data) {
-                return put(
-                    `/erp/sales/invoices/${id}`,
-                    data
+            update(id, payload) {
+                return api.put(
+                    `/erp/sales-invoices/${id}`,
+                    payload
                 )
             },
 
-            delete(id) {
-                return destroy(
-                    `/erp/sales/invoices/${id}`
+            approve(id) {
+                return api.post(
+                    `/erp/sales-invoices/${id}/approve`
+                )
+            },
+
+            payment(id, payload) {
+                return api.post(
+                    `/erp/sales-invoices/${id}/payment`,
+                    payload
+                )
+            },
+
+            cancel(id) {
+                return api.post(
+                    `/erp/sales-invoices/${id}/cancel`
+                )
+            },
+
+            pdf(id) {
+                return api.get(
+                    `/erp/sales-invoices/${id}/pdf`,
+                    {
+                        responseType: 'blob',
+                    }
                 )
             },
         },
@@ -1131,14 +1153,14 @@ export const erpApi = {
         stocks: {
             list(params = {}) {
                 return get(
-                    '/erp/inventory/stocks',
+                    '/erp/stocks',
                     params
                 )
             },
 
             show(id) {
                 return get(
-                    `/erp/inventory/stocks/${id}`
+                    `/erp/stocks/${id}`
                 )
             },
         },
@@ -1146,28 +1168,40 @@ export const erpApi = {
         adjustments: {
             list(params = {}) {
                 return get(
-                    '/erp/inventory/adjustments',
+                    '/erp/stock-adjustments',
                     params
                 )
             },
 
             show(id) {
                 return get(
-                    `/erp/inventory/adjustments/${id}`
+                    `/erp/stock-adjustments/${id}`
                 )
             },
 
             create(data) {
                 return post(
-                    '/erp/inventory/adjustments',
+                    '/erp/stock-adjustments',
                     data
                 )
             },
 
             update(id, data) {
                 return put(
-                    `/erp/inventory/adjustments/${id}`,
+                    `/erp/stock-adjustments/${id}`,
                     data
+                )
+            },
+
+            approve(id) {
+                return api.post(
+                    `/erp/stock-adjustments/${id}/approve`
+                )
+            },
+
+            cancel(id) {
+                return api.post(
+                    `/erp/stock-adjustments/${id}/cancel`
                 )
             },
         },
@@ -1199,35 +1233,61 @@ export const erpApi = {
                     data
                 )
             },
+
+            submit(id, data) {
+                return post(
+                    `/erp/stock-issues/${id}/submit`,
+                    data
+                )
+            },
+
+            approve(id) {
+                return post(
+                    `/erp/stock-issues/${id}/approve`,
+                )
+            },
+
+            issue(id) {
+                return post(
+                    `/erp/stock-issues/${id}/issue`,
+                )
+            },
+
+            cancel(id) {
+                return post(
+                    `/erp/stock-issues/${id}/cancel`,
+                )
+            },
         },
 
         mutations: {
             list(params = {}) {
                 return get(
-                    '/erp/inventory/mutations',
+                    '/erp/stock-movements',
                     params
                 )
             },
 
             show(id) {
                 return get(
-                    `/erp/inventory/mutations/${id}`
+                    `/erp/stock-movements/${id}`
                 )
             },
 
             create(data) {
                 return post(
-                    '/erp/inventory/mutations',
+                    '/erp/stock-movements',
                     data
                 )
             },
 
             update(id, data) {
                 return put(
-                    `/erp/inventory/mutations/${id}`,
+                    `/erp/stock-movements/${id}`,
                     data
                 )
             },
+
         },
     },
 

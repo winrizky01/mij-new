@@ -571,6 +571,7 @@ function getStock(productId) {
     return Number(
         product.stock ??
         product.current_stock ??
+        product.stock_quantity ??
         0
     )
 

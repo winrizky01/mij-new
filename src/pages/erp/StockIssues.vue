@@ -694,10 +694,10 @@ async function loadItems() {
 
     try {
 
-        const response =
-            await erpApi.master.products.list({
-                is_active: true,
-            })
+        const response = await erpApi.master.products.list({
+            is_active: true,
+            warehouse_id: 1,
+        })
 
         items.value =
             response?.data?.data ||

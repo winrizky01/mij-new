@@ -230,7 +230,7 @@
                         <div class="space-y-1">
 
                             <RouterLink
-                                to="/erp/sales-invoices"
+                                to="/erp/invoices"
                                 class="erp-nav"
                                 @click="closeSidebar"
                             >
@@ -239,7 +239,7 @@
                                 </span>
 
                                 <span>
-                                    Invoice Penjualan
+                                    Invoice
                                 </span>
                             </RouterLink>
 
@@ -287,7 +287,7 @@
                         <div class="space-y-1">
 
                             <RouterLink
-                                to="/erp/stock"
+                                to="/erp/stocks"
                                 class="erp-nav"
                                 @click="closeSidebar"
                             >
@@ -317,7 +317,7 @@
 
 
                             <RouterLink
-                                to="/erp/stock-mutations"
+                                to="/erp/stock-movements"
                                 class="erp-nav"
                                 @click="closeSidebar"
                             >

@@ -699,6 +699,14 @@ const masters = ref([
         count: 0,
     },
 
+    {
+        key: 'invoice_series',
+        label: 'Invoice Series',
+        icon: '👥',
+        codePrefix: 'INV',
+        count: 0,
+    },
+
 ])
 
 

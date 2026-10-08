@@ -35,8 +35,9 @@ import ErpProvinces from '../pages/erp/Provinces.vue'
 import ErpShipments from '../pages/erp/Shipments.vue'
 import ErpEmployees from '../pages/erp/Employees.vue'
 import ErpPartners from '../pages/erp/Partners.vue'
-import ErpInventory from '../pages/erp/Stock.vue'
+import ErpStocks from '../pages/erp/Stock.vue'
 import ErpStockIssues from '../pages/erp/StockIssues.vue'
+import ErpStockMovement from '../pages/erp/StockMovements.vue'
 import ErpInvoices from '../pages/erp/SalesInvoices.vue'
 import ErpUnits from '../pages/erp/Units.vue'
 
@@ -230,15 +231,21 @@ const router = createRouter({
                 },
 
                 {
-                    path: 'inventory',
-                    name: 'erp.inventory',
-                    component: ErpInventory,
+                    path: 'stocks',
+                    name: 'erp.stocks',
+                    component: ErpStocks,
                 },
 
                 {
                     path: 'stock-issues',
                     name: 'erp.stock-issues',
                     component: ErpStockIssues,
+                },
+
+                {
+                    path: 'stock-movements',
+                    name: 'erp.stock-movements',
+                    component: ErpStockMovement,
                 },
 
                 {

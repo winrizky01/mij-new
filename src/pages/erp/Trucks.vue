@@ -1633,8 +1633,7 @@ async function loadTruckTypes() {
                 is_active: true,
             })
 
-        const data =
-            unwrapData(response)
+        const data = response.data
 
         truckTypes.value =
             Array.isArray(data)
@@ -2071,11 +2070,11 @@ async function loadEmployees() {
     try {
         const response =
             await erpApi.master.employees.list({
+                employment_type: 'LEPAS',
                 is_active: true,
             })
 
-        const data =
-            unwrapData(response)
+        const data = response.data
 
         employees.value =
             Array.isArray(data)

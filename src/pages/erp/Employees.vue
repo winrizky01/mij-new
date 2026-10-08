@@ -352,40 +352,39 @@
 
 
                             <td class="px-5 py-4">
+                                <div class="flex justify-end gap-1.5">
 
-                                <div class="flex justify-end gap-1">
-
+                                    <!-- Detail -->
                                     <button
                                         type="button"
-                                        class="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-[#0052cc]"
+                                        class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
                                         title="Lihat"
                                         @click="openShowModal(employee)"
                                     >
-                                        👁
+                                        <EyeIcon class="h-4 w-4" />
                                     </button>
 
-
+                                    <!-- Edit -->
                                     <button
                                         type="button"
-                                        class="rounded-lg p-2 text-gray-500 transition hover:bg-blue-50 hover:text-[#0052cc]"
+                                        class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-blue-50 hover:text-blue-600"
                                         title="Edit"
                                         @click="openEditModal(employee)"
                                     >
-                                        ✎
+                                        <PencilIcon class="h-4 w-4" />
                                     </button>
 
-
+                                    <!-- Hapus -->
                                     <button
                                         type="button"
-                                        class="rounded-lg p-2 text-gray-500 transition hover:bg-red-50 hover:text-red-600"
+                                        class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-red-50 hover:text-red-600"
                                         title="Hapus"
                                         @click="removeEmployee(employee)"
                                     >
-                                        🗑
+                                        <Trash2Icon class="h-4 w-4" />
                                     </button>
 
                                 </div>
-
                             </td>
 
                         </tr>
@@ -529,22 +528,33 @@
                 </div>
 
 
-                <div class="mt-4 flex justify-end gap-2 border-t border-gray-100 pt-3">
+                <div class="flex gap-1.5">
 
                     <button
                         type="button"
-                        class="rounded-lg px-3 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100"
+                        class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+                        title="Lihat"
                         @click="openShowModal(employee)"
                     >
-                        Lihat
+                        <EyeIcon class="h-4 w-4" />
                     </button>
 
                     <button
                         type="button"
-                        class="rounded-lg bg-blue-50 px-3 py-2 text-xs font-semibold text-[#0052cc] hover:bg-blue-100"
+                        class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-blue-50 hover:text-blue-600"
+                        title="Edit"
                         @click="openEditModal(employee)"
                     >
-                        Edit
+                        <PencilIcon class="h-4 w-4" />
+                    </button>
+
+                    <button
+                        type="button"
+                        class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-red-50 hover:text-red-600"
+                        title="Hapus"
+                        @click="removeEmployee(employee)"
+                    >
+                        <Trash2Icon class="h-4 w-4" />
                     </button>
 
                 </div>
@@ -601,6 +611,12 @@
 
 
 <script setup>
+import {
+    EyeIcon,
+    PencilIcon,
+    Trash2Icon,
+} from 'lucide-vue-next'
+
 import {
     computed,
     onMounted,

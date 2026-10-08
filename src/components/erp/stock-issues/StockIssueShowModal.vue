@@ -12,9 +12,8 @@
                     <h2 class="text-lg font-bold text-[#003366]">
                         Detail Pengeluaran
                     </h2>
-
                     <p class="mt-1 text-xs text-gray-500">
-                        {{ issue.number }}
+                        {{ issue.issue_number }}
                     </p>
                 </div>
 
@@ -35,7 +34,7 @@
                         </p>
 
                         <p class="mt-1 text-sm font-semibold text-gray-800">
-                            {{ formatDate(issue.date) }}
+                            {{ formatDate(issue.issue_date) }}
                         </p>
                     </div>
 
@@ -58,17 +57,16 @@
                         </p>
 
                         <p class="mt-1 text-sm font-semibold text-gray-800">
-                            {{ issue.requester }}
+                            {{ issue.requested_by.name }}
                         </p>
                     </div>
-
                     <div>
                         <p class="text-xs text-gray-400">
                             Bagian
                         </p>
 
                         <p class="mt-1 text-sm font-semibold text-gray-800">
-                            {{ issue.department }}
+                            {{ issue.requested_by.position }}
                         </p>
                     </div>
 
@@ -78,7 +76,7 @@
                         </p>
 
                         <p class="mt-1 text-sm font-semibold text-gray-800">
-                            {{ issue.warehouse }}
+                            {{ issue.warehouse.name }}
                         </p>
                     </div>
 
@@ -119,17 +117,17 @@
                                 >
                                     <td class="px-4 py-3">
                                         <p class="text-sm font-medium text-gray-800">
-                                            {{ item.itemName }}
+                                            {{ item.product.name }}
                                         </p>
 
                                         <p class="text-xs text-gray-400">
-                                            {{ item.itemCode }}
+                                            {{ item.product.code }}
                                         </p>
                                     </td>
 
                                     <td class="px-4 py-3 text-right text-sm font-semibold text-gray-800">
-                                        {{ item.quantity }}
-                                        {{ item.uom }}
+                                        {{ item.requested_quantity * 1 }}
+                                        {{ item.unit.name }}
                                     </td>
                                 </tr>
                             </tbody>
@@ -207,11 +205,21 @@ function statusClass(status) {
     return classes[status] || 'bg-gray-100 text-gray-600'
 }
 
-function formatDate(date) {
-    return new Intl.DateTimeFormat('id-ID', {
+function formatDate(value) {
+    if (!value) {
+        return '-'
+    }
+
+    const date = new Date(value)
+
+    if (Number.isNaN(date.getTime())) {
+        return '-'
+    }
+
+    return date.toLocaleDateString('id-ID', {
         day: '2-digit',
-        month: 'short',
+        month: '2-digit',
         year: 'numeric',
-    }).format(new Date(date))
+    })
 }
 </script>

@@ -290,28 +290,37 @@
 
                             <!-- ACTION -->
                             <td class="px-5 py-4">
-                                <div
-                                    class="flex justify-end gap-2"
-                                >
+                                <div class="flex justify-end gap-1.5">
+
+                                    <!-- Edit -->
                                     <button
                                         type="button"
-                                        class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                                        class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-blue-50 hover:text-blue-600"
+                                        title="Edit"
                                         @click="openEdit(tariff)"
                                     >
-                                        Edit
+                                        <PencilIcon class="h-4 w-4" />
                                     </button>
 
+                                    <!-- Toggle Status -->
                                     <button
                                         type="button"
-                                        class="rounded-lg bg-gray-50 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-100"
-                                        @click="toggleStatus(tariff)"
-                                    >
-                                        {{
+                                        class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition"
+                                        :class="
+                                            tariff.status === 'active'
+                                                ? 'hover:bg-red-50 hover:text-red-600'
+                                                : 'hover:bg-emerald-50 hover:text-emerald-600'
+                                        "
+                                        :title="
                                             tariff.status === 'active'
                                                 ? 'Nonaktifkan'
                                                 : 'Aktifkan'
-                                        }}
+                                        "
+                                        @click="toggleStatus(tariff)"
+                                    >
+                                        <PowerIcon class="h-4 w-4" />
                                     </button>
+
                                 </div>
                             </td>
                         </tr>
@@ -761,6 +770,11 @@
 </template>
 
 <script setup>
+import {
+    PencilIcon,
+    PowerIcon,
+} from 'lucide-vue-next'
+
 import {
     computed,
     onMounted,

@@ -319,25 +319,28 @@
 
 
                             <td class="px-5 py-4">
-
-                                <div class="flex justify-end gap-1">
+                                <div class="flex justify-end gap-1.5">
 
                                     <!-- EDIT -->
                                     <button
                                         type="button"
-                                        class="rounded-lg p-2 text-gray-500 transition hover:bg-blue-50 hover:text-[#0052cc] disabled:opacity-50"
+                                        class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-blue-50 hover:text-blue-600 disabled:opacity-50"
                                         title="Edit"
                                         :disabled="saving"
                                         @click="openForm(item)"
                                     >
-                                        ✏️
+                                        <PencilIcon class="h-4 w-4" />
                                     </button>
-
 
                                     <!-- STATUS -->
                                     <button
                                         type="button"
-                                        class="rounded-lg p-2 text-gray-500 transition hover:bg-yellow-50 hover:text-yellow-600 disabled:opacity-50"
+                                        class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition disabled:opacity-50"
+                                        :class="
+                                            item.is_active
+                                                ? 'hover:bg-red-50 hover:text-red-600'
+                                                : 'hover:bg-emerald-50 hover:text-emerald-600'
+                                        "
                                         :title="
                                             item.is_active
                                                 ? 'Nonaktifkan'
@@ -346,27 +349,21 @@
                                         :disabled="saving"
                                         @click="toggleStatus(item)"
                                     >
-                                        {{
-                                            item.is_active
-                                                ? '⏸️'
-                                                : '▶️'
-                                        }}
+                                        <PowerIcon class="h-4 w-4" />
                                     </button>
-
 
                                     <!-- DELETE -->
                                     <button
                                         type="button"
-                                        class="rounded-lg p-2 text-gray-500 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                                        class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
                                         title="Hapus"
                                         :disabled="saving"
                                         @click="deleteItem(item)"
                                     >
-                                        🗑️
+                                        <Trash2Icon class="h-4 w-4" />
                                     </button>
 
                                 </div>
-
                             </td>
 
                         </tr>
@@ -609,6 +606,12 @@
 
 
 <script setup>
+import {
+    PencilIcon,
+    PowerIcon,
+    Trash2Icon,
+} from 'lucide-vue-next'
+
 import {
     computed,
     onMounted,

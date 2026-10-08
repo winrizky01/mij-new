@@ -40,6 +40,9 @@ import ErpStockIssues from '../pages/erp/StockIssues.vue'
 import ErpStockMovement from '../pages/erp/StockMovements.vue'
 import ErpInvoices from '../pages/erp/SalesInvoices.vue'
 import ErpUnits from '../pages/erp/Units.vue'
+import ErpCashBank from '../pages/erp/CashBank.vue'
+import ErpReceivables from '../pages/erp/Receivables.vue'
+import ErpPayables from '../pages/erp/Payables.vue'
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
@@ -252,6 +255,22 @@ const router = createRouter({
                     path: 'invoices',
                     name: 'erp.invoices',
                     component: ErpInvoices,
+                },
+
+                {
+                    path: '/erp/cash-bank',
+                    name: 'erp.cash-bank',
+                    component: ErpCashBank,
+                },
+                {
+                    path: '/erp/receivables',
+                    name: 'erp.receivables',
+                    component: ErpReceivables,
+                },
+                {
+                    path: '/erp/payables',
+                    name: 'erp.payables',
+                    component: ErpPayables,
                 },
             ],
         },

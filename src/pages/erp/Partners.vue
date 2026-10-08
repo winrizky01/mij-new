@@ -264,81 +264,35 @@
 
                                 <!-- Actions -->
                                 <td class="px-5 py-4">
-                                    <div class="flex justify-end gap-1">
+                                    <div class="flex justify-end gap-1.5">
+                                        <!-- Detail -->
                                         <button
                                             type="button"
-                                            class="rounded-lg p-2 text-gray-400 transition hover:bg-blue-50 hover:text-[#0052cc]"
+                                            class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
                                             title="Detail"
                                             @click="openShowModal(partner)"
                                         >
-                                            <svg
-                                                class="h-4 w-4"
-                                                viewBox="0 0 24 24"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                stroke-width="2"
-                                            >
-                                                <circle
-                                                    cx="12"
-                                                    cy="12"
-                                                    r="9"
-                                                />
-                                                <path
-                                                    stroke-linecap="round"
-                                                    d="M12 11v5"
-                                                />
-                                                <path
-                                                    stroke-linecap="round"
-                                                    d="M12 8h.01"
-                                                />
-                                            </svg>
+                                            <EyeIcon class="h-4 w-4" />
                                         </button>
 
+                                        <!-- Edit -->
                                         <button
                                             type="button"
-                                            class="rounded-lg p-2 text-gray-400 transition hover:bg-yellow-50 hover:text-yellow-600"
+                                            class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-blue-50 hover:text-blue-600"
                                             title="Edit"
                                             @click="openEditModal(partner)"
                                         >
-                                            <svg
-                                                class="h-4 w-4"
-                                                viewBox="0 0 24 24"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                stroke-width="2"
-                                            >
-                                                <path
-                                                    stroke-linecap="round"
-                                                    stroke-linejoin="round"
-                                                    d="M12 20h9"
-                                                />
-                                                <path
-                                                    stroke-linecap="round"
-                                                    stroke-linejoin="round"
-                                                    d="M16.5 3.5a2.12 2.12 0 013 3L8 18l-4 1 1-4L16.5 3.5z"
-                                                />
-                                            </svg>
+                                            <PencilIcon class="h-4 w-4" />
                                         </button>
 
+                                        <!-- Hapus -->
                                         <button
                                             type="button"
-                                            class="rounded-lg p-2 text-gray-400 transition hover:bg-red-50 hover:text-red-600"
+                                            class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-red-50 hover:text-red-600"
                                             title="Hapus"
                                             @click="deletePartner(partner)"
                                         >
-                                            <svg
-                                                class="h-4 w-4"
-                                                viewBox="0 0 24 24"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                stroke-width="2"
-                                            >
-                                                <path
-                                                    stroke-linecap="round"
-                                                    stroke-linejoin="round"
-                                                    d="M3 6h18M9 6V4h6v2M19 6l-1 14H6L5 6M10 11v5M14 11v5"
-                                                />
-                                            </svg>
+                                            <Trash2Icon class="h-4 w-4" />
                                         </button>
                                     </div>
                                 </td>
@@ -428,21 +382,32 @@
                                 }}
                             </span>
 
-                            <div class="flex gap-1">
+                            <div class="flex gap-1.5">
                                 <button
                                     type="button"
-                                    class="rounded-lg px-3 py-2 text-sm text-gray-500 hover:bg-blue-50 hover:text-[#0052cc]"
+                                    class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+                                    title="Detail"
                                     @click="openShowModal(partner)"
                                 >
-                                    Detail
+                                    <EyeIcon class="h-4 w-4" />
                                 </button>
 
                                 <button
                                     type="button"
-                                    class="rounded-lg px-3 py-2 text-sm text-gray-500 hover:bg-yellow-50 hover:text-yellow-600"
+                                    class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-blue-50 hover:text-blue-600"
+                                    title="Edit"
                                     @click="openEditModal(partner)"
                                 >
-                                    Edit
+                                    <PencilIcon class="h-4 w-4" />
+                                </button>
+
+                                <button
+                                    type="button"
+                                    class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-red-50 hover:text-red-600"
+                                    title="Hapus"
+                                    @click="deletePartner(partner)"
+                                >
+                                    <Trash2Icon class="h-4 w-4" />
                                 </button>
                             </div>
                         </div>
@@ -482,6 +447,12 @@
 </template>
 
 <script setup>
+import {
+    EyeIcon,
+    PencilIcon,
+    Trash2Icon,
+} from 'lucide-vue-next'
+
 import {
     computed,
     onMounted,

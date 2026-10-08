@@ -487,28 +487,20 @@
                     <!-- Right -->
                     <div class="flex items-center gap-2 sm:gap-3">
 
-                        <!-- Search -->
-                        <button
-                            type="button"
-                            class="flex h-10 w-10 items-center justify-center rounded-xl text-gray-500 hover:bg-gray-100"
-                            title="Pencarian"
-                        >
-                            🔍
-                        </button>
-
-
                         <!-- Notification -->
                         <button
                             type="button"
-                            class="relative flex h-10 w-10 items-center justify-center rounded-xl text-gray-500 hover:bg-gray-100"
+                            class="relative flex h-10 w-10 items-center justify-center rounded-xl text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
+                            title="Notifikasi"
                         >
-                            🔔
+                            <Bell class="h-5 w-5" />
 
                             <span
-                                class="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500"
-                            ></span>
+                                class="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white ring-2 ring-white"
+                            >
+                                3
+                            </span>
                         </button>
-
 
                         <!-- User -->
                         <div
@@ -539,9 +531,12 @@
 
 
 <script setup>
+
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { authApi } from '@/services/api'
+
+import { Bell } from 'lucide-vue-next'
 
 const router = useRouter()
 
@@ -619,7 +614,7 @@ async function logout() {
     gap: 0.75rem;
     width: 100%;
     border-radius: 0.75rem;
-    padding: 0.5rem 0.75rem;
+    padding: 0.05rem 0.75rem;
     font-size: 0.875rem;
     font-weight: 500;
     color: #4b5563;

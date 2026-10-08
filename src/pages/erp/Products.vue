@@ -503,29 +503,27 @@
 
                             <!-- ACTION -->
                             <td class="px-5 py-4">
-
-                                <div class="flex justify-end gap-1">
-
+                                <div class="flex justify-end gap-1.5">
+                                    <!-- Edit -->
                                     <button
                                         type="button"
                                         @click="openEdit(product)"
-                                        class="rounded-lg p-2 text-slate-400 transition hover:bg-sky-50 hover:text-[#14a2d8]"
+                                        class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-blue-50 hover:text-blue-600"
                                         title="Edit"
                                     >
                                         <PencilIcon class="h-4 w-4" />
                                     </button>
 
+                                    <!-- Hapus -->
                                     <button
                                         type="button"
                                         @click="deleteProduct(product)"
-                                        class="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                                        class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-red-50 hover:text-red-600"
                                         title="Hapus"
                                     >
                                         <Trash2Icon class="h-4 w-4" />
                                     </button>
-
                                 </div>
-
                             </td>
 
                         </tr>

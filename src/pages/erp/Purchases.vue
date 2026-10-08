@@ -340,156 +340,171 @@
 
                             <!-- ACTION -->
                             <td class="px-5 py-4">
-
-                                <div class="flex justify-end gap-2">
+                                <div class="flex justify-end gap-1.5">
 
                                     <!-- LIHAT -->
                                     <button
                                         type="button"
+                                        class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+                                        title="Lihat"
                                         @click="openShowModal(purchase)"
-                                        class="rounded-lg bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-600 transition hover:bg-gray-100"
                                     >
-                                        Lihat
+                                        <EyeIcon class="h-4 w-4" />
                                     </button>
 
+                                    <!-- MORE ACTION -->
+                                    <div class="relative">
+                                        <button
+                                            type="button"
+                                            class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+                                            title="Aksi"
+                                            @click="toggleActionMenu(purchase.id)"
+                                        >
+                                            <MoreVerticalIcon class="h-4 w-4" />
+                                        </button>
 
-                                    <!-- EDIT PR -->
-                                    <button
-                                        v-if="
-                                            purchase.status === 'draft' ||
-                                            purchase.status === 'submitted'
-                                        "
-                                        type="button"
-                                        @click="openEditModal(purchase)"
-                                        class="rounded-lg bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-600 transition hover:bg-blue-100"
-                                    >
-                                        Edit
-                                    </button>
+                                        <!-- ACTION MENU -->
+                                        <div
+                                            v-if="activeActionMenu === purchase.id"
+                                            class="absolute right-0 z-30 mt-2 w-52 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-xl"
+                                        >
 
+                                            <!-- EDIT PR -->
+                                            <button
+                                                v-if="
+                                                    purchase.status === 'draft' ||
+                                                    purchase.status === 'submitted'
+                                                "
+                                                type="button"
+                                                class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50"
+                                                @click="
+                                                    closeActionMenu();
+                                                    openEditModal(purchase);
+                                                "
+                                            >
+                                                <PencilIcon class="h-4 w-4 text-blue-600" />
+                                                <span>Edit PR</span>
+                                            </button>
 
-                                    <!-- APPROVAL PR -->
-                                    <button
-                                        v-if="
-                                            purchase.status === 'submitted'
-                                        "
-                                        type="button"
-                                        @click="openApprovalModal(purchase)"
-                                        class="rounded-lg bg-green-50 px-3 py-2 text-xs font-semibold text-green-700 transition hover:bg-green-100"
-                                    >
-                                        Approval
-                                    </button>
+                                            <!-- APPROVAL PR -->
+                                            <button
+                                                v-if="purchase.status === 'submitted'"
+                                                type="button"
+                                                class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-green-50"
+                                                @click="
+                                                    closeActionMenu();
+                                                    openApprovalModal(purchase);
+                                                "
+                                            >
+                                                <CheckCircleIcon class="h-4 w-4 text-green-600" />
+                                                <span>Approval PR</span>
+                                            </button>
 
+                                            <!-- BUAT PO -->
+                                            <button
+                                                v-if="
+                                                    purchase.status === 'approved' &&
+                                                    !getPurchaseOrder(purchase)
+                                                "
+                                                type="button"
+                                                class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-purple-50"
+                                                @click="
+                                                    closeActionMenu();
+                                                    openPOModal(purchase);
+                                                "
+                                            >
+                                                <FilePlusIcon class="h-4 w-4 text-purple-600" />
+                                                <span>Buat PO</span>
+                                            </button>
 
-                                    <!-- ================================================= -->
-                                    <!-- PURCHASE ORDER -->
-                                    <!-- ================================================= -->
+                                            <!-- EDIT PO -->
+                                            <button
+                                                v-if="
+                                                    purchase.status === 'approved' &&
+                                                    getPurchaseOrder(purchase)?.status === 'draft'
+                                                "
+                                                type="button"
+                                                class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-indigo-50"
+                                                @click="
+                                                    closeActionMenu();
+                                                    openPOModal(purchase);
+                                                "
+                                            >
+                                                <PencilIcon class="h-4 w-4 text-indigo-600" />
+                                                <span>Edit PO</span>
+                                            </button>
 
-                                    <!-- BUAT PO -->
-                                    <button
-                                        v-if="
-                                            purchase.status === 'approved' &&
-                                            !getPurchaseOrder(purchase)
-                                        "
-                                        type="button"
-                                        @click="openPOModal(purchase)"
-                                        class="rounded-lg bg-purple-50 px-3 py-2 text-xs font-semibold text-purple-700 transition hover:bg-purple-100"
-                                    >
-                                        Buat PO
-                                    </button>
+                                            <!-- PESAN PO -->
+                                            <button
+                                                v-if="
+                                                    purchase.status === 'approved' &&
+                                                    getPurchaseOrder(purchase)?.status === 'draft'
+                                                "
+                                                type="button"
+                                                class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-green-50"
+                                                @click="
+                                                    closeActionMenu();
+                                                    orderPurchaseOrder(purchase);
+                                                "
+                                            >
+                                                <SendIcon class="h-4 w-4 text-green-600" />
+                                                <span>Pesan PO</span>
+                                            </button>
 
+                                            <!-- BUAT GR -->
+                                            <button
+                                                v-if="
+                                                    getPurchaseOrder(purchase) &&
+                                                    canCreateGoodsReceipt(purchase) &&
+                                                    !getGoodsReceipt(purchase)
+                                                "
+                                                type="button"
+                                                class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-orange-50"
+                                                @click="
+                                                    closeActionMenu();
+                                                    openReceiveModal(purchase);
+                                                "
+                                            >
+                                                <PackagePlusIcon class="h-4 w-4 text-orange-600" />
+                                                <span>Buat GR</span>
+                                            </button>
 
-                                    <!-- EDIT PO DRAFT -->
-                                    <button
-                                        v-if="
-                                            purchase.status === 'approved' &&
-                                            getPurchaseOrder(purchase)?.status === 'draft'
-                                        "
-                                        type="button"
-                                        @click="openPOModal(purchase)"
-                                        class="rounded-lg bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100"
-                                    >
-                                        Edit PO
-                                    </button>
+                                            <!-- LANJUTKAN GR -->
+                                            <button
+                                                v-if="
+                                                    getGoodsReceipt(purchase)?.status === 'draft'
+                                                "
+                                                type="button"
+                                                class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-yellow-50"
+                                                @click="
+                                                    closeActionMenu();
+                                                    openReceiveModal(purchase);
+                                                "
+                                            >
+                                                <PencilIcon class="h-4 w-4 text-yellow-600" />
+                                                <span>Lanjutkan GR</span>
+                                            </button>
 
+                                            <!-- TERIMA BARANG -->
+                                            <button
+                                                v-if="
+                                                    getGoodsReceipt(purchase)?.status === 'draft'
+                                                "
+                                                type="button"
+                                                class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-emerald-50"
+                                                @click="
+                                                    closeActionMenu();
+                                                    receiveGoodsReceipt(purchase);
+                                                "
+                                            >
+                                                <CheckIcon class="h-4 w-4 text-emerald-600" />
+                                                <span>Terima Barang</span>
+                                            </button>
 
-                                    <!-- PESAN PO -->
-                                    <button
-                                        v-if="
-                                            purchase.status === 'approved' &&
-                                            getPurchaseOrder(purchase)?.status === 'draft'
-                                        "
-                                        type="button"
-                                        @click="orderPurchaseOrder(purchase)"
-                                        class="rounded-lg bg-green-50 px-3 py-2 text-xs font-semibold text-green-700 transition hover:bg-green-100"
-                                    >
-                                        Pesan PO
-                                    </button>
-
-
-                                    <!-- BUAT GR -->
-                                    <button
-                                        v-if="
-                                            getPurchaseOrder(purchase) &&
-                                            canCreateGoodsReceipt(purchase) &&
-                                            !getGoodsReceipt(purchase)
-                                        "
-                                        type="button"
-                                        @click="openReceiveModal(purchase)"
-                                        class="rounded-lg bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-700 transition hover:bg-orange-100"
-                                    >
-                                        Buat GR
-                                    </button>
-
-
-                                    <!-- EDIT / LANJUTKAN GR DRAFT -->
-                                    <button
-                                        v-if="
-                                            getGoodsReceipt(purchase)?.status === 'draft'
-                                        "
-                                        type="button"
-                                        @click="openReceiveModal(purchase)"
-                                        class="rounded-lg bg-yellow-50 px-3 py-2 text-xs font-semibold text-yellow-700 transition hover:bg-yellow-100"
-                                    >
-                                        Lanjutkan GR
-                                    </button>
-
-
-                                    <!-- TERIMA BARANG -->
-                                    <button
-                                        v-if="
-                                            getGoodsReceipt(purchase)?.status === 'draft'
-                                        "
-                                        type="button"
-                                        @click="receiveGoodsReceipt(purchase)"
-                                        class="rounded-lg bg-green-50 px-3 py-2 text-xs font-semibold text-green-700 transition hover:bg-green-100"
-                                    >
-                                        Terima Barang
-                                    </button>
-
-
-                                    <!-- GR SUDAH DITERIMA -->
-                                    <span
-                                        v-if="
-                                            getGoodsReceipt(purchase)?.status === 'received'
-                                        "
-                                        class="inline-flex items-center rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700"
-                                    >
-                                        GR Diterima
-                                    </span>
-
-
-                                    <!-- PO SELESAI -->
-                                    <span
-                                        v-if="
-                                            getPurchaseOrder(purchase)?.status === 'received'
-                                        "
-                                        class="inline-flex items-center rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700"
-                                    >
-                                        Selesai
-                                    </span>
+                                        </div>
+                                    </div>
 
                                 </div>
-
                             </td>
 
                         </tr>
@@ -642,6 +657,16 @@
 
 
 <script setup>
+import {
+    EyeIcon,
+    MoreVerticalIcon,
+    PencilIcon,
+    CheckCircleIcon,
+    FilePlusIcon,
+    SendIcon,
+    PackagePlusIcon,
+    CheckIcon,
+} from 'lucide-vue-next'
 
 import {
     computed,
@@ -690,6 +715,7 @@ const search = ref('')
 const statusFilter = ref('all')
 
 const selectedPurchase = ref(null)
+const activeActionMenu = ref(null)
 
 
 // =========================================================
@@ -1334,6 +1360,21 @@ function formatDate(value) {
         }
     ).format(date)
 
+}
+
+// =========================================================
+// HELPER
+// =========================================================
+
+function toggleActionMenu(id) {
+    activeActionMenu.value =
+        activeActionMenu.value === id
+            ? null
+            : id
+}
+
+function closeActionMenu() {
+    activeActionMenu.value = null
 }
 
 

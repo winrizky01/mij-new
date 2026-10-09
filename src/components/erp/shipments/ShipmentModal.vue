@@ -76,7 +76,6 @@
                         <Field label="Nomor Surat Jalan">
                             <input
                                 v-model="form.delivery_order_number"
-                                readonly
                                 class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-600"
                             />
                         </Field>
@@ -779,14 +778,14 @@ const statusOptions = [
         value: 'draft',
         label: 'Draft',
     },
-    {
-        value: 'scheduled',
-        label: 'Dijadwalkan',
-    },
-    {
-        value: 'departed',
-        label: 'Berangkat',
-    },
+    // {
+    //     value: 'scheduled',
+    //     label: 'Dijadwalkan',
+    // },
+    // {
+    //     value: 'departed',
+    //     label: 'Berangkat',
+    // },
     {
         value: 'on_route',
         label: 'Dalam Perjalanan',
@@ -818,7 +817,6 @@ function createEmptyForm() {
         shipment_date: '',
         status: 'draft',
 
-        vendor_id: null,
         truck_id: null,
         driver_id: null,
         tariff_id: null,
@@ -1165,7 +1163,6 @@ function handleTruckChange() {
 async function findTariff() {
     if (!canFindTariff.value) {
         clearTariff()
-
         return
     }
 
@@ -1173,68 +1170,55 @@ async function findTariff() {
     errorMessage.value = ''
 
     try {
-        /*
-         * API mengembalikan:
-         *
-         * shipping_tariffs[]
-         *      └── details[]
-         *
-         * Kita flatten menjadi detail tarif.
-         */
         const response =
             await erpApi.master.shippingTariffs.list({
-                city_id:
-                    form.destination_city_id,
-
-                truck_id:
-                    form.truck_id,
-
+                city_id: form.destination_city_id,
+                truck_id: form.truck_id,
                 is_active: true,
             })
 
-        const details =
-            normalizeTariffDetails(response)
+        const details = normalizeTariffDetails(response)
 
-        /*
-         * Final safety filter.
-         */
-        tariffCandidates.value =
-            details.filter(tariff => {
-                return (
-                    Number(tariff.city_id) ===
-                        Number(
-                            form.destination_city_id
-                        )
-                    &&
-                    Number(tariff.truck_id) ===
-                        Number(form.truck_id)
-                    &&
-                    tariff.is_active === true
-                )
-            })
+        const candidates = details.filter(tariff => {
+            const cityMatches =
+                Number(tariff.city_id) ===
+                Number(form.destination_city_id)
 
-        /*
-         * Satu tarif = auto select.
-         */
-        if (
-            tariffCandidates.value.length === 1
-        ) {
-            applyTariff(
-                tariffCandidates.value[0]
+            // Tarif umum berlaku untuk semua truk.
+            // Tarif khusus hanya berlaku untuk truk yang cocok.
+            const truckMatches =
+                tariff.truck_id == null ||
+                Number(tariff.truck_id) ===
+                    Number(form.truck_id)
+
+            const detailActive =
+                tariff.is_active === true ||
+                tariff.is_active === 1 ||
+                tariff.is_active === '1'
+
+            const masterActive =
+                tariff.master_status === 'active'
+
+            return (
+                cityMatches &&
+                truckMatches &&
+                detailActive &&
+                masterActive
             )
+        })
 
+        tariffCandidates.value = candidates
+
+        // Auto-select hanya jika benar-benar ada satu kandidat.
+        if (candidates.length === 1) {
+            applyTariff(candidates[0])
             return
         }
 
-        /*
-         * Banyak tarif = user pilih.
-         */
-        form.tariff_id = null
-
+        // Nol atau beberapa kandidat: jangan memilih sembarangan.
         clearTariffValues()
     } catch (error) {
         tariffCandidates.value = []
-
         clearTariffValues()
 
         errorMessage.value =
@@ -1246,84 +1230,58 @@ async function findTariff() {
 }
 
 function normalizeTariffDetails(response) {
+    // Mendukung response Axios maupun data yang sudah diekstrak.
     const payload =
+        response?.data?.data ??
         response?.data ??
         response
 
     const parents = Array.isArray(payload)
         ? payload
-        : Array.isArray(payload?.data)
-            ? payload.data
-            : []
+        : []
 
     return parents.flatMap(parent => {
-        return (parent.details || [])
-            .filter(
-                detail =>
-                    detail.is_active !== false
-            )
-            .map(detail => ({
-                id: detail.id,
+        if (!Array.isArray(parent.details)) {
+            return []
+        }
 
-                shipping_tariff_id:
-                    detail.shipping_tariff_id,
+        // Master nonaktif tidak boleh dipakai.
+        if (parent.status !== 'active') {
+            return []
+        }
 
-                code:
-                    parent.code || '',
+        return parent.details.map(detail => ({
+            ...detail,
 
-                name:
-                    parent.name || '',
+            // Identitas master tarif.
+            shipping_tariff_id:
+                detail.shipping_tariff_id ?? parent.id,
 
-                province_id:
-                    detail.province_id,
+            code: parent.code || '',
+            name: parent.name || '',
+            master_status: parent.status,
 
-                province:
-                    detail.province || '',
+            effective_date:
+                parent.effective_date ?? null,
 
-                city_id:
-                    detail.city_id,
+            expired_date:
+                parent.expired_date ?? null,
 
-                city:
-                    detail.city || '',
+            // Pastikan nilai uang berupa angka.
+            vendor_rate:
+                Number(detail.vendor_rate || 0),
 
-                truck_id:
-                    detail.truck_id,
+            vendor_additional:
+                Number(detail.vendor_additional || 0),
 
-                tariff_type:
-                    detail.tariff_type || 'Tarif',
+            driver_rate:
+                Number(detail.driver_rate || 0),
 
-                truck_type_id:
-                    detail.truck_type_id,
+            driver_additional:
+                Number(detail.driver_additional || 0),
 
-                vendor_rate:
-                    Number(
-                        detail.vendor_rate || 0
-                    ),
-
-                vendor_additional:
-                    Number(
-                        detail.vendor_additional || 0
-                    ),
-
-                driver_rate:
-                    Number(
-                        detail.driver_rate || 0
-                    ),
-
-                driver_additional:
-                    Number(
-                        detail.driver_additional || 0
-                    ),
-
-                is_active:
-                    detail.is_active !== false,
-
-                notes:
-                    detail.notes || '',
-
-                truck:
-                    detail.truck || null,
-            }))
+            truck: detail.truck || null,
+        }))
     })
 }
 
@@ -1400,26 +1358,21 @@ function clearTariffValues() {
 }
 
 function tariffLabel(tariff) {
-    const type =
-        tariff.tariff_type ||
-        'Tarif'
-
     const truck =
         tariff.truck?.plate_number ||
-        ''
-
-    const city =
-        tariff.city ||
-        ''
+        (
+            tariff.truck_id != null
+                ? `Truk ID ${tariff.truck_id}`
+                : 'Tarif umum'
+        )
 
     return [
+        tariff.code,
         tariff.name,
-        type,
+        tariff.tariff_type,
         truck,
-        city,
-        formatCurrency(
-            tariff.vendor_rate
-        ),
+        `Vendor ${formatCurrency(tariff.vendor_rate)}`,
+        `Driver ${formatCurrency(tariff.driver_rate)}`,
     ]
         .filter(Boolean)
         .join(' · ')
@@ -1433,7 +1386,7 @@ function tariffLabel(tariff) {
 
 async function loadShipment() {
     const shipment = props.shipment
-
+    console.log(shipment)
     if (!shipment) {
         resetForm()
 
@@ -1451,6 +1404,9 @@ async function loadShipment() {
     form.shipment_number =
         shipment.shipment_number || ''
 
+    form.delivery_order_number = 
+        shipment.delivery_order_number || ''
+
     form.shipment_date =
         normalizeDate(
             shipment.shipment_date
@@ -1458,9 +1414,6 @@ async function loadShipment() {
 
     form.status =
         shipment.status || 'draft'
-
-    form.vendor_id =
-        shipment.vendor_id ?? null
 
     form.truck_id =
         shipment.truck_id ?? null
@@ -1749,9 +1702,6 @@ function buildPayload() {
         shipment_date:
             form.shipment_date,
 
-        vendor_id:
-            form.vendor_id,
-
         truck_id:
             form.truck_id || null,
 
@@ -1864,13 +1814,6 @@ function buildPayload() {
 */
 
 function validate() {
-    if (!form.vendor_id) {
-        errorMessage.value =
-            'Vendor angkutan wajib dipilih.'
-
-        return false
-    }
-
     if (!form.shipment_date) {
         errorMessage.value =
             'Tanggal surat jalan wajib diisi.'

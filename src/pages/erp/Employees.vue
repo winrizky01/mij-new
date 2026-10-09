@@ -86,7 +86,7 @@
 
             <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
                 <div class="text-xs font-semibold text-gray-500">
-                    Trial
+                    Lepas
                 </div>
 
                 <div class="mt-2 text-2xl font-bold text-amber-600">
@@ -727,7 +727,7 @@ const activeCount = computed(() =>
 const permanentCount = computed(() =>
     employees.value.filter(
         employee =>
-            employee.employment_type === 'permanent'
+            employee.employment_type === 'PKWTT'
     ).length
 )
 
@@ -735,7 +735,7 @@ const permanentCount = computed(() =>
 const trialCount = computed(() =>
     employees.value.filter(
         employee =>
-            employee.employment_type === 'trial'
+            employee.employment_type === 'LEPAS'
     ).length
 )
 
@@ -1007,7 +1007,7 @@ async function removeEmployee(employee) {
 
     try {
 
-        await erpApi.master.employees.remove(
+        await erpApi.master.employees.delete(
             employee.id
         )
 

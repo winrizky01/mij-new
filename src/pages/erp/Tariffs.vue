@@ -611,7 +611,6 @@
 
                                     <select
                                         v-model="form.truck_id"
-                                        required
                                         class="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-[#0052cc]"
                                     >
                                         <option value="">
@@ -812,7 +811,7 @@ const form = reactive({
 
     province_id: '',
     city_id: '',
-    tariff_type: '',
+    tariff_type: 'REGUREL',
     truck_id: '',
 
     vendor_rate: 0,
@@ -911,7 +910,7 @@ function resetForm() {
 
         province_id: '',
         city_id: '',
-        tariff_type: '',
+        tariff_type: 'REGUREL',
         truck_id: '',
 
         vendor_rate: 0,
@@ -1175,7 +1174,7 @@ async function openEdit(tariff) {
                 : '',
 
         tariff_type:
-            tariff.tariffType || '',
+            tariff.tariffType || 'REGUREL',
 
         truck_id:
             tariff.truckId

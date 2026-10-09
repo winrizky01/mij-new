@@ -1613,10 +1613,6 @@ function openEdit(truck) {
 }
 
 function closeModal() {
-    if (saving.value) {
-        return
-    }
-
     showModal.value = false
 }
 
@@ -1816,6 +1812,9 @@ async function toggleStatus(truck) {
         return
     }
 
+    console.log(truck)
+
+
     const newStatus =
         truck.status === 'inactive'
             ? 'available'
@@ -1825,13 +1824,14 @@ async function toggleStatus(truck) {
         const response =
             await erpApi.master.trucks.update(
                 truck.id,
-                {
+                {   
+                    code  : truck.code,
+                    plate_number: truck.plate_number,
                     status: newStatus,
                 }
             )
 
-        const updatedTruck =
-            unwrapData(response)
+        const updatedTruck = unwrapData(response)
 
         const index =
             trucks.value.findIndex(

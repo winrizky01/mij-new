@@ -95,10 +95,6 @@
                             </th>
 
                             <th class="px-5 py-4 text-left font-semibold text-gray-600">
-                                Vendor
-                            </th>
-
-                            <th class="px-5 py-4 text-left font-semibold text-gray-600">
                                 Truk / Driver
                             </th>
 
@@ -159,12 +155,6 @@
 
                             <td class="px-5 py-4">
                                 <p class="font-medium text-gray-900">
-                                    {{ shipment.vendor?.name || '-' }}
-                                </p>
-                            </td>
-
-                            <td class="px-5 py-4">
-                                <p class="font-medium text-gray-900">
                                     {{ shipment.truck?.plate_number || '-' }}
                                 </p>
 
@@ -207,28 +197,37 @@
 
                             <td class="px-5 py-4">
                                 <div class="flex justify-end gap-2">
+                                    <!-- LIHAT -->
                                     <button
                                         type="button"
-                                        class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                                        title="Lihat pengiriman"
+                                        aria-label="Lihat pengiriman"
+                                        class="rounded-lg border border-gray-200 p-2 text-gray-600 transition hover:bg-gray-50 hover:text-gray-900"
                                         @click="openShow(shipment)"
                                     >
-                                        Lihat
+                                        <EyeIcon class="h-4 w-4" />
                                     </button>
 
+                                    <!-- EDIT -->
                                     <button
                                         type="button"
-                                        class="rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-semibold text-[#0052cc] hover:bg-blue-100"
+                                        title="Edit pengiriman"
+                                        aria-label="Edit pengiriman"
+                                        class="rounded-lg bg-blue-50 p-2 text-[#0052cc] transition hover:bg-blue-100"
                                         @click="openEdit(shipment)"
                                     >
-                                        Edit
+                                        <PencilIcon class="h-4 w-4" />
                                     </button>
 
+                                    <!-- KOREKSI -->
                                     <button
                                         type="button"
-                                        class="rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-100"
+                                        title="Koreksi pengiriman"
+                                        aria-label="Koreksi pengiriman"
+                                        class="rounded-lg bg-amber-50 p-2 text-amber-700 transition hover:bg-amber-100"
                                         @click="openCorrection(shipment)"
                                     >
-                                        Koreksi
+                                        <ClipboardPenIcon class="h-4 w-4" />
                                     </button>
                                 </div>
                             </td>
@@ -419,6 +418,13 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
+import {
+    EyeIcon,
+    PencilIcon,
+    ClipboardPenIcon,
+} from 'lucide-vue-next'
+
+
 import InfoRow from '../../components/erp/shipments/InfoRow.vue'
 import ShipmentModal from '../../components/erp/shipments/ShipmentModal.vue'
 import { erpApi } from '../../services/api'

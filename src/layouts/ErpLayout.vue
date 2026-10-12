@@ -230,6 +230,21 @@
                         <div class="space-y-1">
 
                             <RouterLink
+                                to="/erp/quotations"
+                                class="erp-nav"
+                                @click="closeSidebar"
+                            >
+                                <span class="erp-icon">
+                                    🧾
+                                </span>
+
+                                <span>
+                                    Quotation
+                                </span>
+                            </RouterLink>
+
+
+                            <RouterLink
                                 to="/erp/invoices"
                                 class="erp-nav"
                                 @click="closeSidebar"

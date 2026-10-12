@@ -39,6 +39,7 @@ import ErpStocks from '../pages/erp/Stock.vue'
 import ErpStockIssues from '../pages/erp/StockIssues.vue'
 import ErpStockMovement from '../pages/erp/StockMovements.vue'
 import ErpInvoices from '../pages/erp/SalesInvoices.vue'
+import ErpQuotations from '../pages/erp/Quotations.vue'
 import ErpUnits from '../pages/erp/Units.vue'
 import ErpCashBank from '../pages/erp/CashBank.vue'
 import ErpReceivables from '../pages/erp/Receivables.vue'
@@ -258,15 +259,23 @@ const router = createRouter({
                 },
 
                 {
+                    path: 'quotations',
+                    name: 'erp.quotations',
+                    component: ErpQuotations,
+                },
+
+                {
                     path: '/erp/cash-bank',
                     name: 'erp.cash-bank',
                     component: ErpCashBank,
                 },
+
                 {
                     path: '/erp/receivables',
                     name: 'erp.receivables',
                     component: ErpReceivables,
                 },
+
                 {
                     path: '/erp/payables',
                     name: 'erp.payables',

@@ -1105,6 +1105,32 @@ export const erpApi = {
                 )
             },
         },
+
+        quotations: {
+            list(params = {}) {
+                return api.get('/erp/quotations', { params })
+            },
+
+            show(id) {
+                return api.get(`/erp/quotations/${id}`)
+            },
+
+            create(payload) {
+                return api.post('/erp/quotations', payload)
+            },
+
+            update(id, payload) {
+                return api.put(`/erp/quotations/${id}`, payload)
+            },
+
+            delete(id) {
+                return api.delete(`/erp/quotations/${id}`)
+            },
+
+            convert(id) {
+                return api.post(`/erp/quotations/${id}/convert`)
+            },
+        },
     },
 
     shipments: {

@@ -244,6 +244,65 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- PAGINATION -->
+            <div
+                class="flex flex-col gap-4 rounded-2xl border border-gray-100 bg-white px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+            >
+                <div class="flex flex-wrap items-center gap-3 text-sm text-gray-600">
+                    <span>
+                        Menampilkan
+                        <strong>{{ pagination.total === 0 ? 0 : (pagination.current_page - 1) * pagination.per_page + 1 }}</strong>
+                        -
+                        <strong>
+                            {{ Math.min(pagination.current_page * pagination.per_page, pagination.total) }}
+                        </strong>
+                        dari
+                        <strong>{{ pagination.total }}</strong>
+                        pengiriman
+                    </span>
+
+                    <select
+                        v-model.number="pagination.per_page"
+                        class="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#0052cc]"
+                        :disabled="loading"
+                        aria-label="Jumlah data per halaman"
+                    >
+                        <option
+                            v-for="option in perPageOptions"
+                            :key="option.value"
+                            :value="option.value"
+                        >
+                            {{ option.label }}
+                        </option>
+                    </select>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button
+                        type="button"
+                        class="rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                        :disabled="loading || pagination.current_page <= 1"
+                        @click="goToPage(pagination.current_page - 1)"
+                    >
+                        Sebelumnya
+                    </button>
+
+                    <span class="min-w-[100px] text-center text-sm text-gray-600">
+                        Halaman {{ pagination.current_page }}
+                        / {{ pagination.last_page }}
+                    </span>
+
+                    <button
+                        type="button"
+                        class="rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                        :disabled="loading || pagination.current_page >= pagination.last_page"
+                        @click="goToPage(pagination.current_page + 1)"
+                    >
+                        Berikutnya
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- FORM MODAL -->
@@ -430,8 +489,19 @@ import ShipmentModal from '../../components/erp/shipments/ShipmentModal.vue'
 import { erpApi } from '../../services/api'
 
 const loading = ref(false)
-
 const shipments = ref([])
+const pagination = reactive({
+    current_page: 1,
+    last_page: 1,
+    per_page: 25,
+    total: 0,
+})
+const perPageOptions = [
+    { value: 10, label: '10 data' },
+    { value: 25, label: '25 data' },
+    { value: 50, label: '50 data' },
+    { value: 100, label: '100 data' },
+]
 
 const showModal = ref(false)
 const showShowModal = ref(false)
@@ -472,48 +542,12 @@ const statusOptions = [
     },
 ]
 
-const filteredShipments = computed(() => {
-    const keyword = filters.search
-        .toLowerCase()
-        .trim()
-
-    return shipments.value.filter(shipment => {
-        if (filters.status && shipment.status !== filters.status) {
-            return false
-        }
-
-        if (
-            filters.date &&
-            shipment.shipment_date !== filters.date
-        ) {
-            return false
-        }
-
-        if (!keyword) {
-            return true
-        }
-
-        const searchable = [
-            shipment.shipment_number,
-            shipment.vendor?.name,
-            shipment.truck?.plate_number,
-            shipment.truck?.name,
-            shipment.driver?.name,
-            shipment.destination_company,
-            shipment.destination_city,
-        ]
-            .filter(Boolean)
-            .join(' ')
-            .toLowerCase()
-
-        return searchable.includes(keyword)
-    })
-})
+const filteredShipments = computed(() => shipments.value)
 
 const summaryCards = computed(() => [
     {
         label: 'Total',
-        value: shipments.value.length,
+        value: pagination.total,
         color: 'text-gray-900',
     },
     {
@@ -553,6 +587,15 @@ watch(
         filters.date,
     ],
     () => {
+        pagination.current_page = 1
+        loadShipments()
+    }
+)
+
+watch(
+    () => pagination.per_page,
+    () => {
+        pagination.current_page = 1
         loadShipments()
     }
 )
@@ -561,31 +604,65 @@ onMounted(() => {
     loadShipments()
 })
 
-async function loadShipments() {
+async function loadShipments(page = pagination.current_page) {
     loading.value = true
 
     try {
         const response = await erpApi.shipments.list({
-            search: filters.search || undefined,
+            search: filters.search.trim() || undefined,
             status: filters.status || undefined,
             shipment_date: filters.date || undefined,
+            page,
+            per_page: pagination.per_page,
         })
 
-        const data = response?.data ?? response
+        // Mendukung respons Axios standar dan wrapper API.
+        const result = response?.data ?? response
+        const paginated = result?.data &&
+            !Array.isArray(result.data)
+            ? result.data
+            : result
 
-        shipments.value = Array.isArray(data)
-            ? data
-            : data?.data ?? []
+        shipments.value = Array.isArray(paginated?.data)
+            ? paginated.data
+            : Array.isArray(result)
+                ? result
+                : []
+
+        pagination.current_page =
+            Number(paginated?.current_page ?? page)
+
+        pagination.last_page =
+            Number(paginated?.last_page ?? 1)
+
+        pagination.per_page =
+            Number(paginated?.per_page ?? pagination.per_page)
+
+        pagination.total =
+            Number(paginated?.total ?? shipments.value.length)
     } catch (error) {
-        console.error(
-            'Gagal memuat pengiriman:',
-            error
-        )
+        console.error('Gagal memuat pengiriman:', error)
 
         shipments.value = []
+        pagination.total = 0
+        pagination.current_page = 1
+        pagination.last_page = 1
     } finally {
         loading.value = false
     }
+}
+
+function goToPage(page) {
+    if (
+        loading.value ||
+        page < 1 ||
+        page > pagination.last_page ||
+        page === pagination.current_page
+    ) {
+        return
+    }
+
+    loadShipments(page)
 }
 
 async function openCreate() {

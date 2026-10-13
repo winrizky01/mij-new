@@ -258,8 +258,8 @@
                                             <input
                                                 v-model.number="item.quantity"
                                                 type="number"
-                                                min="0.001"
-                                                step="0.001"
+                                                min="1"
+                                                step="1"
                                                 :disabled="saving"
                                                 class="w-full rounded-lg border border-gray-300 px-3 py-2 text-right text-sm outline-none focus:border-[#0052cc] focus:ring-2 focus:ring-blue-100 disabled:bg-gray-50"
                                             />
@@ -465,8 +465,6 @@ async function loadProductTypes() {
         productTypes.value =
             response?.data?.data || []
     } catch (error) {
-        console.error(error)
-
         errorMessage.value =
             getApiError(error) ||
             'Gagal memuat Product Type.'
@@ -484,8 +482,7 @@ async function loadProducts() {
                 is_active: true,
             })
 
-        products.value =
-            response?.data?.data || []
+        products.value = response?.data?.data || []
     } catch (error) {
         console.error(error)
 
@@ -571,7 +568,12 @@ function handleProductTypeChange() {
      * Ketika tipe berubah, produk yang sudah dipilih
      * dan tidak sesuai tipe akan dikosongkan.
      */
+    if( form.productTypeId == null ){
+        errorMessage.value = 'Silahkan pilih tipe pengadaan terlebih dahulu!'
+        return
+    }
 
+    errorMessage.value = '';
     form.items.forEach((item) => {
         if (!item.productId) {
             return
@@ -621,10 +623,8 @@ function syncProduct(item) {
         return
     }
 
-    item.unitId =
-        product.unit_id ??
-        product.unit?.id ??
-        null
+    item.unitId = product.unit_id ?? product.unit?.id ?? null
+    item.unitName = product.unit?.name ?? null
 }
 
 /*

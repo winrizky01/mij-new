@@ -930,9 +930,9 @@ async function receive() {
     saving.value = true
 
     try {
+        
         const payload = {
             purchase_order_id: purchaseOrderId.value,
-
             supplier_id:
                 purchaseOrder.value?.supplier_id ||
                 purchaseOrder.value?.supplier?.id ||
@@ -943,13 +943,24 @@ async function receive() {
             notes: form.notes || null,
 
             items: items.map(item => ({
-                purchase_order_item_id:
-                    item.purchaseOrderItemId,
+                purchase_order_item_id: item.purchaseOrderItemId,
                 product_id: item.productId,
                 quantity: item.receiveQuantity,
                 unit_id: item.unitId || null,
             })),
+
+            price_revision_reason: hasPriceChanges.value
+                ? form.priceRevisionReason.trim()
+                : null,
+
+            price_revisions: form.items
+                .filter(item => priceChanged(item))
+                .map(item => ({
+                    purchase_order_item_id: item.purchaseOrderItemId,
+                    new_unit_price: Number(item.newUnitPrice),
+                })),
         }
+
 
         if (!payload.supplier_id) {
             errorMessage.value =

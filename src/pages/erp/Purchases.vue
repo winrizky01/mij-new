@@ -655,7 +655,6 @@
     </div>
 </template>
 
-
 <script setup>
 import {
     EyeIcon,

@@ -707,6 +707,7 @@ async function loadMasterData() {
 
         units.value =
             unitResponse?.data?.data ??
+            unitResponse?.data ??
             []
 
         invoiceSeries.value =
@@ -756,19 +757,19 @@ function fillForm(invoice) {
         ''
 
     form.invoice_date =
-        invoice.invoice_date ?? today()
+        String(invoice.invoice_date ?? today()).slice(0, 10)
 
-    form.due_date =
-        invoice.due_date ??
-        plusDays(form.invoice_date, 30)
+    form.due_date = invoice.due_date
+        ? String(invoice.due_date).slice(0, 10)
+        : plusDays(form.invoice_date, 30)
 
     form.notes = invoice.notes ?? ''
 
     form.ppn_rate = Number(invoice.ppn_rate) || 0
     form.pph_rate = Number(invoice.pph_rate) || 0
 
-    form.items = (invoice.items ?? []).map(item => ({
-        key: `${item.id ?? Date.now()}-${Math.random()}`,
+    form.items = (invoice.items ?? []).map((item, index) => ({
+        key: `saved-${item.id ?? index}-${Math.random()}`,
 
         product_id: item.product_id ?? null,
 
@@ -777,17 +778,13 @@ function fillForm(invoice) {
             item.product?.name ??
             '',
 
-        quantity: Number(item.quantity) || 1,
+        quantity: Number(item.quantity ?? 1),
 
-        unit_id:
-            item.unit_id ??
-            item.unit?.id ??
-            '',
+        unit_id: item.unit_id ?? item.unit?.id ?? '',
 
         unit_price: Number(item.unit_price) || 0,
 
-        discount_amount:
-            Number(item.discount_amount) || 0,
+        discount_amount: Number(item.discount_amount) || 0,
 
         account_id: item.account_id ?? null,
 

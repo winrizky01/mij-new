@@ -5,10 +5,10 @@
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <h1 class="text-2xl font-bold text-slate-800">
-                    Sales Quotation
+                    Quotation
                 </h1>
                 <p class="mt-1 text-sm text-slate-500">
-                    Kelola penawaran harga customer dan konversi ke Sales Order.
+                    Kelola penawaran harga customer dan konversi ke Invoice
                 </p>
             </div>
 
@@ -224,7 +224,7 @@
                 <div class="flex items-center justify-between border-b px-6 py-4">
                     <div>
                         <h2 class="text-lg font-bold text-slate-800">
-                            {{ editingId ? 'Detail Sales Quotation' : 'Buat Sales Quotation' }}
+                            {{ editingId ? 'Detail Quotation' : 'Buat Quotation' }}
                         </h2>
                         <p class="mt-1 text-xs text-slate-500">
                             Barang dan jasa dapat digabung dalam satu penawaran.
@@ -805,14 +805,14 @@ async function openEdit(id, viewOnly = false) {
     formError.value = ''
 
     try {
-        const response = await erpApi.purchases.quotations.show(id)
+        const response  = await erpApi.purchases.quotations.show(id)
         const quotation = unwrap(response)
 
         editingId.value = quotation.id
-        readOnly.value = viewOnly
+        readOnly.value  = viewOnly
 
         Object.assign(form, {
-            customer_id: quotation.customer_id,
+            customer_id: quotation.partner_id,
             quotation_date: String(quotation.quotation_date || '').slice(0, 10),
             valid_until: String(quotation.valid_until || '').slice(0, 10),
             status: quotation.status || 'draft',

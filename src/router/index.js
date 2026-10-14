@@ -44,6 +44,7 @@ import ErpUnits from '../pages/erp/Units.vue'
 import ErpCashBank from '../pages/erp/CashBank.vue'
 import ErpReceivables from '../pages/erp/Receivables.vue'
 import ErpPayables from '../pages/erp/Payables.vue'
+import ErpReportShipment from '../pages/erp/reports/ShipmentReport.vue'
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
@@ -280,6 +281,12 @@ const router = createRouter({
                     path: '/erp/payables',
                     name: 'erp.payables',
                     component: ErpPayables,
+                },
+                
+                {
+                    path: '/erp/reports/shipments',
+                    name: 'erp.reports.shipments',
+                    component: ErpReportShipment,
                 },
                 
                 {

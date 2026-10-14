@@ -405,6 +405,31 @@
                         </div>
                     </div>
 
+                    
+                    <!-- LAPORAN -->
+                    <div class="mb-6">
+                        <p class="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+                            Laporan
+                        </p>
+
+                        <div class="space-y-1">
+                            <RouterLink
+                                to="/erp/reports/shipments"
+                                class="erp-nav"
+                                @click="closeSidebar"
+                            >
+                                <span class="erp-icon">
+                                    📊
+                                </span>
+
+                                <span>
+                                    Laporan Pengiriman
+                                </span>
+                            </RouterLink>
+                        </div>
+                    </div>
+
+
                 </nav>
 
 

@@ -332,7 +332,7 @@
 
 
                             <RouterLink
-                                to="/erp/stock-movements"
+                                to="/erp/stock-mutations"
                                 class="erp-nav"
                                 @click="closeSidebar"
                             >

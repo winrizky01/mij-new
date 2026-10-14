@@ -247,8 +247,8 @@ const router = createRouter({
                 },
 
                 {
-                    path: 'stock-movements',
-                    name: 'erp.stock-movements',
+                    path: 'stock-mutations',
+                    name: 'erp.stock-mutations',
                     component: ErpStockMovement,
                 },
 

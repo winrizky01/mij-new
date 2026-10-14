@@ -103,7 +103,6 @@ const groupDefinitions = [
       'goods-receipts.',
       'stock-issues.',
       'stock-adjustments.',
-      'stock-movements.',
       'stock-mutations.',
       'stocks.',
     ],

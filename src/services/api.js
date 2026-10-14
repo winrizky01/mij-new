@@ -1327,27 +1327,27 @@ export const erpApi = {
         mutations: {
             list(params = {}) {
                 return get(
-                    '/erp/stock-movements',
+                    '/erp/stock-mutations',
                     params
                 )
             },
 
             show(id) {
                 return get(
-                    `/erp/stock-movements/${id}`
+                    `/erp/stock-mutations/${id}`
                 )
             },
 
             create(data) {
                 return post(
-                    '/erp/stock-movements',
+                    '/erp/stock-mutations',
                     data
                 )
             },
 
             update(id, data) {
                 return put(
-                    `/erp/stock-movements/${id}`,
+                    `/erp/stock-mutations/${id}`,
                     data
                 )
             },

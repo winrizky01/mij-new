@@ -281,6 +281,18 @@ const router = createRouter({
                     name: 'erp.payables',
                     component: ErpPayables,
                 },
+                
+                {
+                path: 'access-management',
+                name: 'erp.access-management',
+                component: () => import('@/pages/erp/AccessManagement.vue'),
+                meta: {
+                    requiresAuth: true,
+                    system: 'erp',
+                    superAdminOnly: true,
+                },
+                },
+
             ],
         },
     ],

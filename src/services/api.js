@@ -582,6 +582,34 @@ export const erpApi = {
         return get('/erp/dashboard')
     },
 
+    accessManagement: {
+        users() {
+            return get('/erp/access-management/users')
+        },
+
+        roles() {
+            return get('/erp/access-management/roles')
+        },
+
+        permissions() {
+            return get('/erp/access-management/permissions')
+        },
+
+        updateUserRoles(userId, roleIds) {
+            return put(
+                `/erp/access-management/users/${userId}/roles`,
+                { role_ids: roleIds }
+            )
+        },
+
+        updateRolePermissions(roleId, permissionIds) {
+            return put(
+                `/erp/access-management/roles/${roleId}/permissions`,
+                { permission_ids: permissionIds }
+            )
+        },
+    },
+
     master: {
         products: {
             list(params = {}) {

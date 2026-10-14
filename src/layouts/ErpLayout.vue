@@ -408,6 +408,21 @@
                 </nav>
 
 
+                <!-- Manajemen Akses: khusus Super Admin ERP -->
+                <div
+                    v-if="isErpSuperAdmin"
+                    class="shrink-0 border-t border-gray-300 p-3"
+                >
+                    <RouterLink
+                        to="/erp/access-management"
+                        class="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-gray-700 transition hover:bg-sky-50 hover:text-sky-700"
+                        active-class="bg-sky-50 text-sky-700"
+                    >
+                        <ShieldCheck class="h-5 w-5 shrink-0" />
+                        <span>Manajemen Akses</span>
+                    </RouterLink>
+                </div>
+
                 <!-- Bottom User -->
                 <div class="shrink-0 border-t border-gray-100 p-3">
 
@@ -550,8 +565,9 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { authApi } from '@/services/api'
+import { RouterLink } from 'vue-router'
 
-import { Bell } from 'lucide-vue-next'
+import { Bell, ShieldCheck, } from 'lucide-vue-next'
 
 const router = useRouter()
 
@@ -609,6 +625,16 @@ const userInitials = computed(() => {
 function closeSidebar() {
     sidebarOpen.value = false
 }
+
+
+const isErpSuperAdmin = computed(() => {
+    const roles = user.value?.roles ?? user.roles ?? []
+
+    return roles.some(role => {
+        const roleName = typeof role === 'string' ? role : role.name
+        return roleName === 'erp_super_admin'
+    })
+})
 
 
 async function logout() {

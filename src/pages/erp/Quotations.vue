@@ -139,9 +139,18 @@
                                 <div class="flex justify-end gap-2">
                                     <button
                                         type="button"
+                                        title="Print quotation"
+                                        @click="printQuotation(quotation)"
+                                        class="rounded-lg p-2 text-slate-400 transition hover:bg-sky-50 hover:text-sky-600"
+                                    >
+                                        <Printer class="h-4 w-4" />
+                                    </button>
+
+                                    <button
+                                        type="button"
                                         title="Lihat detail"
                                         @click="openEdit(quotation.id, true)"
-                                        class="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-100"
+                                        class="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-[#003366]"
                                     >
                                         <Eye class="h-4 w-4" />
                                     </button>
@@ -151,7 +160,7 @@
                                         type="button"
                                         title="Edit quotation"
                                         @click="openEdit(quotation.id, false)"
-                                        class="rounded-lg bg-blue-50 p-2 text-blue-700 hover:bg-blue-100"
+                                        class="rounded-lg p-2 text-slate-400 transition hover:bg-amber-50 hover:text-amber-600 disabled:opacity-50"
                                     >
                                         <Pencil class="h-4 w-4" />
                                     </button>
@@ -159,9 +168,9 @@
                                     <button
                                         v-if="quotation.status === 'accepted'"
                                         type="button"
-                                        title="Konversi ke Sales Order"
+                                        title="Konversi ke Invoice"
                                         @click="convertQuotation(quotation)"
-                                        class="rounded-lg bg-emerald-50 p-2 text-emerald-700 hover:bg-emerald-100"
+                                        class="rounded-lg p-2 text-slate-400 transition hover:bg-amber-50 hover:text-amber-600 disabled:opacity-50"
                                     >
                                         <ArrowRightLeft class="h-4 w-4" />
                                     </button>
@@ -171,7 +180,7 @@
                                         type="button"
                                         title="Hapus quotation"
                                         @click="deleteQuotation(quotation)"
-                                        class="rounded-lg bg-red-50 p-2 text-red-600 hover:bg-red-100"
+                                        class="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
                                     >
                                         <Trash2 class="h-4 w-4" />
                                     </button>
@@ -600,6 +609,13 @@ import {
     Pencil,
     Trash2,
     ArrowRightLeft,
+    CheckCircle2,
+    XCircle,
+    Check,
+    RefreshCw,
+    FileText,
+    CreditCard,
+    Printer,
 } from 'lucide-vue-next'
 
 import { erpApi, getApiError } from '@/services/api'
@@ -750,7 +766,7 @@ async function loadQuotations() {
     errorMessage.value = ''
 
     try {
-        const response = await erpApi.purchases.quotations.list({
+        const response = await erpApi.sales.quotations.list({
             search: filters.search || undefined,
             status: filters.status || undefined,
             page: filters.page,
@@ -805,7 +821,7 @@ async function openEdit(id, viewOnly = false) {
     formError.value = ''
 
     try {
-        const response  = await erpApi.purchases.quotations.show(id)
+        const response  = await erpApi.sales.quotations.show(id)
         const quotation = unwrap(response)
 
         editingId.value = quotation.id
@@ -922,12 +938,12 @@ async function saveQuotation() {
         }
 
         if (editingId.value) {
-            await erpApi.purchases.quotations.update(
+            await erpApi.sales.quotations.update(
                 editingId.value,
                 payload
             )
         } else {
-            await erpApi.purchases.quotations.create(payload)
+            await erpApi.sales.quotations.create(payload)
         }
 
         closeForm()
@@ -948,7 +964,7 @@ async function deleteQuotation(quotation) {
     errorMessage.value = ''
 
     try {
-        await erpApi.purchases.quotations.delete(quotation.id)
+        await erpApi.sales.quotations.delete(quotation.id)
         await loadQuotations()
     } catch (error) {
         errorMessage.value =
@@ -966,7 +982,7 @@ async function convertQuotation(quotation) {
     errorMessage.value = ''
 
     try {
-        const response = await erpApi.purchases.quotations.convert(
+        const response = await erpApi.sales.quotations.convert(
             quotation.id
         )
 
@@ -981,6 +997,37 @@ async function convertQuotation(quotation) {
     } catch (error) {
         errorMessage.value =
             getApiError(error) || 'Gagal mengonversi quotation.'
+    }
+}
+
+async function printQuotation (quotation) {
+    try {
+        const response = await erpApi.sales.quotations.pdf(
+            quotation.id
+        )
+
+        const blob = new Blob(
+            [response.data],
+            {
+                type: 'application/pdf',
+            }
+        )
+
+        const url = window.URL.createObjectURL(blob)
+
+        window.open(url, '_blank')
+
+        setTimeout(() => {
+            window.URL.revokeObjectURL(url)
+        }, 60000)
+
+    } catch (error) {
+        console.error(error)
+
+        alert(
+            getApiError(error) ||
+            'PDF quotation gagal dibuka.'
+        )
     }
 }
 

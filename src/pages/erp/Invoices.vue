@@ -9,7 +9,7 @@
                 <h1
                     class="text-2xl font-bold text-[#172033]"
                 >
-                    Invoice Penjualan
+                    Invoice
                 </h1>
 
                 <p

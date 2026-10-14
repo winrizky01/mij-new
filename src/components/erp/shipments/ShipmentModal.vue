@@ -1027,7 +1027,7 @@ async function loadMasters() {
             provinceResponse,
         ] = await Promise.all([
             erpApi.master.trucks.list({
-                is_active: true,
+                status: 'available',
             }),
 
             erpApi.master.employees.list({

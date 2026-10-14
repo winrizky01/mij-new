@@ -1,4 +1,3 @@
-
 <template>
     <div class="space-y-6 p-6">
         <!-- HEADER -->
@@ -609,12 +608,6 @@ import {
     Pencil,
     Trash2,
     ArrowRightLeft,
-    CheckCircle2,
-    XCircle,
-    Check,
-    RefreshCw,
-    FileText,
-    CreditCard,
     Printer,
 } from 'lucide-vue-next'
 
@@ -785,7 +778,7 @@ async function loadQuotations() {
         pagination.total = page?.total || 0
     } catch (error) {
         errorMessage.value =
-            getApiError(error) || 'Gagal memuat Sales Quotation.'
+            getApiError(error) || 'Gagal memuat Quotation.'
     } finally {
         loading.value = false
     }

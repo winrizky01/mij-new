@@ -50,6 +50,14 @@
             </div>
         </div>
 
+        <!-- ERROR -->
+        <div
+            v-if="errorMessage"
+            class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+        >
+            {{ errorMessage }}
+        </div>
+
         <!-- Stats -->
         <div
             class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
@@ -1202,6 +1210,7 @@ import {
 
 import SalesInvoiceModal from '../../components/erp/invoices/SalesInvoiceModal.vue'
 import PaymentModal from '../../components/erp/invoices/PaymentModal.vue'
+import { useToast } from '@/composables/useToast'
 
 /*
 |--------------------------------------------------------------------------
@@ -1209,8 +1218,10 @@ import PaymentModal from '../../components/erp/invoices/PaymentModal.vue'
 |--------------------------------------------------------------------------
 */
 
+const { success, error } = useToast()
 const loading = ref(false)
 const actionLoading = ref(false)
+const errorMessage = ref('')
 
 const invoices = ref([])
 
@@ -1368,6 +1379,7 @@ const filteredTotal = computed(() => {
 
 async function loadInvoices() {
     loading.value = true
+    errorMessage.value = ''
 
     try {
         const params = {}
@@ -1397,7 +1409,7 @@ async function loadInvoices() {
         invoices.value =
             response.data?.data ?? []
     } catch (error) {
-        alert(getApiError(error))
+        errorMessage.value = getApiError(error) || "Gagal memuat Invoice"
     } finally {
         loading.value = false
     }
@@ -1461,6 +1473,7 @@ function closePaymentModal() {
 */
 
 async function openDetail(invoice) {
+    errorMessage.value = ''
     try {
         const response =
             await erpApi.sales.invoices.show(
@@ -1473,7 +1486,7 @@ async function openDetail(invoice) {
 
         showDetailModal.value = true
     } catch (error) {
-        alert(getApiError(error))
+        errorMessage.value = getApiError(error)
     }
 }
 
@@ -1498,6 +1511,7 @@ async function approveInvoice(invoice) {
     }
 
     actionLoading.value = true
+    errorMessage.value = ''
 
     try {
         await erpApi.sales.invoices.approve(
@@ -1513,11 +1527,9 @@ async function approveInvoice(invoice) {
             await openDetail(invoice)
         }
 
-        alert(
-            'Invoice berhasil di-approve.'
-        )
+        success('Invoice berhasil di-approve.')
     } catch (error) {
-        alert(getApiError(error))
+        errorMessage.value = getApiError(error) || '-'
     } finally {
         actionLoading.value = false
     }
@@ -1542,6 +1554,7 @@ async function handlePayment(payload) {
     }
 
     actionLoading.value = true
+    errorMessage.value = ''
 
     try {
         const invoiceId =
@@ -1565,13 +1578,9 @@ async function handlePayment(payload) {
             })
         }
 
-        alert(
-            'Pembayaran berhasil dicatat.'
-        )
+        success('Pembayaran berhasil dicatat.')
     } catch (error) {
-        alert(
-            getApiError(error)
-        )
+        errorMessage.value = getApiError(error)
     } finally {
         actionLoading.value = false
     }
@@ -1597,6 +1606,7 @@ async function cancelInvoice(invoice) {
     }
 
     actionLoading.value = true
+    errorMessage.value = ''
 
     try {
         await erpApi.sales.invoices.cancel(
@@ -1612,11 +1622,9 @@ async function cancelInvoice(invoice) {
             await openDetail(invoice)
         }
 
-        alert(
-            'Invoice berhasil dibatalkan.'
-        )
+        success('Invoice berhasil dibatalkan.')
     } catch (error) {
-        alert(getApiError(error))
+        errorMessage.value = getApiError(error)
     } finally {
         actionLoading.value = false
     }
@@ -1766,6 +1774,7 @@ function itemTotal(item) {
 }
 
 const printInvoice = async (invoice) => {
+    errorMessage.value = ''
     try {
         const response = await erpApi.sales.invoices.pdf(
             invoice.id
@@ -1788,11 +1797,8 @@ const printInvoice = async (invoice) => {
 
     } catch (error) {
         console.error(error)
-
-        alert(
-            getApiError(error) ||
+        errorMessage.value = getApiError(error) ||
             'PDF invoice gagal dibuka.'
-        )
     }
 }
 

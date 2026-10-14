@@ -1,3 +1,8 @@
+<script setup>
+  import GlobalNotification from './components/erp/GlobalNotification.vue'
+</script>
+
 <template>
-  <RouterView />
+    <RouterView />
+    <GlobalNotification />
 </template>

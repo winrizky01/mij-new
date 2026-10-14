@@ -111,23 +111,52 @@ api.interceptors.request.use(
 |
 */
 
+// api.interceptors.response.use(
+//     (response) => response,
+
+//     (error) => {
+//         if (error.response?.status === 401) {
+//             clearAuth()
+
+//             /*
+//              * Jangan langsung redirect menggunakan window.location
+//              * di sini. Router Vue akan menangani redirect.
+//              *
+//              * Event ini bisa digunakan oleh App.vue / auth store
+//              * kalau nanti kita ingin membuat global auth handler.
+//              */
+
+//             window.dispatchEvent(
+//                 new CustomEvent('mji:unauthorized')
+//             )
+//         }
+
+//         return Promise.reject(error)
+//     }
+// )
+
 api.interceptors.response.use(
     (response) => response,
 
     (error) => {
-        if (error.response?.status === 401) {
-            clearAuth()
+        const status = error.response?.status
 
-            /*
-             * Jangan langsung redirect menggunakan window.location
-             * di sini. Router Vue akan menangani redirect.
-             *
-             * Event ini bisa digunakan oleh App.vue / auth store
-             * kalau nanti kita ingin membuat global auth handler.
-             */
+        if (status === 401) {
+            clearAuth()
 
             window.dispatchEvent(
                 new CustomEvent('mji:unauthorized')
+            )
+        }
+
+        if (status === 403) {
+            const message =
+                'Kamu tidak memiliki izin untuk melakukan tindakan ini. Hubungi administrator ERP jika membutuhkan akses.'
+
+            window.dispatchEvent(
+                new CustomEvent('mji:forbidden', {
+                    detail: { message },
+                })
             )
         }
 
@@ -141,29 +170,52 @@ api.interceptors.response.use(
 |--------------------------------------------------------------------------
 */
 
+
 export function getApiError(error) {
     const response = error?.response
-    console.log('API ERROR', error)
+    const status = response?.status
 
     if (!response) {
         return {
             status: 0,
-            message:
-                'Tidak dapat terhubung ke server.',
+            message: 'Tidak dapat terhubung ke server. Periksa koneksi jaringan.',
             errors: {},
         }
     }
 
+    if (status === 401) {
+        return {
+            status,
+            message: 'Sesi kamu telah berakhir. Silakan login kembali.',
+            errors: {},
+        }
+    }
+
+    if (status === 403) {
+        return {
+            status,
+            message: 'Kamu tidak memiliki akses untuk melakukan tindakan ini.',
+            errors: {},
+        }
+    }
+
+    if (status === 422) {
+        return {
+            status,
+            message: response.data?.message || 'Periksa kembali data yang kamu masukkan.',
+            errors: response.data?.errors || {},
+        }
+    }
+
     return {
-        status: response.status,
-        message:
-            response.data?.message ||
-            'Terjadi kesalahan pada server.',
-        errors:
-            response.data?.errors || {},
-        data: response.data,
+        status,
+        message: status >= 500
+            ? 'Terjadi kesalahan pada server. Silakan coba lagi.'
+            : response.data?.message || 'Permintaan tidak dapat diproses.',
+        errors: response.data?.errors || {},
     }
 }
+
 
 /*
 |--------------------------------------------------------------------------

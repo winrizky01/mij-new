@@ -487,7 +487,9 @@ import {
 import InfoRow from '../../components/erp/shipments/InfoRow.vue'
 import ShipmentModal from '../../components/erp/shipments/ShipmentModal.vue'
 import { erpApi } from '../../services/api'
+import { useToast } from '@/composables/useToast'
 
+const { success, error } = useToast()
 const loading = ref(false)
 const shipments = ref([])
 const pagination = reactive({
@@ -640,8 +642,8 @@ async function loadShipments(page = pagination.current_page) {
 
         pagination.total =
             Number(paginated?.total ?? shipments.value.length)
-    } catch (error) {
-        console.error('Gagal memuat pengiriman:', error)
+    } catch (err) {
+        error(getApiError(err))
 
         shipments.value = []
         pagination.total = 0
@@ -695,11 +697,8 @@ async function openShow(shipment) {
             data?.data ?? data
 
         showShowModal.value = true
-    } catch (error) {
-        console.error(
-            'Gagal memuat detail pengiriman:',
-            error
-        )
+    } catch (err) {
+        error(getApiError(err))
     }
 }
 

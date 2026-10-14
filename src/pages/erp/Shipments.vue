@@ -210,6 +210,7 @@
 
                                     <!-- EDIT -->
                                     <button
+                                        v-if="shipment.status !== 'completed'"
                                         type="button"
                                         title="Edit pengiriman"
                                         aria-label="Edit pengiriman"
@@ -221,6 +222,7 @@
 
                                     <!-- KOREKSI -->
                                     <button
+                                        v-if="shipment.status == 'arrived'  || shipment.status == 'completed'"
                                         type="button"
                                         title="Koreksi pengiriman"
                                         aria-label="Koreksi pengiriman"

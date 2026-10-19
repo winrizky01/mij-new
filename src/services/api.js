@@ -456,6 +456,38 @@ export const adminApi = {
             )
         },
 
+        pages: {
+            list(params = {}) {
+                return get('/website/pages', params)
+            },
+
+            show(id) {
+                return get(`/website/pages/${id}`)
+            },
+
+            create(data) {
+                return post('/website/pages', data)
+            },
+
+            update(id, data) {
+                return put(`/website/pages/${id}`, data)
+            },
+
+            delete(id) {
+                return destroy(`/website/pages/${id}`)
+            },
+
+            saveDraft(id, blocks) {
+                return put(`/website/pages/${id}/draft`, {
+                    blocks,
+                })
+            },
+
+            publish(id) {
+                return post(`/website/pages/${id}/publish`)
+            },
+        },
+
         services: {
             list(params = {}) {
                 return get(

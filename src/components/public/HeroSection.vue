@@ -3,8 +3,12 @@
         id="home"
         class="relative isolate flex min-h-[90vh] flex-col justify-center overflow-hidden bg-[#001a4d] text-white"
     >
+        
         <!-- Background Image Carousel -->
-        <div class="absolute inset-0 -z-20 overflow-hidden">
+        <div
+            v-if="heroSlides.length > 0"
+            class="absolute inset-0 -z-20 overflow-hidden"
+        >
             <div
                 v-for="(slide, index) in heroSlides"
                 :key="index"
@@ -17,20 +21,37 @@
                 :style="{
                     backgroundImage: `url('${slide.bgImage}')`,
                 }"
-            />
+            ></div>
         </div>
 
         <!-- Gradient Overlay -->
         <div
             class="absolute inset-0 -z-10 bg-gradient-to-r from-[#001a4d]/95 via-[#003d99]/85 to-transparent"
-        />
+        ></div>
 
         <div
             class="absolute inset-0 -z-10 bg-gradient-to-t from-[#001a4d] via-transparent to-black/30"
-        />
+        ></div>
+
+        <!-- Loading -->
+        <div
+            v-if="loading"
+            class="mx-auto w-full max-w-7xl px-5 py-24 sm:px-8 sm:py-32 lg:py-36"
+        >
+            <p class="text-blue-100">Memuat konten...</p>
+        </div>
+
+        <!-- Error -->
+        <div
+            v-else-if="errorMessage"
+            class="mx-auto w-full max-w-7xl px-5 py-24 sm:px-8 sm:py-32 lg:py-36"
+        >
+            <p class="text-blue-100">{{ errorMessage }}</p>
+        </div>
 
         <!-- Hero Content -->
         <div
+            v-else-if="heroSlides.length > 0"
             class="mx-auto w-full max-w-7xl px-5 py-24 sm:px-8 sm:py-32 lg:py-36"
         >
             <div class="max-w-3xl">
@@ -119,9 +140,7 @@
                         {{ stat.value }}
                     </p>
 
-                    <p
-                        class="mt-2 text-xs leading-6 text-blue-100 sm:text-sm"
-                    >
+                    <p class="mt-2 text-xs leading-6 text-blue-100 sm:text-sm">
                         {{ stat.label }}
                     </p>
                 </div>
@@ -130,6 +149,7 @@
 
         <!-- Slide Navigation -->
         <div
+            v-if="!loading && !errorMessage && heroSlides.length > 0"
             class="absolute bottom-6 right-6 z-20 flex items-center gap-3 rounded-full border border-white/10 bg-black/40 px-4 py-2 backdrop-blur-md"
         >
             <button
@@ -144,93 +164,132 @@
                         : 'w-2 bg-white/40 hover:bg-white/70'
                 "
                 :aria-label="`Slide ${index + 1}`"
-            />
+            ></button>
         </div>
+
     </section>
 </template>
 
 <script setup>
 import { onMounted, onUnmounted, ref } from 'vue'
+import api from '@/services/api'
 
-const currentSlide = ref(0)
+const currentSlide  = ref(0)
+const heroSlides    = ref([])
+const stats         = ref([])
+const autoplayInterval = ref(6000)
+const loading       = ref(true)
+const errorMessage  = ref('')
 
 let slideTimer = null
+async function fetchHeroSection() {
+    loading.value = true
+    errorMessage.value = ''
 
-const heroSlides = [
-    {
-        tag: 'Manunggal Jasa Investindo',
-        title: 'Solusi Bisnis Terpadu untuk Kesuksesan Anda',
-        description:
-            'Mitra terpercaya Anda dalam layanan trucking, software development, aplikasi mobile, dan digital marketing terintegrasi.',
-        bgImage:
-            'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=2000&q=80',
-    },
-    {
-        tag: 'Digital & Technology',
-        title: 'Transformasi Digital Berkelanjutan',
-        description:
-            'Pengembangan software custom, aplikasi mobile modern, dan sistem informasi enterprise untuk efisiensi bisnis Anda.',
-        bgImage:
-            'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=2000&q=80',
-    },
-    {
-        tag: 'Integrated Services',
-        title: 'Jaringan Logistik & Pemasaran Terluas',
-        description:
-            'Dukungan armada modern siap kirim ke seluruh nusantara dipadukan dengan strategi digital marketing yang terukur.',
-        bgImage:
-            'https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=2000&q=80',
-    },
-]
+    try {
+        const response = await api.get('/website/home/sections')
+        const sections = response.data?.data ?? []
 
-const stats = [
-    {
-        value: '1957',
-        label: 'Tahun berdiri (cikal bakal)',
-    },
-    {
-        value: '500+',
-        label: 'Klien terpercaya',
-    },
-    {
-        value: '100+',
-        label: 'Proyek sukses',
-    },
-    {
-        value: '4',
-        label: 'Layanan utama',
-    },
-]
+        const hero = sections.find(
+            section => section.type === 'hero'
+        )
+
+        if (!hero) {
+            throw new Error(
+                'Section Hero belum tersedia atau belum aktif di database.'
+            )
+        }
+
+        const settings = hero.settings ?? {}
+
+        heroSlides.value = Array.isArray(settings.slides)
+            ? settings.slides.map(slide => ({
+                tag: slide.tag ?? '',
+                title: slide.title ?? '',
+                description: slide.description ?? '',
+                bgImage: slide.bgImage ?? hero.image ?? '',
+            }))
+            : []
+
+        stats.value = Array.isArray(settings.stats)
+            ? settings.stats.map(stat => ({
+                value: stat.value ?? '',
+                label: stat.label ?? '',
+            }))
+            : []
+
+        const interval = Number(settings.autoplay_interval)
+
+        if (Number.isFinite(interval) && interval >= 1000) {
+            autoplayInterval.value = interval
+        }
+
+        if (heroSlides.value.length === 0) {
+            throw new Error(
+                'Data slides Hero kosong di database.'
+            )
+        }
+
+        currentSlide.value = 0
+    } catch (error) {
+        console.error('Gagal mengambil Hero dari API:', error)
+
+        heroSlides.value = []
+        stats.value = []
+
+        errorMessage.value =
+            error.response?.data?.message ||
+            error.message ||
+            'Gagal memuat konten Hero.'
+    } finally {
+        loading.value = false
+    }
+}
 
 function nextSlide() {
+    if (heroSlides.value.length <= 1) return
+
     currentSlide.value =
-        (currentSlide.value + 1) % heroSlides.length
+        (currentSlide.value + 1) % heroSlides.value.length
 }
 
 function startTimer() {
-    slideTimer = setInterval(nextSlide, 6000)
+    if (slideTimer) {
+        clearInterval(slideTimer)
+        slideTimer = null
+    }
+
+    if (heroSlides.value.length > 1) {
+        slideTimer = setInterval(
+            nextSlide,
+            autoplayInterval.value
+        )
+    }
 }
 
 function resetTimer() {
-    if (slideTimer) {
-        clearInterval(slideTimer)
-    }
-
     startTimer()
 }
 
 function setSlide(index) {
+    if (index < 0 || index >= heroSlides.value.length) return
+
     currentSlide.value = index
     resetTimer()
 }
 
-onMounted(() => {
-    startTimer()
+onMounted(async () => {
+    await fetchHeroSection()
+
+    if (heroSlides.value.length > 0) {
+        startTimer()
+    }
 })
 
 onUnmounted(() => {
     if (slideTimer) {
         clearInterval(slideTimer)
+        slideTimer = null
     }
 })
 </script>

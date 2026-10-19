@@ -1,1035 +1,858 @@
+<script setup>
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { websiteContentService } from '@/services/websiteContent'
+
+const route = useRoute()
+
+const loading = ref(false)
+const saving = ref(false)
+const uploading = ref(false)
+const errorMessage = ref('')
+const successMessage = ref('')
+const pages = ref([])
+const sections = ref([])
+const selectedPageId = ref('')
+const editingId = ref(null)
+const showEditor = ref(false)
+const imageFile = ref(null)
+
+const defaultTypes = [
+    { value: 'hero', label: 'Hero Banner' },
+    { value: 'about', label: 'Tentang MJI' },
+    { value: 'contact', label: 'Kontak' },
+    { value: 'services', label: 'Layanan' },
+    { value: 'features', label: 'Keunggulan' },
+    { value: 'testimonials', label: 'Testimoni' },
+    { value: 'faq', label: 'FAQ' },
+    { value: 'gallery', label: 'Galeri' },
+    { value: 'custom', label: 'Section Generik' },
+]
+
+const form = reactive({
+    type: 'hero',
+    title: '',
+    subtitle: '',
+    content: '',
+    image: '',
+    button_text: '',
+    button_url: '',
+    is_active: true,
+    sort_order: 0,
+    settings: {},
+})
+
+const pageOptions = computed(() =>
+    pages.value.map(page => ({
+        id: page.id,
+        label: page.title || page.name || page.slug,
+        slug: page.slug,
+    }))
+)
+
+const currentPage = computed(() =>
+    pages.value.find(
+        page => String(page.id) === String(selectedPageId.value)
+    )
+)
+
+const typeLabel = type =>
+    defaultTypes.find(item => item.value === type)?.label || type
+
+const backendOrigin = computed(() => {
+    const base = import.meta.env.VITE_API_BASE_URL
+        || import.meta.env.VITE_API_URL
+        || ''
+
+    return String(base).replace(/\/api\/?$/, '').replace(/\/$/, '')
+})
+
+function imageUrl(path) {
+    if (!path) return ''
+    if (/^https?:\/\//i.test(path) || path.startsWith('data:')) {
+        return path
+    }
+
+    return `${backendOrigin.value}${path.startsWith('/') ? '' : '/'}${path}`
+}
+
+function resetMessages() {
+    errorMessage.value = ''
+    successMessage.value = ''
+}
+
+function emptyForm() {
+    Object.assign(form, {
+        type: 'hero',
+        title: '',
+        subtitle: '',
+        content: '',
+        image: '',
+        button_text: '',
+        button_url: '',
+        is_active: true,
+        sort_order: sections.value.length,
+        settings: {},
+    })
+
+    imageFile.value = null
+}
+
+function parseSettings(settings) {
+    if (!settings) return {}
+    if (typeof settings === 'object' && !Array.isArray(settings)) {
+        return { ...settings }
+    }
+
+    try {
+        const parsed = JSON.parse(settings)
+        return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+            ? parsed
+            : {}
+    } catch {
+        return {}
+    }
+}
+
+async function loadPages() {
+    pages.value = await websiteContentService.getPages()
+
+    const requestedPageId = route.query.page_id
+    const home = pages.value.find(page => page.slug === 'home')
+
+    if (requestedPageId &&
+        pages.value.some(page => String(page.id) === String(requestedPageId))) {
+        selectedPageId.value = String(requestedPageId)
+    } else if (home) {
+        selectedPageId.value = String(home.id)
+    } else if (pages.value.length) {
+        selectedPageId.value = String(pages.value[0].id)
+    }
+}
+
+async function loadSections() {
+    if (!selectedPageId.value) {
+        sections.value = []
+        return
+    }
+
+    loading.value = true
+    resetMessages()
+
+    try {
+        sections.value = await websiteContentService.getSections({
+            page_id: selectedPageId.value,
+        })
+    } catch (error) {
+        errorMessage.value =
+            error.response?.data?.message || 'Gagal memuat section.'
+    } finally {
+        loading.value = false
+    }
+}
+
+function addSection(type = 'hero') {
+    resetMessages()
+    emptyForm()
+    form.type = type
+    form.sort_order = sections.value.length
+    editingId.value = null
+    showEditor.value = true
+}
+
+function editSection(section) {
+    resetMessages()
+    emptyForm()
+
+    editingId.value = section.id
+
+    Object.assign(form, {
+        type: section.type || 'custom',
+        title: section.title || '',
+        subtitle: section.subtitle || '',
+        content: section.content || '',
+        image: section.image || '',
+        button_text: section.button_text || '',
+        button_url: section.button_url || '',
+        is_active: Boolean(section.is_active),
+        sort_order: Number(section.sort_order || 0),
+        settings: parseSettings(section.settings),
+    })
+
+    form.settings.statsText = JSON.stringify(
+        parseSettings(section.settings).stats || [],
+        null,
+        2
+    )
+    showEditor.value = true
+}
+
+function changeType(value) {
+    form.type = value
+    // Jangan menghapus settings ketika tipe berubah.
+}
+
+function parseGenericSettings() {
+    let settings = form.settings
+
+    if (typeof settings === 'string') {
+        try {
+            settings = JSON.parse(settings)
+        } catch {
+            throw new Error('Format JSON settings tidak valid.')
+        }
+    }
+
+    if (
+        !settings ||
+        Array.isArray(settings) ||
+        typeof settings !== 'object'
+    ) {
+        throw new Error('Settings harus berupa object JSON.')
+    }
+
+    settings = { ...settings }
+
+    // statsText hanya field bantu form, bukan data database.
+    if (Object.prototype.hasOwnProperty.call(settings, 'statsText')) {
+        try {
+            settings.stats = typeof settings.statsText === 'string'
+                ? JSON.parse(settings.statsText)
+                : settings.statsText
+
+            if (!Array.isArray(settings.stats)) {
+                throw new Error('Statistik harus berupa JSON array.')
+            }
+
+            delete settings.statsText
+        } catch (error) {
+            throw new Error(
+                error.message || 'Format statistik tidak valid.'
+            )
+        }
+    }
+
+    return settings
+}
+
+async function uploadSelectedImage() {
+    if (!imageFile.value) return
+
+    uploading.value = true
+    resetMessages()
+
+    try {
+        const result = await websiteContentService.uploadImage(imageFile.value)
+        const url = result?.url || result?.path
+
+        if (!url) {
+            throw new Error('Respons upload tidak memiliki url atau path.')
+        }
+
+        form.image = url
+        imageFile.value = null
+        successMessage.value = 'Gambar berhasil diunggah.'
+    } catch (error) {
+        errorMessage.value =
+            error.response?.data?.message ||
+            error.message ||
+            'Upload gambar gagal.'
+    } finally {
+        uploading.value = false
+    }
+}
+
+async function saveSection() {
+    resetMessages()
+
+    if (!selectedPageId.value) {
+        errorMessage.value = 'Pilih halaman terlebih dahulu.'
+        return
+    }
+
+    if (!/^[a-z][a-z0-9_-]*$/.test(form.type)) {
+        errorMessage.value =
+            'Slug tipe harus dimulai huruf kecil dan hanya berisi huruf, angka, _ atau -.'
+        return
+    }
+
+    saving.value = true
+
+    try {
+        const payload = {
+            page_id: Number(selectedPageId.value),
+            type: form.type,
+            title: form.title || null,
+            subtitle: form.subtitle || null,
+            content: form.content || null,
+            image: form.image || null,
+            button_text: form.button_text || null,
+            button_url: form.button_url || null,
+            is_active: Boolean(form.is_active),
+            sort_order: Number(form.sort_order || 0),
+            settings: parseGenericSettings(),
+        }
+
+        if (editingId.value) {
+            await websiteContentService.updateSection(editingId.value, payload)
+            successMessage.value = 'Section berhasil diperbarui.'
+        } else {
+            await websiteContentService.createSection(payload)
+            successMessage.value = 'Section berhasil ditambahkan.'
+        }
+
+        showEditor.value = false
+        await loadSections()
+    } catch (error) {
+        errorMessage.value =
+            error.response?.data?.message ||
+            error.message ||
+            'Gagal menyimpan section.'
+    } finally {
+        saving.value = false
+    }
+}
+
+async function toggleActive(section) {
+    resetMessages()
+
+    try {
+        await websiteContentService.updateSection(section.id, {
+            page_id: section.page_id,
+            type: section.type,
+            title: section.title,
+            subtitle: section.subtitle,
+            content: section.content,
+            image: section.image,
+            button_text: section.button_text,
+            button_url: section.button_url,
+            sort_order: section.sort_order,
+            settings: parseSettings(section.settings),
+            is_active: !section.is_active,
+        })
+
+        await loadSections()
+        successMessage.value = 'Status section berhasil diperbarui.'
+    } catch (error) {
+        errorMessage.value =
+            error.response?.data?.message || 'Gagal mengubah status section.'
+    }
+}
+
+async function deleteSection(section) {
+    if (!window.confirm(`Hapus section "${section.title || section.type}"?`)) {
+        return
+    }
+
+    resetMessages()
+
+    try {
+        await websiteContentService.deleteSection(section.id)
+        await loadSections()
+        successMessage.value = 'Section berhasil dihapus.'
+    } catch (error) {
+        errorMessage.value =
+            error.response?.data?.message || 'Gagal menghapus section.'
+    }
+}
+
+async function moveSection(index, direction) {
+    const nextIndex = index + direction
+
+    if (nextIndex < 0 || nextIndex >= sections.value.length) return
+
+    const original = [...sections.value]
+    const reordered = [...sections.value]
+    const [moved] = reordered.splice(index, 1)
+    reordered.splice(nextIndex, 0, moved)
+
+    sections.value = reordered
+
+    try {
+        await websiteContentService.reorderSections(
+            Number(selectedPageId.value),
+            reordered
+        )
+        await loadSections()
+        successMessage.value = 'Urutan section berhasil disimpan.'
+    } catch (error) {
+        sections.value = original
+        errorMessage.value =
+            error.response?.data?.message || 'Gagal menyimpan urutan section.'
+    }
+}
+
+watch(selectedPageId, async () => {
+    showEditor.value = false
+    await loadSections()
+})
+
+onMounted(async () => {
+    try {
+        await loadPages()
+        await loadSections()
+    } catch (error) {
+        errorMessage.value =
+            error.response?.data?.message || 'Gagal memuat CMS website.'
+    }
+})
+</script>
+
 <template>
     <div class="space-y-6">
-        <!-- Header -->
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <header class="flex flex-col justify-between gap-4 md:flex-row md:items-center">
             <div>
-                <h1 class="text-xl font-bold text-gray-900 sm:text-2xl">
-                    Halaman Website
+                <h1 class="text-2xl font-bold text-slate-900">
+                    Website CMS
                 </h1>
-
-                <p class="mt-1 text-sm text-gray-500">
-                    Kelola konten yang tampil pada halaman utama website.
+                <p class="mt-1 text-sm text-slate-500">
+                    Kelola konten dan urutan section setiap halaman website MJI.
                 </p>
             </div>
 
-            <button type="button" @click="saveContent"
-                class="inline-flex items-center justify-center rounded-lg bg-[#0052cc] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0047b3]">
-                💾 Simpan Perubahan
+            <button
+                type="button"
+                class="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+                @click="addSection()"
+            >
+                + Tambah Section
+            </button>
+        </header>
+
+        <div class="rounded-2xl border border-slate-200 bg-white p-4">
+            <label class="mb-2 block text-sm font-semibold text-slate-700">
+                Halaman website
+            </label>
+
+            <select
+                v-model="selectedPageId"
+                class="w-full rounded-xl border border-slate-300 px-3 py-2.5 md:max-w-md"
+            >
+                <option value="" disabled>Pilih halaman</option>
+                <option
+                    v-for="page in pageOptions"
+                    :key="page.id"
+                    :value="String(page.id)"
+                >
+                    {{ page.label }} — /{{ page.slug }}
+                </option>
+            </select>
+
+            <p v-if="currentPage" class="mt-2 text-xs text-slate-500">
+                Slug halaman: /{{ currentPage.slug }}
+            </p>
+        </div>
+
+        <div
+            v-if="errorMessage"
+            role="alert"
+            class="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+        >
+            {{ errorMessage }}
+        </div>
+
+        <div
+            v-if="successMessage"
+            role="status"
+            class="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700"
+        >
+            {{ successMessage }}
+        </div>
+
+        <div v-if="loading" class="py-12 text-center text-slate-500">
+            Memuat section...
+        </div>
+
+        <div
+            v-else-if="!sections.length"
+            class="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center"
+        >
+            <h2 class="font-semibold text-slate-800">Belum ada section</h2>
+            <p class="mt-2 text-sm text-slate-500">
+                Tambahkan Hero, Tentang, Kontak, atau tipe section lainnya.
+            </p>
+            <button
+                class="mt-4 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
+                @click="addSection('hero')"
+            >
+                Buat section pertama
             </button>
         </div>
 
-        <!-- Tabs -->
-        <div class="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-            <div class="flex min-w-max border-b border-gray-200">
-                <button v-for="tab in tabs" :key="tab.id" type="button" @click="activeTab = tab.id"
-                    class="relative px-5 py-4 text-sm font-medium transition" :class="activeTab === tab.id
-                        ? 'text-[#0052cc]'
-                        : 'text-gray-500 hover:text-gray-900'
-                        ">
-                    <span class="mr-2">{{ tab.icon }}</span>
-                    {{ tab.label }}
+        <div v-else class="space-y-3">
+            <article
+                v-for="(section, index) in sections"
+                :key="section.id"
+                class="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 md:flex-row md:items-center"
+            >
+                <div class="flex items-center gap-3 md:w-20">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 font-bold text-slate-600">
+                        {{ index + 1 }}
+                    </div>
 
-                    <span v-if="activeTab === tab.id" class="absolute inset-x-0 bottom-0 h-0.5 bg-[#0052cc]" />
-                </button>
-            </div>
-        </div>
+                    <div class="flex flex-col gap-1">
+                        <button
+                            :disabled="index === 0"
+                            title="Naikkan urutan"
+                            class="text-slate-500 hover:text-blue-600 disabled:opacity-30"
+                            @click="moveSection(index, -1)"
+                        >
+                            ↑
+                        </button>
+                        <button
+                            :disabled="index === sections.length - 1"
+                            title="Turunkan urutan"
+                            class="text-slate-500 hover:text-blue-600 disabled:opacity-30"
+                            @click="moveSection(index, 1)"
+                        >
+                            ↓
+                        </button>
+                    </div>
+                </div>
 
-        <!-- Content -->
-        <div class="rounded-xl border border-gray-200 bg-white p-5 sm:p-6">
-            <!-- HERO -->
-            <div v-if="activeTab === 'hero'" class="space-y-6">
-                <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <SectionHeader title="Hero / Banner"
-                        description="Kelola banner yang tampil pada bagian paling atas website." />
+                <img
+                    v-if="section.image"
+                    :src="imageUrl(section.image)"
+                    :alt="section.title || section.type"
+                    class="h-20 w-28 rounded-lg border border-slate-200 object-cover"
+                />
 
-                    <button type="button" @click="openHeroForm()"
-                        class="inline-flex shrink-0 items-center justify-center rounded-lg bg-[#0052cc] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0047b3]">
-                        + Tambah Banner
+                <div class="min-w-0 flex-1">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <h2 class="font-semibold text-slate-900">
+                            {{ section.title || typeLabel(section.type) }}
+                        </h2>
+                        <span class="rounded-md bg-slate-100 px-2 py-1 text-xs text-slate-600">
+                            {{ section.type }}
+                        </span>
+                        <span
+                            :class="section.is_active
+                                ? 'bg-emerald-50 text-emerald-700'
+                                : 'bg-slate-100 text-slate-500'"
+                            class="rounded-full px-2 py-1 text-xs font-medium"
+                        >
+                            {{ section.is_active ? 'Aktif' : 'Nonaktif' }}
+                        </span>
+                    </div>
+
+                    <p class="mt-1 line-clamp-2 text-sm text-slate-500">
+                        {{ section.subtitle || section.content || 'Belum ada deskripsi.' }}
+                    </p>
+
+                    <p class="mt-1 text-xs text-slate-400">
+                        ID: {{ section.id }} · Urutan: {{ section.sort_order }}
+                    </p>
+                </div>
+
+                <div class="flex flex-wrap gap-2">
+                    <button
+                        class="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50"
+                        @click="editSection(section)"
+                    >
+                        Edit
+                    </button>
+
+                    <button
+                        class="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50"
+                        @click="toggleActive(section)"
+                    >
+                        {{ section.is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+                    </button>
+
+                    <button
+                        class="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                        @click="deleteSection(section)"
+                    >
+                        Hapus
                     </button>
                 </div>
-
-                <!-- Hero List -->
-                <div class="space-y-3">
-                    <div v-for="(hero, index) in content.heroes" :key="hero.id"
-                        class="rounded-xl border border-gray-200 bg-white p-4 transition hover:border-blue-200 hover:shadow-sm">
-                        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                            <!-- Info -->
-                            <div class="flex min-w-0 items-start gap-4">
-                                <!-- Order -->
-                                <div
-                                    class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-blue-50 text-sm font-bold text-[#0052cc]">
-                                    {{ index + 1 }}
-                                </div>
-
-                                <!-- Content -->
-                                <div class="min-w-0">
-                                    <div class="flex flex-wrap items-center gap-2">
-                                        <h3 class="truncate text-sm font-semibold text-gray-900">
-                                            {{ hero.title }}
-                                        </h3>
-
-                                        <span class="rounded-full px-2 py-0.5 text-[10px] font-semibold" :class="hero.active
-                                            ? 'bg-green-50 text-green-600'
-                                            : 'bg-gray-100 text-gray-500'
-                                            ">
-                                            {{ hero.active ? 'Aktif' : 'Nonaktif' }}
-                                        </span>
-                                    </div>
-
-                                    <p class="mt-1 text-sm text-gray-500">
-                                        {{ hero.subtitle }}
-                                    </p>
-
-                                    <p class="mt-2 line-clamp-2 text-xs leading-5 text-gray-400">
-                                        {{ hero.description }}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <!-- Actions -->
-                            <div class="flex shrink-0 items-center gap-2">
-                                <button type="button" @click="moveHero(index, 'up')" :disabled="index === 0"
-                                    class="grid h-9 w-9 place-items-center rounded-lg border border-gray-200 text-gray-500 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30"
-                                    title="Naik">
-                                    ↑
-                                </button>
-
-                                <button type="button" @click="moveHero(index, 'down')"
-                                    :disabled="index === content.heroes.length - 1"
-                                    class="grid h-9 w-9 place-items-center rounded-lg border border-gray-200 text-gray-500 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30"
-                                    title="Turun">
-                                    ↓
-                                </button>
-
-                                <button type="button" @click="toggleHero(hero)"
-                                    class="rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50">
-                                    {{ hero.active ? 'Nonaktifkan' : 'Aktifkan' }}
-                                </button>
-
-                                <button type="button" @click="openHeroForm(hero)"
-                                    class="rounded-lg bg-blue-50 px-3 py-2 text-xs font-semibold text-[#0052cc] hover:bg-blue-100">
-                                    Edit
-                                </button>
-
-                                <button type="button" @click="deleteHero(hero.id)"
-                                    class="grid h-9 w-9 place-items-center rounded-lg border border-red-100 text-red-500 hover:bg-red-50"
-                                    title="Hapus">
-                                    🗑️
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Empty -->
-                    <div v-if="content.heroes.length === 0"
-                        class="rounded-xl border border-dashed border-gray-300 p-10 text-center">
-                        <div class="text-3xl">🖥️</div>
-
-                        <p class="mt-3 text-sm font-semibold text-gray-900">
-                            Belum ada banner
-                        </p>
-
-                        <p class="mt-1 text-xs text-gray-500">
-                            Tambahkan banner pertama untuk website.
-                        </p>
-
-                        <button type="button" @click="openHeroForm()"
-                            class="mt-4 rounded-lg bg-[#0052cc] px-4 py-2.5 text-sm font-semibold text-white">
-                            + Tambah Banner
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Hero Form -->
-                <div v-if="showHeroForm" class="rounded-xl border border-blue-100 bg-blue-50/50 p-5 sm:p-6">
-                    <div class="mb-5 flex items-center justify-between gap-3">
-                        <div>
-                            <h3 class="text-base font-bold text-gray-900">
-                                {{ editingHero ? 'Edit Banner' : 'Tambah Banner' }}
-                            </h3>
-
-                            <p class="mt-1 text-xs text-gray-500">
-                                Isi informasi banner yang akan ditampilkan pada website.
-                            </p>
-                        </div>
-
-                        <button type="button" @click="closeHeroForm"
-                            class="grid h-9 w-9 place-items-center rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-gray-50">
-                            ✕
-                        </button>
-                    </div>
-
-                    <div class="grid gap-5 lg:grid-cols-2">
-                        <FormInput v-model="heroForm.title" label="Judul" placeholder="Solusi Bisnis Terpadu" />
-
-                        <FormInput v-model="heroForm.subtitle" label="Subtitle" placeholder="Untuk Kesuksesan Anda" />
-
-                        <div class="lg:col-span-2">
-                            <FormTextarea v-model="heroForm.description" label="Deskripsi"
-                                placeholder="Masukkan deskripsi banner" :rows="4" />
-                        </div>
-
-                        <FormInput v-model="heroForm.buttonText" label="Text Tombol" placeholder="Pelajari Layanan" />
-
-                        <FormInput v-model="heroForm.buttonLink" label="Link Tombol" placeholder="#services" />
-
-                        <div class="lg:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700">
-                                Gambar Banner
-                            </label>
-
-                            <div
-                                class="mt-1.5 flex flex-col gap-3 rounded-lg border border-dashed border-gray-300 bg-white p-4 sm:flex-row sm:items-center">
-                                <div
-                                    class="grid h-16 w-24 shrink-0 place-items-center overflow-hidden rounded-lg bg-gray-100">
-                                    <img v-if="heroForm.image" :src="heroForm.image" alt=""
-                                        class="h-full w-full object-cover" />
-
-                                    <span v-else class="text-xl">
-                                        🖼️
-                                    </span>
-                                </div>
-
-                                <div class="min-w-0">
-                                    <p class="text-sm font-medium text-gray-700">
-                                        Gambar Hero
-                                    </p>
-
-                                    <p class="mt-1 text-xs text-gray-400">
-                                        Untuk sementara gunakan URL gambar. Nanti bisa
-                                        dipilih dari Media Library.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4">
-                            <div>
-                                <p class="text-sm font-semibold text-gray-900">
-                                    Banner Aktif
-                                </p>
-
-                                <p class="mt-1 text-xs text-gray-500">
-                                    Tampilkan banner pada website.
-                                </p>
-                            </div>
-
-                            <Toggle v-model="heroForm.active" />
-                        </div>
-                    </div>
-
-                    <div class="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                        <button type="button" @click="closeHeroForm"
-                            class="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                            Batal
-                        </button>
-
-                        <button type="button" @click="saveHero"
-                            class="rounded-lg bg-[#0052cc] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0047b3]">
-                            {{ editingHero ? 'Simpan Perubahan' : 'Tambah Banner' }}
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TENTANG -->
-            <div v-else-if="activeTab === 'about'" class="space-y-6">
-                <SectionHeader title="Tentang Perusahaan"
-                    description="Kelola informasi singkat mengenai Manunggal Jasa Investindo." />
-
-                <div class="grid gap-6 lg:grid-cols-2">
-                    <div class="space-y-5">
-                        <FormInput v-model="content.about.title" label="Judul" />
-
-                        <FormInput v-model="content.about.heading" label="Heading" />
-
-                        <FormTextarea v-model="content.about.description" label="Deskripsi" :rows="6" />
-
-                        <FormTextarea v-model="content.about.vision" label="Visi" :rows="3" />
-
-                        <FormTextarea v-model="content.about.mission" label="Misi" :rows="3" />
-
-                        <div>
-                            <div class="mb-3">
-                                <p class="text-sm font-semibold text-gray-900">
-                                    Statistik Perusahaan
-                                </p>
-                                <p class="mt-1 text-xs text-gray-500">
-                                    Informasi singkat yang ditampilkan pada section Tentang Kami.
-                                </p>
-                            </div>
-
-                            <div class="grid gap-4 sm:grid-cols-3">
-                                <div
-                                    v-for="(stat, index) in content.about.stats"
-                                    :key="index"
-                                    class="rounded-xl border border-gray-200 bg-gray-50 p-4"
-                                >
-                                    <FormInput
-                                        v-model="stat.label"
-                                        label="Label"
-                                        :placeholder="
-                                            index === 0
-                                                ? 'Tahun Berdiri'
-                                                : index === 1
-                                                    ? 'Klien Terpercaya'
-                                                    : 'Proyek Sukses'
-                                        "
-                                    />
-
-                                    <div class="mt-3">
-                                        <FormInput
-                                            v-model="stat.value"
-                                            label="Nilai"
-                                            :placeholder="
-                                                index === 0
-                                                    ? '2020'
-                                                    : index === 1
-                                                        ? '500+'
-                                                        : '1K+'
-                                            "
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="space-y-5">
-                        <PreviewCard title="Informasi Perusahaan">
-                            <div class="rounded-xl bg-gray-50 p-5">
-                                <p class="text-sm font-semibold text-[#0052cc]">
-                                    {{ content.about.title }}
-                                </p>
-
-                                <h3 class="mt-2 text-xl font-bold text-gray-900">
-                                    {{ content.about.heading }}
-                                </h3>
-
-                                <p class="mt-3 text-sm leading-6 text-gray-600">
-                                    {{ content.about.description }}
-                                </p>
-
-                                <div class="mt-5 grid grid-cols-3 gap-3">
-                                    <div v-for="stat in content.about.stats" :key="stat.label"
-                                        class="rounded-lg bg-white p-3 text-center shadow-sm">
-                                        <p class="text-lg font-bold text-[#0052cc]">
-                                            {{ stat.value }}
-                                        </p>
-
-                                        <p class="mt-1 text-[11px] text-gray-500">
-                                            {{ stat.label }}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </PreviewCard>
-
-                        <div class="rounded-lg border border-dashed border-gray-300 p-5">
-                            <p class="text-sm font-semibold text-gray-900">
-                                Gambar Tentang Perusahaan
-                            </p>
-
-                            <p class="mt-1 text-xs text-gray-500">
-                                Upload gambar melalui menu Media.
-                            </p>
-
-                            <button type="button"
-                                class="mt-4 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                                🖼️ Pilih dari Media
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- PANGGIL TUKANG -->
-            <div v-else-if="activeTab === 'panggil-tukang'" class="space-y-6">
-                <SectionHeader title="Panggil Tukang" description="Kelola konten promosi layanan Panggil Tukang." />
-
-                <div class="grid gap-6 lg:grid-cols-2">
-                    <div class="space-y-5">
-                        <FormInput v-model="content.panggilTukang.title" label="Judul" />
-
-                        <FormInput v-model="content.panggilTukang.subtitle" label="Subtitle" />
-
-                        <FormTextarea v-model="content.panggilTukang.description" label="Deskripsi" :rows="5" />
-
-                        <div class="grid gap-4 sm:grid-cols-2">
-                            <FormInput v-model="content.panggilTukang.buttonText" label="Text Tombol" />
-
-                            <FormInput v-model="content.panggilTukang.buttonLink" label="Link Tombol" />
-                        </div>
-
-                        <div class="flex items-center justify-between rounded-lg border border-gray-200 p-4">
-                            <div>
-                                <p class="text-sm font-semibold text-gray-900">
-                                    Tampilkan Section
-                                </p>
-
-                                <p class="text-xs text-gray-500">
-                                    Aktifkan section pada halaman utama.
-                                </p>
-                            </div>
-
-                            <Toggle v-model="content.panggilTukang.active" />
-                        </div>
-                    </div>
-
-                    <PreviewCard title="Preview">
-                        <div class="rounded-xl bg-blue-50 p-6">
-                            <span class="text-sm font-semibold text-[#0052cc]">
-                                PANGGIL TUKANG
-                            </span>
-
-                            <h3 class="mt-2 text-2xl font-bold text-gray-900">
-                                {{ content.panggilTukang.title }}
-                            </h3>
-
-                            <p class="mt-2 font-medium text-gray-700">
-                                {{ content.panggilTukang.subtitle }}
-                            </p>
-
-                            <p class="mt-4 text-sm leading-6 text-gray-600">
-                                {{ content.panggilTukang.description }}
-                            </p>
-
-                            <button type="button"
-                                class="mt-5 rounded-lg bg-[#0052cc] px-4 py-2.5 text-sm font-semibold text-white">
-                                {{ content.panggilTukang.buttonText }}
-                            </button>
-                        </div>
-                    </PreviewCard>
-                </div>
-            </div>
-
-            <!-- DIGITAL MARKETING -->
-            <div v-else-if="activeTab === 'digital-marketing'" class="space-y-6">
-                <SectionHeader title="Digital Marketing"
-                    description="Kelola konten layanan digital marketing pada website." />
-
-                <div class="grid gap-6 lg:grid-cols-2">
-                    <div class="space-y-5">
-                        <FormInput v-model="content.digitalMarketing.title" label="Judul" />
-
-                        <FormInput v-model="content.digitalMarketing.subtitle" label="Subtitle" />
-
-                        <FormTextarea v-model="content.digitalMarketing.description" label="Deskripsi" :rows="5" />
-
-                        <FormInput v-model="content.digitalMarketing.buttonText" label="Text Tombol" />
-
-                        <FormInput v-model="content.digitalMarketing.buttonLink" label="Link Tombol" />
-
-                        <div class="flex items-center justify-between rounded-lg border border-gray-200 p-4">
-                            <div>
-                                <p class="text-sm font-semibold text-gray-900">
-                                    Tampilkan Section
-                                </p>
-
-                                <p class="text-xs text-gray-500">
-                                    Aktifkan section pada halaman utama.
-                                </p>
-                            </div>
-
-                            <Toggle v-model="content.digitalMarketing.active" />
-                        </div>
-                    </div>
-
-                    <PreviewCard title="Preview">
-                        <div class="rounded-xl bg-gray-900 p-6 text-white">
-                            <span class="text-sm font-semibold text-blue-300">
-                                DIGITAL MARKETING
-                            </span>
-
-                            <h3 class="mt-2 text-2xl font-bold">
-                                {{ content.digitalMarketing.title }}
-                            </h3>
-
-                            <p class="mt-2 text-blue-100">
-                                {{ content.digitalMarketing.subtitle }}
-                            </p>
-
-                            <p class="mt-4 text-sm leading-6 text-gray-300">
-                                {{ content.digitalMarketing.description }}
-                            </p>
-
-                            <button type="button"
-                                class="mt-5 rounded-lg bg-[#0052cc] px-4 py-2.5 text-sm font-semibold text-white">
-                                {{ content.digitalMarketing.buttonText }}
-                            </button>
-                        </div>
-                    </PreviewCard>
-                </div>
-            </div>
-
-            <!-- KONTAK -->
-            <div v-else-if="activeTab === 'contact'" class="space-y-6">
-                <SectionHeader title="Kontak & Informasi"
-                    description="Informasi yang digunakan pada bagian kontak website." />
-
-                <div class="grid gap-6 lg:grid-cols-2">
-                    <div class="space-y-5">
-                        <FormInput v-model="content.contact.title" label="Judul Section" />
-
-                        <FormTextarea v-model="content.contact.description" label="Deskripsi" :rows="4" />
-
-                        <FormInput v-model="content.contact.email" label="Email" type="email" />
-
-                        <FormInput v-model="content.contact.phone" label="Nomor Telepon" />
-
-                        <FormTextarea v-model="content.contact.address" label="Alamat" :rows="3" />
-                    </div>
-
-                    <div class="space-y-5">
-                        <PreviewCard title="Preview Informasi Kontak">
-                            <div class="space-y-4">
-                                <div>
-                                    <p class="text-xl font-bold text-gray-900">
-                                        {{ content.contact.title }}
-                                    </p>
-
-                                    <p class="mt-2 text-sm leading-6 text-gray-500">
-                                        {{ content.contact.description }}
-                                    </p>
-                                </div>
-
-                                <div class="space-y-3">
-                                    <ContactItem icon="📧" label="Email" :value="content.contact.email" />
-
-                                    <ContactItem icon="📞" label="Telepon" :value="content.contact.phone" />
-
-                                    <ContactItem icon="📍" label="Alamat" :value="content.contact.address" />
-                                </div>
-                            </div>
-                        </PreviewCard>
-
-                        <div class="rounded-xl border border-gray-200 p-5">
-                            <p class="text-sm font-semibold text-gray-900">
-                                Media Sosial
-                            </p>
-
-                            <div class="mt-4 space-y-4">
-                                <FormInput v-model="content.contact.instagram" label="Instagram"
-                                    placeholder="@manunggaljasa" />
-
-                                <FormInput v-model="content.contact.facebook" label="Facebook"
-                                    placeholder="Manunggal Jasa Investindo" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            </article>
         </div>
 
-        <!-- Bottom save -->
         <div
-            class="flex flex-col gap-3 rounded-xl border border-blue-100 bg-blue-50 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-                <p class="text-sm font-semibold text-gray-900">
-                    Perubahan belum terhubung ke server
-                </p>
-
-                <p class="mt-1 text-xs text-gray-500">
-                    Saat ini data masih menggunakan mock data untuk kebutuhan
-                    pengembangan UI.
-                </p>
+            v-if="showEditor"
+            class="rounded-2xl border border-slate-200 bg-white p-5 md:p-6"
+        >
+            <div class="mb-5 flex items-start justify-between gap-4">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-900">
+                        {{ editingId ? 'Edit Section' : 'Tambah Section' }}
+                    </h2>
+                    <p class="mt-1 text-sm text-slate-500">
+                        Field disimpan ke website_sections dan settings.
+                    </p>
+                </div>
+                <button
+                    class="rounded-lg px-3 py-2 text-sm text-slate-500 hover:bg-slate-100"
+                    @click="showEditor = false"
+                >
+                    Tutup
+                </button>
             </div>
 
-            <button type="button" @click="saveContent"
-                class="rounded-lg bg-[#0052cc] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0047b3]">
-                Simpan Perubahan
-            </button>
+            <form class="space-y-5" @submit.prevent="saveSection">
+                <div class="grid gap-4 md:grid-cols-2">
+                    <div>
+                        <label class="mb-2 block text-sm font-medium">Tipe section</label>
+                        <input
+                            :value="form.type"
+                            list="website-section-types"
+                            required
+                            pattern="[a-z][a-z0-9_-]*"
+                            maxlength="80"
+                            class="w-full rounded-xl border border-slate-300 px-3 py-2.5"
+                            @input="changeType($event.target.value)"
+                        />
+                        <datalist id="website-section-types">
+                            <option
+                                v-for="type in defaultTypes"
+                                :key="type.value"
+                                :value="type.value"
+                            >
+                                {{ type.label }}
+                            </option>
+                        </datalist>
+                        <p class="mt-1 text-xs text-slate-500">
+                            Bisa memilih tipe yang tersedia atau mengetik slug baru.
+                        </p>
+                    </div>
+
+                    <div>
+                        <label class="mb-2 block text-sm font-medium">Judul</label>
+                        <input
+                            v-model="form.title"
+                            class="w-full rounded-xl border border-slate-300 px-3 py-2.5"
+                            placeholder="Judul section"
+                        />
+                    </div>
+
+                    <div>
+                        <label class="mb-2 block text-sm font-medium">Subjudul</label>
+                        <input
+                            v-model="form.subtitle"
+                            class="w-full rounded-xl border border-slate-300 px-3 py-2.5"
+                            placeholder="Subjudul"
+                        />
+                    </div>
+
+                    <div>
+                        <label class="mb-2 block text-sm font-medium">Urutan</label>
+                        <input
+                            v-model.number="form.sort_order"
+                            type="number"
+                            min="0"
+                            class="w-full rounded-xl border border-slate-300 px-3 py-2.5"
+                        />
+                    </div>
+                </div>
+
+                <div>
+                    <label class="mb-2 block text-sm font-medium">Konten / deskripsi</label>
+                    <textarea
+                        v-model="form.content"
+                        rows="4"
+                        class="w-full rounded-xl border border-slate-300 px-3 py-2.5"
+                        placeholder="Isi konten section"
+                    />
+                </div>
+
+                <div>
+                    <label class="mb-2 block text-sm font-medium">Gambar</label>
+                    <div class="flex flex-col gap-3 md:flex-row">
+                        <input
+                            v-model="form.image"
+                            class="min-w-0 flex-1 rounded-xl border border-slate-300 px-3 py-2.5"
+                            placeholder="/storage/website/..."
+                        />
+                        <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            class="block w-full text-sm md:max-w-xs"
+                            @change="imageFile = $event.target.files?.[0] || null"
+                        />
+                        <button
+                            type="button"
+                            :disabled="!imageFile || uploading"
+                            class="rounded-xl border border-slate-300 px-4 py-2 text-sm disabled:opacity-50"
+                            @click="uploadSelectedImage"
+                        >
+                            {{ uploading ? 'Mengunggah...' : 'Upload' }}
+                        </button>
+                    </div>
+
+                    <img
+                        v-if="form.image"
+                        :src="imageUrl(form.image)"
+                        alt="Preview gambar section"
+                        class="mt-3 max-h-48 rounded-xl border border-slate-200 object-contain"
+                    />
+                </div>
+
+                <div class="grid gap-4 md:grid-cols-2">
+                    <div>
+                        <label class="mb-2 block text-sm font-medium">Teks tombol</label>
+                        <input
+                            v-model="form.button_text"
+                            class="w-full rounded-xl border border-slate-300 px-3 py-2.5"
+                            placeholder="Hubungi Kami"
+                        />
+                    </div>
+                    <div>
+                        <label class="mb-2 block text-sm font-medium">URL tombol</label>
+                        <input
+                            v-model="form.button_url"
+                            class="w-full rounded-xl border border-slate-300 px-3 py-2.5"
+                            placeholder="/contact"
+                        />
+                    </div>
+                </div>
+
+                <div
+                    v-if="form.type === 'about'"
+                    class="space-y-4 rounded-xl border border-slate-200 p-4"
+                >
+                    <h3 class="font-semibold">Pengaturan Tentang MJI</h3>
+
+                    <div>
+                        <label class="mb-2 block text-sm font-medium">Visi</label>
+                        <textarea
+                            v-model="form.settings.vision"
+                            rows="2"
+                            class="w-full rounded-xl border border-slate-300 px-3 py-2.5"
+                        />
+                    </div>
+
+                    <div>
+                        <label class="mb-2 block text-sm font-medium">Misi</label>
+                        <textarea
+                            v-model="form.settings.mission"
+                            rows="3"
+                            class="w-full rounded-xl border border-slate-300 px-3 py-2.5"
+                        />
+                    </div>
+
+                    <div>
+                        <label class="mb-2 block text-sm font-medium">Statistik (JSON array)</label>
+                        <textarea
+                            v-model="form.settings.statsText"
+                            rows="3"
+                            class="w-full rounded-xl border border-slate-300 px-3 py-2.5 font-mono text-sm"
+                            placeholder='[{"label":"Pengalaman","value":"10+ tahun"}]'
+                        />
+                        <p class="mt-1 text-xs text-slate-500">
+                            Jika statsText diisi, isinya akan divalidasi sebagai JSON saat disimpan.
+                        </p>
+                    </div>
+                </div>
+
+                <div
+                    v-if="form.type === 'contact'"
+                    class="space-y-4 rounded-xl border border-slate-200 p-4"
+                >
+                    <h3 class="font-semibold">Informasi Kontak</h3>
+
+                    <div class="grid gap-4 md:grid-cols-2">
+                        <div>
+                            <label class="mb-2 block text-sm font-medium">Alamat</label>
+                            <textarea
+                                v-model="form.settings.address"
+                                rows="2"
+                                class="w-full rounded-xl border border-slate-300 px-3 py-2.5"
+                            />
+                        </div>
+                        <div>
+                            <label class="mb-2 block text-sm font-medium">Email</label>
+                            <input
+                                v-model="form.settings.email"
+                                type="email"
+                                class="w-full rounded-xl border border-slate-300 px-3 py-2.5"
+                            />
+                        </div>
+                        <div>
+                            <label class="mb-2 block text-sm font-medium">Telepon</label>
+                            <input
+                                v-model="form.settings.phone"
+                                class="w-full rounded-xl border border-slate-300 px-3 py-2.5"
+                            />
+                        </div>
+                        <div>
+                            <label class="mb-2 block text-sm font-medium">WhatsApp</label>
+                            <input
+                                v-model="form.settings.whatsapp"
+                                class="w-full rounded-xl border border-slate-300 px-3 py-2.5"
+                            />
+                        </div>
+                        <div>
+                            <label class="mb-2 block text-sm font-medium">Instagram</label>
+                            <input
+                                v-model="form.settings.instagram"
+                                class="w-full rounded-xl border border-slate-300 px-3 py-2.5"
+                            />
+                        </div>
+                        <div>
+                            <label class="mb-2 block text-sm font-medium">Facebook</label>
+                            <input
+                                v-model="form.settings.facebook"
+                                class="w-full rounded-xl border border-slate-300 px-3 py-2.5"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <div
+                    v-if="!['hero', 'about', 'contact'].includes(form.type)"
+                    class="space-y-3 rounded-xl border border-slate-200 p-4"
+                >
+                    <h3 class="font-semibold">Pengaturan tambahan</h3>
+                    <p class="text-sm text-slate-500">
+                        Masukkan object JSON. Data ini tersedia untuk renderer section publik.
+                    </p>
+                    <textarea
+                        :value="JSON.stringify(form.settings, null, 2)"
+                        rows="8"
+                        class="w-full rounded-xl border border-slate-300 px-3 py-2.5 font-mono text-sm"
+                        @change="() => {
+                            try {
+                                const parsed = JSON.parse($event.target.value)
+                                if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') {
+                                    throw new Error('Settings harus object JSON')
+                                }
+                                form.settings = parsed
+                            } catch (error) {
+                                errorMessage = error.message
+                            }
+                        }"
+                    />
+                </div>
+
+                <label class="flex items-center gap-3">
+                    <input
+                        v-model="form.is_active"
+                        type="checkbox"
+                        class="h-4 w-4 rounded border-slate-300"
+                    />
+                    <span class="text-sm font-medium text-slate-700">
+                        Tampilkan section di website publik
+                    </span>
+                </label>
+
+                <div class="flex flex-wrap gap-3 border-t border-slate-200 pt-5">
+                    <button
+                        type="submit"
+                        :disabled="saving || uploading"
+                        class="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                    >
+                        {{ saving ? 'Menyimpan...' : 'Simpan Section' }}
+                    </button>
+                    <button
+                        type="button"
+                        class="rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-medium"
+                        @click="showEditor = false"
+                    >
+                        Batal
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </template>
-
-<script setup>
-import { reactive, ref, defineComponent, h } from 'vue'
-
-const activeTab = ref('hero')
-const showHeroForm = ref(false)
-const editingHero = ref(null)
-
-const heroForm = reactive({
-    id: null,
-    title: '',
-    subtitle: '',
-    description: '',
-    image: '',
-    buttonText: '',
-    buttonLink: '',
-    active: true,
-})
-
-
-const tabs = [
-    {
-        id: 'hero',
-        label: 'Hero',
-        icon: '🖥️',
-    },
-    {
-        id: 'about',
-        label: 'Tentang',
-        icon: '🏢',
-    },
-    {
-        id: 'panggil-tukang',
-        label: 'Panggil Tukang',
-        icon: '🛠️',
-    },
-    {
-        id: 'digital-marketing',
-        label: 'Digital Marketing',
-        icon: '📈',
-    },
-    {
-        id: 'contact',
-        label: 'Kontak',
-        icon: '📞',
-    },
-]
-
-const content = reactive({
-    heroes: [
-        {
-            id: 1,
-            title: 'Solusi Bisnis Terpadu',
-            subtitle: 'Untuk Kesuksesan Anda',
-            description:
-                'Manunggal Jasa Investindo menghadirkan solusi bisnis di bidang logistik, teknologi, dan layanan digital.',
-            image: '',
-            buttonText: 'Pelajari Layanan',
-            buttonLink: '#services',
-            active: true,
-            order: 1,
-        },
-
-        {
-            id: 2,
-            title: 'Transformasi Digital Berkelanjutan',
-            subtitle: 'Digital & Technology',
-            description:
-                'Kami membantu bisnis berkembang melalui teknologi dan solusi digital yang tepat.',
-            image: '',
-            buttonText: 'Lihat Layanan',
-            buttonLink: '#digital-marketing',
-            active: true,
-            order: 2,
-        },
-
-        {
-            id: 3,
-            title: 'Jaringan Layanan Terintegrasi',
-            subtitle: 'Integrated Services',
-            description:
-                'Solusi logistik, teknologi, dan layanan digital dalam satu ekosistem bisnis.',
-            image: '',
-            buttonText: 'Hubungi Kami',
-            buttonLink: '#contact',
-            active: true,
-            order: 3,
-        },
-    ],
-
-    about: {
-        title: 'Tentang Kami',
-        heading: 'Partner Bisnis untuk Pertumbuhan Berkelanjutan',
-        description:
-            'Manunggal Jasa Investindo hadir untuk memberikan solusi bisnis terpadu melalui layanan profesional, teknologi, dan jaringan yang luas.',
-        vision:
-            'Menjadi perusahaan terpercaya dalam menyediakan solusi bisnis terpadu.',
-        mission:
-            'Memberikan layanan berkualitas dengan mengutamakan profesionalisme dan kepuasan pelanggan.',
-        stats: [
-            {
-                label: 'Pengalaman',
-                value: '10+',
-            },
-            {
-                label: 'Klien',
-                value: '500+',
-            },
-            {
-                label: 'Proyek',
-                value: '1K+',
-            },
-        ],
-    },
-
-    panggilTukang: {
-        title: 'Butuh Tukang Terpercaya?',
-        subtitle: 'Panggil Tukang, Beres!',
-        description:
-            'Temukan tukang profesional dan terpercaya untuk berbagai kebutuhan rumah maupun bisnis Anda.',
-        buttonText: 'Kunjungi Panggil Tukang',
-        buttonLink: '#panggil-tukang',
-        active: true,
-    },
-
-    digitalMarketing: {
-        title: 'Kembangkan Bisnis Anda Secara Digital',
-        subtitle: 'Strategi Digital yang Terukur',
-        description:
-            'Kami membantu bisnis membangun kehadiran digital melalui content management, community management, serta analytics dan reporting.',
-        buttonText: 'Pelajari Layanan',
-        buttonLink: '#digital-marketing',
-        active: true,
-    },
-
-    contact: {
-        title: 'Hubungi Kami',
-        description:
-            'Diskusikan kebutuhan bisnis Anda bersama tim Manunggal Jasa Investindo.',
-        email: 'info@manunggal.com',
-        phone: '0812-0000-0000',
-        address: 'Surabaya, Jawa Timur, Indonesia',
-        instagram: '@manunggaljasa',
-        facebook: 'Manunggal Jasa Investindo',
-    },
-})
-
-function resetHeroForm() {
-    heroForm.id = null
-    heroForm.title = ''
-    heroForm.subtitle = ''
-    heroForm.description = ''
-    heroForm.image = ''
-    heroForm.buttonText = ''
-    heroForm.buttonLink = ''
-    heroForm.active = true
-}
-
-function openHeroForm(hero = null) {
-    resetHeroForm()
-
-    if (hero) {
-        editingHero.value = hero
-
-        heroForm.id = hero.id
-        heroForm.title = hero.title
-        heroForm.subtitle = hero.subtitle
-        heroForm.description = hero.description
-        heroForm.image = hero.image
-        heroForm.buttonText = hero.buttonText
-        heroForm.buttonLink = hero.buttonLink
-        heroForm.active = hero.active
-    } else {
-        editingHero.value = null
-    }
-
-    showHeroForm.value = true
-}
-
-function closeHeroForm() {
-    showHeroForm.value = false
-    editingHero.value = null
-    resetHeroForm()
-}
-
-function saveHero() {
-    if (!heroForm.title.trim()) {
-        alert('Judul banner wajib diisi.')
-        return
-    }
-
-    if (editingHero.value) {
-        Object.assign(
-            editingHero.value,
-            JSON.parse(JSON.stringify(heroForm))
-        )
-    } else {
-        const newHero = {
-            ...JSON.parse(JSON.stringify(heroForm)),
-            id: Date.now(),
-            order: content.heroes.length + 1,
-        }
-
-        content.heroes.push(newHero)
-    }
-
-    closeHeroForm()
-}
-
-function deleteHero(id) {
-    const confirmed = confirm(
-        'Apakah kamu yakin ingin menghapus banner ini?'
-    )
-
-    if (!confirmed) return
-
-    const index = content.heroes.findIndex(
-        (hero) => hero.id === id
-    )
-
-    if (index === -1) return
-
-    content.heroes.splice(index, 1)
-
-    updateHeroOrder()
-}
-
-function toggleHero(hero) {
-    hero.active = !hero.active
-}
-
-function moveHero(index, direction) {
-    const targetIndex =
-        direction === 'up'
-            ? index - 1
-            : index + 1
-
-    if (
-        targetIndex < 0 ||
-        targetIndex >= content.heroes.length
-    ) {
-        return
-    }
-
-    const current = content.heroes[index]
-
-    content.heroes[index] =
-        content.heroes[targetIndex]
-
-    content.heroes[targetIndex] = current
-
-    updateHeroOrder()
-}
-
-function updateHeroOrder() {
-    content.heroes.forEach((hero, index) => {
-        hero.order = index + 1
-    })
-}
-
-
-
-
-
-function saveContent() {
-    console.log('Website content:', JSON.parse(JSON.stringify(content)))
-
-    alert('Perubahan berhasil disimpan (mock).')
-}
-
-/*
-|--------------------------------------------------------------------------
-| Reusable local components
-|--------------------------------------------------------------------------
-*/
-
-const SectionHeader = defineComponent({
-    props: {
-        title: String,
-        description: String,
-    },
-
-    setup(props) {
-        return () =>
-            h('div', [
-                h(
-                    'h2',
-                    {
-                        class: 'text-lg font-bold text-gray-900',
-                    },
-                    props.title
-                ),
-
-                h(
-                    'p',
-                    {
-                        class: 'mt-1 text-sm text-gray-500',
-                    },
-                    props.description
-                ),
-            ])
-    },
-})
-
-const PreviewCard = defineComponent({
-    props: {
-        title: String,
-    },
-
-    setup(props, { slots }) {
-        return () =>
-            h(
-                'div',
-                {
-                    class: 'rounded-xl border border-gray-200 p-4 sm:p-5',
-                },
-                [
-                    h(
-                        'p',
-                        {
-                            class: 'mb-4 text-xs font-semibold uppercase tracking-wide text-gray-400',
-                        },
-                        props.title
-                    ),
-
-                    slots.default?.(),
-                ]
-            )
-    },
-})
-
-const FormInput = defineComponent({
-    props: {
-        modelValue: String,
-        label: String,
-        placeholder: String,
-        type: {
-            type: String,
-            default: 'text',
-        },
-    },
-
-    emits: ['update:modelValue'],
-
-    setup(props, { emit }) {
-        return () =>
-            h('div', { class: 'space-y-1.5' }, [
-                h(
-                    'label',
-                    {
-                        class: 'block text-sm font-medium text-gray-700',
-                    },
-                    props.label
-                ),
-
-                h('input', {
-                    type: props.type,
-                    value: props.modelValue,
-                    placeholder: props.placeholder,
-                    class: 'w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#0052cc] focus:ring-2 focus:ring-[#0052cc]/10',
-                    onInput: (event) =>
-                        emit('update:modelValue', event.target.value),
-                }),
-            ])
-    },
-})
-
-const FormTextarea = defineComponent({
-    props: {
-        modelValue: String,
-        label: String,
-        placeholder: String,
-        rows: {
-            type: Number,
-            default: 4,
-        },
-    },
-
-    emits: ['update:modelValue'],
-
-    setup(props, { emit }) {
-        return () =>
-            h('div', { class: 'space-y-1.5' }, [
-                h(
-                    'label',
-                    {
-                        class: 'block text-sm font-medium text-gray-700',
-                    },
-                    props.label
-                ),
-
-                h(
-                    'textarea',
-                    {
-                        rows: props.rows,
-                        placeholder: props.placeholder,
-                        class: 'w-full resize-y rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#0052cc] focus:ring-2 focus:ring-[#0052cc]/10',
-                        onInput: (event) =>
-                            emit(
-                                'update:modelValue',
-                                event.target.value
-                            ),
-                    },
-                    props.modelValue
-                ),
-            ])
-    },
-})
-
-const Toggle = defineComponent({
-    props: {
-        modelValue: Boolean,
-    },
-
-    emits: ['update:modelValue'],
-
-    setup(props, { emit }) {
-        return () =>
-            h(
-                'button',
-                {
-                    type: 'button',
-                    class: [
-                        'relative h-6 w-11 rounded-full transition',
-                        props.modelValue
-                            ? 'bg-[#0052cc]'
-                            : 'bg-gray-300',
-                    ],
-
-                    onClick: () =>
-                        emit('update:modelValue', !props.modelValue),
-                },
-                [
-                    h('span', {
-                        class: [
-                            'absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm transition',
-                            props.modelValue
-                                ? 'left-6'
-                                : 'left-1',
-                        ],
-                    }),
-                ]
-            )
-    },
-})
-
-const ContactItem = defineComponent({
-    props: {
-        icon: String,
-        label: String,
-        value: String,
-    },
-
-    setup(props) {
-        return () =>
-            h(
-                'div',
-                {
-                    class: 'flex gap-3 rounded-lg border border-gray-200 p-3',
-                },
-                [
-                    h(
-                        'div',
-                        {
-                            class: 'grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-blue-50',
-                        },
-                        props.icon
-                    ),
-
-                    h('div', { class: 'min-w-0' }, [
-                        h(
-                            'p',
-                            {
-                                class: 'text-xs text-gray-400',
-                            },
-                            props.label
-                        ),
-
-                        h(
-                            'p',
-                            {
-                                class: 'mt-0.5 break-words text-sm font-medium text-gray-800',
-                            },
-                            props.value
-                        ),
-                    ]),
-                ]
-            )
-    },
-})
-</script>

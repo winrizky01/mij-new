@@ -20,6 +20,7 @@ import AdminMedia from '../pages/admin/Media.vue'
 import AdminUsers from '../pages/admin/Users.vue'
 import AdminSettings from '../pages/admin/Settings.vue'
 import AdminWebsiteContent from '../pages/admin/WebsiteContent.vue'
+import AdminWebsitePages from '../pages/admin/WebsitePages.vue'
 
 // =====================================
 // ERP
@@ -113,9 +114,21 @@ const router = createRouter({
                 },
 
                 {
-                    path: 'website',
-                    name: 'admin.website',
+                    path: 'contents',
+                    name: 'admin.contents',
                     component: AdminWebsiteContent,
+                },
+
+                {
+                    path: 'pages',
+                    name: 'admin.pages',
+                    component: AdminWebsitePages,
+                },
+
+                {
+                    path: 'website-editor',
+                    name: 'admin.website-editor',
+                    component: () => import('../pages/admin/WebsiteEditor.vue'),
                 },
 
                 {

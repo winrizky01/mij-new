@@ -1,12 +1,14 @@
-
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import {
     Image as ImageIcon,
     Map,
     Video,
     Plus,
 } from 'lucide-vue-next'
+
+import ArticlesBlock from '../blocks/ArticlesBlock.vue'
+import ServicesBlock from '../blocks/ServicesBlock.vue'
 
 const props = defineProps({
     block: { type: Object, required: true },
@@ -16,6 +18,92 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['select', 'add-child'])
+
+const currentSlide = ref(0)
+let autoplayTimer = null
+
+const sliderImages = computed(() =>
+    (props.block.images || []).filter(item =>
+        typeof item === 'string'
+            ? item.trim() !== ''
+            : Boolean(item?.imageUrl || item?.url)
+    )
+)
+
+const activeSlide = computed(() =>
+    sliderImages.value[currentSlide.value] || null
+)
+
+function getSlideImage(item) {
+    if (typeof item === 'string') return item
+    return item?.imageUrl || item?.url || ''
+}
+
+function getSlideField(item, field) {
+    if (!item || typeof item === 'string') return ''
+    return item[field] || ''
+}
+
+function nextSlide() {
+    const total = sliderImages.value.length
+    if (total < 2) return
+
+    currentSlide.value = (currentSlide.value + 1) % total
+}
+
+function prevSlide() {
+    const total = sliderImages.value.length
+    if (total < 2) return
+
+    currentSlide.value = (currentSlide.value - 1 + total) % total
+}
+
+function goToSlide(index) {
+    currentSlide.value = index
+}
+
+function stopAutoplay() {
+    if (autoplayTimer) {
+        clearInterval(autoplayTimer)
+        autoplayTimer = null
+    }
+}
+
+function startAutoplay() {
+    stopAutoplay()
+
+    if (
+        !props.block.autoplay ||
+        sliderImages.value.length < 2
+    ) return
+
+    const interval = Math.max(
+        1000,
+        Number(props.block.autoplayInterval) || 5000
+    )
+
+    autoplayTimer = setInterval(nextSlide, interval)
+}
+
+watch(
+    () => [
+        props.block.id,
+        props.block.autoplay,
+        props.block.autoplayInterval,
+        sliderImages.value.length,
+    ],
+    () => {
+        if (currentSlide.value >= sliderImages.value.length) {
+            currentSlide.value = 0
+        }
+
+        startAutoplay()
+    },
+    { immediate: true }
+)
+
+onMounted(startAutoplay)
+onBeforeUnmount(stopAutoplay)
 
 const isSelected = computed(() =>
     !props.isPreviewMode &&
@@ -245,6 +333,152 @@ function addChild(columnIndex = 0) {
             </p>
         </template>
 
+        <!-- Image Slider -->
+        <template v-else-if="block.type === 'image_slider'">
+            <div
+                class="relative w-full overflow-hidden bg-slate-200"
+                :style="{
+                    height: `${Math.max(180, Number(block.height) || 520)}px`,
+                    maxWidth: block.maxWidth === 'full' ? '100%' : undefined,
+                    borderRadius: `${Math.max(0, Number(block.borderRadius) || 0)}px`,
+                }"
+            >
+                <!-- Gambar aktif -->
+                <template v-if="activeSlide">
+                    <img
+                        :key="getSlideImage(activeSlide)"
+                        :src="getSlideImage(activeSlide)"
+                        :alt="getSlideField(activeSlide, 'alt')"
+                        class="absolute inset-0 h-full w-full"
+                        :style="{
+                            objectFit: block.objectFit || 'cover',
+                        }"
+                    />
+
+                    <!-- Overlay -->
+                    <div
+                        v-if="block.overlay"
+                        class="absolute inset-0"
+                        :style="{
+                            backgroundColor: block.overlayColor || '#000000',
+                            opacity: Math.max(
+                                0,
+                                Math.min(100, Number(block.overlayOpacity ?? 40))
+                            ) / 100,
+                        }"
+                    />
+
+                    <!-- Konten slide -->
+                    <div
+                        v-if="
+                            getSlideField(activeSlide, 'title') ||
+                            getSlideField(activeSlide, 'description') ||
+                            getSlideField(activeSlide, 'buttonText') ||
+                            block.title ||
+                            block.description
+                        "
+                        class="absolute inset-0 z-[1] flex flex-col justify-center p-6 text-white sm:p-10"
+                        :class="{
+                            'items-center text-center':
+                                block.contentAlignment === 'center',
+                            'items-end text-right':
+                                block.contentAlignment === 'right',
+                            'items-start text-left':
+                                !['center', 'right'].includes(block.contentAlignment),
+                        }"
+                    >
+                        <h2 class="max-w-3xl text-2xl font-bold sm:text-4xl">
+                            {{
+                                getSlideField(activeSlide, 'title') ||
+                                block.title
+                            }}
+                        </h2>
+
+                        <p
+                            v-if="
+                                getSlideField(activeSlide, 'description') ||
+                                block.description
+                            "
+                            class="mt-3 max-w-2xl whitespace-pre-line text-sm leading-6 sm:text-base"
+                        >
+                            {{
+                                getSlideField(activeSlide, 'description') ||
+                                block.description
+                            }}
+                        </p>
+
+                        <a
+                            v-if="getSlideField(activeSlide, 'buttonText')"
+                            :href="getSlideField(activeSlide, 'buttonUrl') || '#'"
+                            :target="activeSlide?.newTab === true ? '_blank' : undefined"
+                            :rel="activeSlide?.newTab === true ? 'noopener noreferrer' : undefined"
+                            data-block-action
+                            class="mt-5 inline-flex rounded-lg bg-[#14a2d8] px-5 py-3 text-sm font-semibold text-white"
+                            @click.stop
+                        >
+                            {{ getSlideField(activeSlide, 'buttonText') }}
+                        </a>
+                    </div>
+                </template>
+
+                <!-- Placeholder ketika belum ada gambar -->
+                <div
+                    v-else
+                    class="absolute inset-0 flex flex-col items-center justify-center text-slate-500"
+                >
+                    <ImageIcon :size="32" />
+                    <p class="mt-2 text-xs">
+                        Tambahkan gambar melalui pengaturan Image Slider
+                    </p>
+                </div>
+
+                <!-- Panah navigasi -->
+                <template v-if="block.showArrows && sliderImages.length > 1">
+                    <button
+                        type="button"
+                        data-block-action
+                        aria-label="Slide sebelumnya"
+                        class="absolute left-3 top-1/2 z-[2] flex size-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-xl text-white transition hover:bg-black/70"
+                        @click.stop="prevSlide"
+                    >
+                        ‹
+                    </button>
+
+                    <button
+                        type="button"
+                        data-block-action
+                        aria-label="Slide berikutnya"
+                        class="absolute right-3 top-1/2 z-[2] flex size-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-xl text-white transition hover:bg-black/70"
+                        @click.stop="nextSlide"
+                    >
+                        ›
+                    </button>
+                </template>
+
+                <!-- Indikator slide -->
+                <div
+                    v-if="block.showDots && sliderImages.length > 1"
+                    class="absolute bottom-4 left-0 right-0 z-[2] flex justify-center gap-2"
+                >
+                    <button
+                        v-for="(item, index) in sliderImages"
+                        :key="index"
+                        type="button"
+                        data-block-action
+                        :aria-label="`Tampilkan slide ${index + 1}`"
+                        :aria-current="currentSlide === index ? 'true' : undefined"
+                        class="h-2.5 rounded-full transition-all"
+                        :class="
+                            currentSlide === index
+                                ? 'w-6 bg-white'
+                                : 'w-2.5 bg-white/60 hover:bg-white'
+                        "
+                        @click.stop="goToSlide(index)"
+                    />
+                </div>
+            </div>
+        </template>
+
         <!-- Gallery -->
         <template v-else-if="block.type === 'gallery'">
             <h3 v-if="block.title" class="mb-3 text-xl font-bold">
@@ -295,28 +529,14 @@ function addChild(columnIndex = 0) {
             />
         </template>
 
-        <!-- Services / Articles -->
-        <template v-else-if="['services', 'articles'].includes(block.type)">
-            <h3 class="text-xl font-bold">
-                {{ block.title || (block.type === 'services' ? 'Layanan Kami' : 'Artikel Terbaru') }}
-            </h3>
-            <p v-if="block.description" class="mt-2 text-sm opacity-70">
-                {{ block.description }}
-            </p>
-            <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <div
-                    v-for="n in 3"
-                    :key="n"
-                    class="rounded-lg border border-slate-200 p-3"
-                >
-                    <div class="h-16 rounded bg-slate-100" />
-                    <div class="mt-3 h-2 w-3/4 rounded bg-slate-200" />
-                    <div class="mt-2 h-2 rounded bg-slate-100" />
-                </div>
-            </div>
-            <p class="mt-3 text-[10px] opacity-60">
-                Preview contoh — belum terhubung ke backend.
-            </p>
+        <!-- Services -->
+        <template v-else-if="block.type === 'services'">
+            <ServicesBlock :block="block" />
+        </template>
+
+        <!-- Articles -->
+        <template v-else-if="block.type === 'articles'">
+            <ArticlesBlock :block="block" />
         </template>
 
         <!-- Statistics -->

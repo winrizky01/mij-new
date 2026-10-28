@@ -12,6 +12,31 @@
             @change-preview-mode="previewMode = $event"
         />
 
+        <div class="flex items-center justify-end gap-3 border-b border-slate-200 bg-white px-4 py-3 lg:px-6">
+            <span
+                v-if="isPublishing"
+                class="text-xs text-slate-500"
+            >
+                Sedang memublikasikan halaman...
+            </span>
+
+            <button
+                type="button"
+                @click="publishPage"
+                :disabled="
+                    !activePage ||
+                    loadingContent ||
+                    loadingPages ||
+                    isSaving ||
+                    isPublishing
+                "
+                class="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+                <span v-if="isPublishing">Publishing...</span>
+                <span v-else>Publish Halaman</span>
+            </button>
+        </div>
+
         <div
             class="grid min-h-[calc(100vh-6.5rem)] grid-cols-1"
             :class="isPreviewMode
@@ -254,10 +279,13 @@ const router = useRouter()
 
 const pages = ref([])
 const activePageId = ref(null)
+let autoSaveTimer = null
 
+const AUTO_SAVE_DELAY = 1000
 const loadingPages = ref(false)
 const loadingContent = ref(false)
 const isSaving = ref(false)
+const isPublishing = ref(false)
 
 const pageError = ref('')
 const saveMessage = ref('')
@@ -441,6 +469,58 @@ function normalizePublicSections(sections) {
     })
 }
 
+
+function restoreImageSliderFromPublicSections(draftBlocks, sections) {
+    const slider = draftBlocks.find(
+        block => block.type === 'image_slider'
+    )
+
+    if (!slider) return draftBlocks
+
+    const currentImages = Array.isArray(slider.images)
+        ? slider.images
+        : []
+
+    // Jangan menimpa gambar yang sudah tersimpan di draft.
+    const hasExistingImages = currentImages.some(image => {
+        if (typeof image === 'string') {
+            return image.trim() !== ''
+        }
+
+        return Boolean(image?.imageUrl || image?.url)
+    })
+
+    if (hasExistingImages) return draftBlocks
+
+    const heroSections = (sections ?? [])
+        .filter(section =>
+            section.type === 'hero' &&
+            section.is_active &&
+            section.image
+        )
+        .sort((a, b) => a.sort_order - b.sort_order)
+
+    if (!heroSections.length) return draftBlocks
+
+    slider.images = heroSections.map(section => ({
+        imageUrl: section.image,
+        alt: section.title ?? '',
+        title: section.title ?? '',
+        description: section.content ?? '',
+        buttonText: section.settings?.buttonText ?? '',
+        buttonUrl: section.settings?.buttonUrl ?? '',
+        newTab: false,
+    }))
+
+    console.info(
+        '[WebsiteEditor] Gambar slider dipulihkan:',
+        slider.images.length
+    )
+
+    return draftBlocks
+}
+
+
 // --------------------------------------------------
 // MUAT ISI SATU HALAMAN
 // Draft yang ada selalu didahulukan daripada konten publik.
@@ -463,48 +543,91 @@ async function loadPageContent(pageId) {
         
         const response = await adminApi.website.pages.show(pageId)
 
-        // API detail mengembalikan { success: true, data: { sections, draft } }
-        const result = response?.data ?? response
+        // Buka wrapper respons API secara bertahap.
+        let result = response
 
-        if (result?.success === false) {
-            throw new Error('API gagal memuat isi halaman.')
+        for (let i = 0; i < 3; i++) {
+            if (
+                result &&
+                typeof result === 'object' &&
+                !Array.isArray(result) &&
+                result.data &&
+                typeof result.data === 'object'
+            ) {
+                result = result.data
+            } else {
+                break
+            }
         }
 
+        if (result?.success === false) {
+            throw new Error(
+                result.message || 'API gagal memuat isi halaman.'
+            )
+        }
+
+        // Ambil detail halaman dari respons.
         const detail = result?.data ?? result
+
+        console.log('[WebsiteEditor] Respons detail:', response)
+        console.log('[WebsiteEditor] Detail halaman:', detail)
+        console.log('[WebsiteEditor] Draft:', detail?.draft)
 
         if (
             !detail ||
             typeof detail !== 'object' ||
             !Array.isArray(detail.sections)
         ) {
-            console.error('[WebsiteEditor] Format detail tidak sesuai:', response)
+            console.error(
+                '[WebsiteEditor] Format detail tidak sesuai:',
+                detail
+            )
+
             throw new Error('Respons detail halaman tidak sesuai.')
-        }
-
-        const page = pages.value.find(
-            item => String(item.id) === String(pageId)
-        )
-
-        if (!page) {
-            throw new Error('Data halaman tidak ditemukan di daftar halaman.')
         }
 
         const draftContent = detail.draft?.content ?? null
 
         let blocks = []
 
-        if (draftContent) {
-            const draftBlocks = Array.isArray(draftContent)
-                ? draftContent
-                : draftContent.blocks
+        if (draftContent !== null && draftContent !== undefined) {
+            let parsedContent = draftContent
 
-            if (Array.isArray(draftBlocks)) {
-                blocks = normalizeDraftBlocks(draftBlocks)
+            // Jika kolom JSON dikembalikan sebagai string, parse terlebih dahulu.
+            if (typeof parsedContent === 'string') {
+                try {
+                    parsedContent = JSON.parse(parsedContent)
+                } catch {
+                    throw new Error(
+                        'Format JSON draft tidak valid.'
+                    )
+                }
             }
-        }
 
-        if (!draftContent) {
+            const draftBlocks = Array.isArray(parsedContent)
+                ? parsedContent
+                : parsedContent?.blocks
+
+            if (!Array.isArray(draftBlocks)) {
+                throw new Error(
+                    'Draft ditemukan, tetapi format bloknya tidak valid.'
+                )
+            }
+
+            blocks = normalizeDraftBlocks(draftBlocks)
+
+            blocks = restoreImageSliderFromPublicSections(
+                blocks,
+                detail.sections
+            )
+
+        } else {
+            // Belum ada draft, jadi gunakan konten publik sebagai awal editor.
             blocks = normalizePublicSections(detail.sections)
+
+            console.log(
+                '[WebsiteEditor] Draft tidak ditemukan; memakai konten publik.'
+            )
         }
 
         if (disposed || requestId !== contentRequestId) return
@@ -512,8 +635,8 @@ async function loadPageContent(pageId) {
         builder.replaceBlocks(blocks)
         builder.selectBlock(null)
 
-        activePageId.value = page.id
-        loadedPageId = String(page.id)
+        activePageId.value = pageId
+        loadedPageId = String(pageId)
 
     } catch (error) {
         if (disposed || requestId !== contentRequestId) {
@@ -683,6 +806,11 @@ onBeforeUnmount(() => {
         clearTimeout(messageTimer)
         messageTimer = null
     }
+
+    if (autoSaveTimer) {
+        clearTimeout(autoSaveTimer)
+        autoSaveTimer = null
+    }
 })
 
 // --------------------------------------------------
@@ -849,12 +977,34 @@ function showMessage(message) {
     }, 4500)
 }
 
+function scheduleAutoSave() {
+    if (autoSaveTimer) {
+        clearTimeout(autoSaveTimer)
+        autoSaveTimer = null
+    }
+
+    if (
+        disposed ||
+        loadingContent.value ||
+        loadingPages.value ||
+        isSaving.value ||
+        !activePageId.value ||
+        !activePage.value
+    ) {
+        return
+    }
+
+    autoSaveTimer = setTimeout(() => {
+        autoSaveTimer = null
+        saveDraft({ silent: true })
+    }, AUTO_SAVE_DELAY)
+}
+
 // --------------------------------------------------
 // SIMPAN DRAFT KE DATABASE
 // Tidak menyentuh website_sections atau konten publik.
 // --------------------------------------------------
-
-async function saveDraft() {
+async function saveDraft({ silent = false } = {}) {
     const pageId = activePageId.value
 
     if (
@@ -864,32 +1014,62 @@ async function saveDraft() {
         loadingPages.value ||
         isSaving.value
     ) {
-        return
+        return false
+    }
+
+    if (autoSaveTimer) {
+        clearTimeout(autoSaveTimer)
+        autoSaveTimer = null
     }
 
     isSaving.value = true
-    pageError.value = ''
-    saveMessage.value = ''
 
-    // Kunci halaman yang disimpan agar perpindahan halaman
-    // tidak membuat hasil penyimpanan dianggap milik halaman lain.
+    if (!silent) {
+        pageError.value = ''
+        saveMessage.value = ''
+    }
+
     const savingPageId = String(pageId)
     const payload = builder.getBlocksPayload()
+    const savedSnapshot = JSON.stringify(payload)
+
+    console.log(
+        '[DEBUG] Image Slider Payload:',
+        JSON.stringify(
+            payload.filter((block) => block.type === 'image_slider'),
+            null,
+            2
+        )
+    );
 
     try {
-        await adminApi.website.pages.saveDraft(
-            pageId,
-            payload
-        )
+        await adminApi.website.pages.saveDraft(pageId, payload)
 
-        if (disposed) return
+        if (disposed) return false
 
-        if (String(activePageId.value) === savingPageId) {
+        const unchanged =
+            JSON.stringify(builder.getBlocksPayload()) === savedSnapshot
+
+        const samePage =
+            String(activePageId.value) === savingPageId
+
+        if (samePage && unchanged) {
             builder.markSaved()
-            showMessage('Draft berhasil disimpan ke database.')
-        } else {
-            showMessage('Draft berhasil disimpan.')
+
+            if (!silent) {
+                showMessage('Draft berhasil disimpan ke database.')
+            }
+
+            return true
         }
+
+        if (!silent) {
+            showMessage(
+                'Ada perubahan baru. Simpan kembali sebelum publish.'
+            )
+        }
+
+        return false
     } catch (error) {
         console.error('Gagal menyimpan draft:', error)
 
@@ -898,10 +1078,117 @@ async function saveDraft() {
                 getApiError(error)?.message ||
                 'Draft gagal disimpan.'
 
-            showMessage('Draft gagal disimpan.')
+            if (!silent) {
+                showMessage('Draft gagal disimpan.')
+            }
         }
+
+        return false
     } finally {
         isSaving.value = false
+
+        if (
+            !disposed &&
+            String(activePageId.value) === savingPageId &&
+            JSON.stringify(builder.getBlocksPayload()) !== savedSnapshot
+        ) {
+            scheduleAutoSave()
+        }
     }
 }
+
+async function publishPage() {
+    const pageId = activePageId.value
+
+    if (
+        !pageId ||
+        !activePage.value ||
+        loadingContent.value ||
+        loadingPages.value ||
+        isSaving.value ||
+        isPublishing.value
+    ) {
+        return
+    }
+
+    const confirmed = window.confirm(
+        `Publish halaman "${activePage.value.title}"? Perubahan akan tampil di website publik.`
+    )
+
+    if (!confirmed) return
+
+    isPublishing.value = true
+    pageError.value = ''
+    saveMessage.value = ''
+
+    try {
+        // Pastikan tidak ada timer autosave yang tertunda.
+        if (autoSaveTimer) {
+            clearTimeout(autoSaveTimer)
+            autoSaveTimer = null
+        }
+
+        // Simpan draft terlebih dahulu.
+        const saved = await saveDraft({ silent: true })
+
+        if (!saved) {
+            throw new Error(
+                'Draft belum berhasil disimpan. Periksa perubahan lalu coba lagi.'
+            )
+        }
+
+        // Jangan publish jika halaman aktif berubah.
+        if (String(activePageId.value) !== String(pageId)) {
+            throw new Error('Halaman aktif berubah. Silakan coba kembali.')
+        }
+
+        // Publish draft melalui backend Laravel.
+        const response = await adminApi.website.pages.publish(pageId)
+
+        const result = response?.data?.data ?? response?.data
+
+        if (response?.data?.success === false) {
+            throw new Error(
+                response.data.message || 'Publish gagal.'
+            )
+        }
+
+        // Muat ulang konten setelah publish berhasil.
+        await loadPageContent(pageId)
+
+        if (pageError.value) {
+            throw new Error(
+                'Publish berhasil, tetapi editor gagal memuat ulang data.'
+            )
+        }
+
+        showMessage(
+            result?.message || 'Halaman berhasil dipublikasikan.'
+        )
+    } catch (error) {
+        console.error('Gagal publish halaman:', error)
+
+        pageError.value =
+            getApiError(error)?.message ||
+            error?.response?.data?.message ||
+            error?.message ||
+            'Gagal memublikasikan halaman.'
+    } finally {
+        isPublishing.value = false
+    }
+}
+
+watch(
+    blocks,
+    () => {
+        if (loadingContent.value || loadingPages.value) return
+
+        saveMessage.value = ''
+        scheduleAutoSave()
+    },
+    {
+        deep: true,
+        flush: 'sync',
+    }
+)
 </script>

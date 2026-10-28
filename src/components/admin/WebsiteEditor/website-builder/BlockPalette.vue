@@ -1,4 +1,3 @@
-
 <script setup>
 import { computed, ref } from 'vue'
 import {
@@ -10,6 +9,7 @@ import {
     AlignLeft,
     Image,
     Images,
+    GalleryHorizontal,
     MousePointer2,
     MoveVertical,
     BriefcaseBusiness,
@@ -48,6 +48,7 @@ const categories = [
             { type: 'heading', label: 'Heading', description: 'Judul dan subjudul', icon: Type },
             { type: 'rich_text', label: 'Rich Text', description: 'Teks berformat', icon: AlignLeft },
             { type: 'image', label: 'Image', description: 'Gambar tunggal', icon: Image },
+            { type: 'image_slider', label: 'Image Slider', description: 'Carousel gambar dengan navigasi', icon: GalleryHorizontal, },
             { type: 'gallery', label: 'Gallery', description: 'Galeri gambar', icon: Images },
             { type: 'button', label: 'Button / CTA', description: 'Tombol tindakan', icon: MousePointer2 },
             { type: 'spacer_divider', label: 'Spacer / Divider', description: 'Jarak atau garis', icon: MoveVertical },

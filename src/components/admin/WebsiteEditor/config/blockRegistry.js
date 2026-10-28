@@ -96,6 +96,54 @@ export const BLOCK_REGISTRY = {
         },
     },
 
+    image_slider: {
+        type: "image_slider",
+        label: "Image Slider / Carousel",
+        category: "layout",
+        description: "Slider gambar dengan teks, tombol, dan navigasi.",
+        icon: "gallery-horizontal",
+        defaults: {
+            name: "Image Slider",
+            enabled: true,
+
+            title: "",
+            description: "",
+
+            // Ukuran dan tampilan slider
+            height: 520,
+            maxWidth: "full",
+            objectFit: "cover",
+            borderRadius: 0,
+
+            // Pengaturan autoplay
+            autoplay: true,
+            autoplayInterval: 5000,
+
+            // Navigasi
+            showArrows: true,
+            showDots: true,
+
+            // Overlay dan posisi konten
+            overlay: true,
+            overlayColor: "#000000",
+            overlayOpacity: 40,
+            contentAlignment: "left",
+
+            // Data setiap slide
+            images: [
+                {
+                    imageUrl: "",
+                    alt: "",
+                    title: "",
+                    description: "",
+                    buttonText: "",
+                    buttonUrl: "",
+                    newTab: false,
+                },
+            ],
+        },
+    },
+
     gallery: {
         type: "gallery",
         label: "Gallery",
@@ -148,15 +196,20 @@ export const BLOCK_REGISTRY = {
         type: "services",
         label: "Daftar Layanan",
         category: "dynamic",
-        description: "Menampilkan daftar layanan.",
+        description: "Menampilkan layanan aktif dari database website MJI.",
         icon: "briefcase-business",
         defaults: {
             name: "Daftar Layanan",
             enabled: true,
             title: "Layanan Kami",
             eyebrow: "",
-            description: "",
-            source: "manual",
+            description: "Kami menyediakan solusi bisnis komprehensif untuk mendukung pertumbuhan perusahaan Anda.",
+            source: "website_services",
+            limit: 6,
+            columns: 3,
+            showDescription: true,
+            showIcon: true,
+            showLink: true,
             items: [],
         },
     },

@@ -169,8 +169,6 @@ api.interceptors.response.use(
 | NORMALIZE ERROR
 |--------------------------------------------------------------------------
 */
-
-
 export function getApiError(error) {
     const response = error?.response
     const status = response?.status
@@ -225,7 +223,6 @@ export function getApiError(error) {
 | Bisa dipakai untuk endpoint apa pun.
 |
 */
-
 export async function get(
     url,
     params = {},
@@ -403,37 +400,29 @@ export const authApi = {
 | PUBLIC WEBSITE API
 |--------------------------------------------------------------------------
 */
-
 export const publicApi = {
-    company() {
-        return get('/public/website/company')
+    home() {
+        return get('/public/website/home')
     },
 
-    services(params = {}) {
+    homeSections() {
+        return get('/public/website/home/sections')
+    },
+
+    settings(params = {}) {
+        return get('/public/website/settings', params)
+    },
+
+    page(slug) {
         return get(
-            '/public/website/services',
-            params
+            `/public/website/pages/${encodeURIComponent(slug)}`
         )
     },
 
-    articles(params = {}) {
-        return get(
-            '/public/website/articles',
-            params
-        )
-    },
-
-    article(slug) {
-        return get(
-            `/public/website/articles/${slug}`
-        )
-    },
-
-    sendInquiry(data) {
-        return post(
-            '/public/website/inquiries',
-            data
-        )
+    traffic: {
+        track(payload) {
+            return post('/public/website/traffic/track', payload)
+        },
     },
 }
 
@@ -491,34 +480,34 @@ export const adminApi = {
         services: {
             list(params = {}) {
                 return get(
-                    '/admin/website/services',
+                    '/website/services',
                     params
                 )
             },
 
             show(id) {
                 return get(
-                    `/admin/website/services/${id}`
+                    `/website/services/${id}`
                 )
             },
 
             create(data) {
                 return post(
-                    '/admin/website/services',
+                    '/website/services',
                     data
                 )
             },
 
             update(id, data) {
                 return put(
-                    `/admin/website/services/${id}`,
+                    `/website/services/${id}`,
                     data
                 )
             },
 
             delete(id) {
                 return destroy(
-                    `/admin/website/services/${id}`
+                    `/website/services/${id}`
                 )
             },
         },
@@ -652,6 +641,17 @@ export const adminApi = {
                 )
             },
         },
+
+        traffics: {
+            dashboard(params = {}) {
+                return get(
+                    '/website/traffic',
+                    params
+                )
+            },
+        },
+
+
     },
 }
 

@@ -1,5 +1,6 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
+import api from '@/services/api'
 import {
     Settings2,
     Type,
@@ -8,6 +9,8 @@ import {
     Trash2,
     X,
 } from 'lucide-vue-next'
+
+import MediaLibrary from '../../MediaLibraryModal.vue'
 
 const props = defineProps({
     section: {
@@ -22,6 +25,137 @@ const emit = defineEmits([
     'close',
 ])
 
+
+const articles = ref([])
+const articlesLoading = ref(false)
+const articlesError = ref('')
+let articlesRequestId = 0
+
+const isArticles = computed(() =>
+    props.section?.type === 'articles'
+)
+
+const selectedArticleIds = computed(() =>
+    Array.isArray(props.section?.article_ids)
+        ? props.section.article_ids.map(String)
+        : []
+)
+
+function normalizeArticles(response) {
+    const body = response?.data ?? response
+    const collection = body?.data ?? body
+
+    if (Array.isArray(collection)) return collection
+
+    if (Array.isArray(collection?.data)) {
+        return collection.data
+    }
+
+    if (Array.isArray(collection?.articles)) {
+        return collection.articles
+    }
+
+    return []
+}
+
+async function fetchArticles() {
+    const requestId = ++articlesRequestId
+
+    if (!isArticles.value) {
+        articles.value = []
+        articlesLoading.value = false
+        articlesError.value = ''
+        return
+    }
+
+    articlesLoading.value = true
+    articlesError.value = ''
+
+    try {
+        const response = await api.get('/website/articles')
+
+        console.log('HTTP status:', response.status)
+        console.log('Respons API artikel:', response.data)
+
+        if (requestId !== articlesRequestId) return
+
+        articles.value = normalizeArticles(response.data)
+        console.log('Artikel setelah normalisasi:', articles.value)
+    } catch (error) {
+        console.error('Gagal mengambil artikel:', error)
+        console.error('Respons error:', error.response?.data)
+
+        if (requestId !== articlesRequestId) return
+
+        articlesError.value =
+            error.response?.data?.message ||
+            'Gagal mengambil daftar artikel dari server.'
+    } finally {
+        if (requestId === articlesRequestId) {
+            articlesLoading.value = false
+        }
+    }
+}
+
+function toggleArticle(articleId, checked) {
+    const id = String(articleId)
+    const current = selectedArticleIds.value
+
+    const next = checked
+        ? [...new Set([...current, id])]
+        : current.filter(item => item !== id)
+
+    update('article_ids', next)
+}
+
+watch(
+    () => [
+        props.section?.id,
+        props.section?.type,
+    ],
+    fetchArticles,
+    { immediate: true },
+)
+
+const mediaLibraryOpen = ref(false)
+const activeSlideIndex = ref(null)
+
+function openMediaLibrary(index) {
+    activeSlideIndex.value = index
+    mediaLibraryOpen.value = true
+}
+
+function handleMediaSelected(item) {
+    const index = activeSlideIndex.value
+
+    if (
+        index === null ||
+        !item?.url ||
+        !sliderImages.value[index]
+    ) {
+        return
+    }
+
+    const images = sliderImages.value.map((slide, i) => {
+        const current = typeof slide === 'string'
+            ? { imageUrl: slide }
+            : { ...slide }
+
+        if (i !== index) return current
+
+        return {
+            ...current,
+            imageUrl: item.url,
+            alt: current.alt || item.alt || '',
+        }
+    })
+
+    update('images', images)
+
+    activeSlideIndex.value = null
+    mediaLibraryOpen.value = false
+}
+
 const isDynamic = computed(() =>
     ['services', 'articles', 'statistics', 'contact_info'].includes(
         props.section?.type,
@@ -35,6 +169,52 @@ const isInteractive = computed(() =>
 )
 
 const isColumns = computed(() => props.section?.type === 'columns')
+
+const isImageSlider = computed(() =>
+    props.section?.type === 'image_slider'
+)
+
+const sliderImages = computed(() =>
+    Array.isArray(props.section?.images)
+        ? props.section.images
+        : []
+)
+
+function updateSliderImage(index, field, value) {
+    const images = sliderImages.value.map((item, i) => {
+        const image = typeof item === 'string'
+            ? { imageUrl: item }
+            : { ...item }
+
+        return i === index
+            ? { ...image, [field]: value }
+            : image
+    })
+
+    update('images', images)
+}
+
+function addSliderImage() {
+    update('images', [
+        ...sliderImages.value,
+        {
+            imageUrl: '',
+            alt: '',
+            title: '',
+            description: '',
+            buttonText: '',
+            buttonUrl: '',
+            newTab: false,
+        },
+    ])
+}
+
+function removeSliderImage(index) {
+    update(
+        'images',
+        sliderImages.value.filter((_, i) => i !== index)
+    )
+}
 
 const columnCount = computed(() =>
     Math.max(1, Math.min(6, Number(props.section?.columns) || 2))
@@ -208,6 +388,303 @@ function updateNumber(field, value) {
                         />
                     </div>
 
+                    <!-- Image Slider Settings -->
+                    <template v-if="isImageSlider">
+                        <div class="space-y-4 rounded-xl border border-sky-100 bg-sky-50/50 p-3">
+                            <div class="flex items-center justify-between">
+                                <h4 class="text-xs font-bold text-slate-800">
+                                    Daftar Slide
+                                </h4>
+                                <span class="text-[10px] text-slate-500">
+                                    {{ sliderImages.length }} gambar
+                                </span>
+                            </div>
+
+                            <div
+                                v-for="(image, index) in sliderImages"
+                                :key="index"
+                                class="space-y-3 rounded-lg border border-slate-200 bg-white p-3"
+                            >
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-semibold text-slate-700">
+                                        Slide {{ index + 1 }}
+                                    </span>
+
+                                    <button
+                                        v-if="sliderImages.length > 1"
+                                        type="button"
+                                        class="text-[10px] font-medium text-rose-600 hover:text-rose-700"
+                                        @click="removeSliderImage(index)"
+                                    >
+                                        Hapus
+                                    </button>
+                                </div>
+                                
+                                <div>
+                                    <label class="mb-1 block text-[11px] font-medium text-slate-600">
+                                        Gambar Slide
+                                    </label>
+
+                                    <div
+                                        v-if="typeof image !== 'string' && (image.imageUrl || image.url)"
+                                        class="mb-2 overflow-hidden rounded-lg border border-slate-200 bg-slate-50"
+                                    >
+                                        <img
+                                            :src="image.imageUrl || image.url"
+                                            :alt="image.alt || ''"
+                                            class="h-32 w-full object-contain"
+                                        />
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        class="mb-2 flex w-full items-center justify-center gap-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2.5 text-xs font-semibold text-sky-700 transition hover:bg-sky-100"
+                                        @click="openMediaLibrary(index)"
+                                    >
+                                        <span>▧</span>
+                                        Pilih dari Media Library
+                                    </button>
+
+                                    <input
+                                        :value="typeof image === 'string' ? image : image.imageUrl || image.url || ''"
+                                        type="url"
+                                        placeholder="Atau masukkan URL gambar manual"
+                                        class="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs outline-none focus:border-sky-400"
+                                        @input="updateSliderImage(index, 'imageUrl', $event.target.value)"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label class="mb-1 block text-[11px] font-medium text-slate-600">
+                                        Teks alternatif gambar
+                                    </label>
+                                    <input
+                                        :value="typeof image === 'string' ? '' : image.alt || ''"
+                                        type="text"
+                                        placeholder="Deskripsi gambar"
+                                        class="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs outline-none focus:border-sky-400"
+                                        @input="updateSliderImage(index, 'alt', $event.target.value)"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label class="mb-1 block text-[11px] font-medium text-slate-600">
+                                        Judul Slide
+                                    </label>
+                                    <input
+                                        :value="typeof image === 'string' ? '' : image.title || ''"
+                                        type="text"
+                                        placeholder="Contoh: Solusi Perekat Industri"
+                                        class="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs outline-none focus:border-sky-400"
+                                        @input="updateSliderImage(index, 'title', $event.target.value)"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label class="mb-1 block text-[11px] font-medium text-slate-600">
+                                        Deskripsi Slide
+                                    </label>
+                                    <textarea
+                                        :value="typeof image === 'string' ? '' : image.description || ''"
+                                        rows="3"
+                                        placeholder="Tuliskan deskripsi..."
+                                        class="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs outline-none focus:border-sky-400"
+                                        @input="updateSliderImage(index, 'description', $event.target.value)"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label class="mb-1 block text-[11px] font-medium text-slate-600">
+                                        Teks Tombol
+                                    </label>
+                                    <input
+                                        :value="typeof image === 'string' ? '' : image.buttonText || ''"
+                                        type="text"
+                                        placeholder="Pelajari Selengkapnya"
+                                        class="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs outline-none focus:border-sky-400"
+                                        @input="updateSliderImage(index, 'buttonText', $event.target.value)"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label class="mb-1 block text-[11px] font-medium text-slate-600">
+                                        URL Tombol
+                                    </label>
+                                    <input
+                                        :value="typeof image === 'string' ? '' : image.buttonUrl || ''"
+                                        type="text"
+                                        placeholder="/kontak"
+                                        class="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs outline-none focus:border-sky-400"
+                                        @input="updateSliderImage(index, 'buttonUrl', $event.target.value)"
+                                    />
+                                </div>
+
+                                <label class="flex items-center gap-2 text-[11px] text-slate-600">
+                                    <input
+                                        type="checkbox"
+                                        :checked="typeof image !== 'string' && image.newTab === true"
+                                        class="size-3.5 accent-[#14a2d8]"
+                                        @change="updateSliderImage(index, 'newTab', $event.target.checked)"
+                                    />
+                                    Buka tautan di tab baru
+                                </label>
+                            </div>
+
+                            <button
+                                type="button"
+                                class="w-full rounded-lg border border-dashed border-sky-300 px-3 py-2.5 text-xs font-semibold text-sky-700 transition hover:bg-sky-50"
+                                @click="addSliderImage"
+                            >
+                                + Tambahkan Slide
+                            </button>
+                        </div>
+
+                        <div class="space-y-3">
+                            <h4 class="text-xs font-bold text-slate-800">
+                                Pengaturan Slider
+                            </h4>
+
+                            <div>
+                                <label class="mb-1 block text-xs font-medium text-slate-600">
+                                    Tinggi Slider (px)
+                                </label>
+                                <input
+                                    :value="section.height ?? 520"
+                                    type="number"
+                                    min="180"
+                                    max="1200"
+                                    class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-sky-400"
+                                    @input="updateNumber('height', $event.target.value)"
+                                />
+                            </div>
+
+                            <div>
+                                <label class="mb-1 block text-xs font-medium text-slate-600">
+                                    Interval Autoplay (milidetik)
+                                </label>
+                                <input
+                                    :value="section.autoplayInterval ?? 5000"
+                                    type="number"
+                                    min="1000"
+                                    max="30000"
+                                    step="500"
+                                    class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-sky-400"
+                                    @input="updateNumber('autoplayInterval', $event.target.value)"
+                                />
+                                <p class="mt-1 text-[10px] text-slate-400">
+                                    5000 ms = 5 detik.
+                                </p>
+                            </div>
+
+                            <label class="flex items-center justify-between text-xs text-slate-700">
+                                Aktifkan autoplay
+                                <input
+                                    type="checkbox"
+                                    :checked="section.autoplay !== false"
+                                    class="size-4 accent-[#14a2d8]"
+                                    @change="update('autoplay', $event.target.checked)"
+                                />
+                            </label>
+
+                            <label class="flex items-center justify-between text-xs text-slate-700">
+                                Tampilkan panah navigasi
+                                <input
+                                    type="checkbox"
+                                    :checked="section.showArrows !== false"
+                                    class="size-4 accent-[#14a2d8]"
+                                    @change="update('showArrows', $event.target.checked)"
+                                />
+                            </label>
+
+                            <label class="flex items-center justify-between text-xs text-slate-700">
+                                Tampilkan indikator titik
+                                <input
+                                    type="checkbox"
+                                    :checked="section.showDots !== false"
+                                    class="size-4 accent-[#14a2d8]"
+                                    @change="update('showDots', $event.target.checked)"
+                                />
+                            </label>
+
+                            <label class="flex items-center justify-between text-xs text-slate-700">
+                                Overlay gelap
+                                <input
+                                    type="checkbox"
+                                    :checked="section.overlay !== false"
+                                    class="size-4 accent-[#14a2d8]"
+                                    @change="update('overlay', $event.target.checked)"
+                                />
+                            </label>
+
+                            <div v-if="section.overlay !== false">
+                                <label class="mb-1 block text-xs font-medium text-slate-600">
+                                    Warna Overlay
+                                </label>
+                                <input
+                                    :value="section.overlayColor || '#000000'"
+                                    type="color"
+                                    class="h-10 w-full rounded-lg border border-slate-200 p-1"
+                                    @input="update('overlayColor', $event.target.value)"
+                                />
+
+                                <label class="mb-1 mt-3 block text-xs font-medium text-slate-600">
+                                    Intensitas Overlay ({{ section.overlayOpacity ?? 40 }}%)
+                                </label>
+                                <input
+                                    :value="section.overlayOpacity ?? 40"
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    class="w-full accent-[#14a2d8]"
+                                    @input="updateNumber('overlayOpacity', $event.target.value)"
+                                />
+                            </div>
+
+                            <div>
+                                <label class="mb-1 block text-xs font-medium text-slate-600">
+                                    Posisi Konten Slide
+                                </label>
+                                <select
+                                    :value="section.contentAlignment || 'left'"
+                                    class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-sky-400"
+                                    @change="update('contentAlignment', $event.target.value)"
+                                >
+                                    <option value="left">Kiri</option>
+                                    <option value="center">Tengah</option>
+                                    <option value="right">Kanan</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="mb-1 block text-xs font-medium text-slate-600">
+                                    Mode Gambar
+                                </label>
+                                <select
+                                    :value="section.objectFit || 'cover'"
+                                    class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-sky-400"
+                                    @change="update('objectFit', $event.target.value)"
+                                >
+                                    <option value="cover">Cover — memenuhi area</option>
+                                    <option value="contain">Contain — seluruh gambar terlihat</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="mb-1 block text-xs font-medium text-slate-600">
+                                    Radius Sudut (px)
+                                </label>
+                                <input
+                                    :value="section.borderRadius ?? 0"
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-sky-400"
+                                    @input="updateNumber('borderRadius', $event.target.value)"
+                                />
+                            </div>
+                        </div>
+                    </template>
+
                     <template
                         v-if="['hero', 'button', 'whatsapp'].includes(section.type)"
                     >
@@ -268,15 +745,121 @@ function updateNumber(field, value) {
                         />
                     </div>
 
-                    <div v-if="isDynamic">
-                        <div class="rounded-lg border border-sky-100 bg-sky-50 p-3">
-                            <p class="text-xs font-semibold text-sky-900">
-                                Sumber data dinamis
-                            </p>
-                            <p class="mt-1 text-[11px] leading-5 text-sky-800">
-                                Pemilihan sumber data, filter, dan jumlah item akan dikonfigurasi melalui registry yang diizinkan developer.
+                    <!-- Konfigurasi artikel -->
+                    <div v-if="isArticles" class="space-y-3">
+                        <div class="rounded-xl border border-sky-100 bg-sky-50/50 p-3">
+                            <h4 class="text-xs font-bold text-slate-800">
+                                Sumber Artikel
+                            </h4>
+
+                            <p class="mt-1 text-[11px] leading-5 text-slate-600">
+                                Pilih artikel yang ingin digunakan pada blok ini.
                             </p>
                         </div>
+
+                        <div>
+                            <label class="mb-1.5 block text-xs font-medium text-slate-600">
+                                Jumlah artikel
+                            </label>
+
+                            <input
+                                :value="section.limit ?? 6"
+                                type="number"
+                                min="1"
+                                max="24"
+                                class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-sky-400"
+                                @change="updateNumber(
+                                    'limit',
+                                    Math.max(1, Math.min(24, Number($event.target.value) || 6))
+                                )"
+                            />
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <h4 class="text-xs font-bold text-slate-800">
+                                Daftar Artikel
+                            </h4>
+
+                            <span class="text-[10px] text-slate-500">
+                                {{ selectedArticleIds.length }} dipilih
+                            </span>
+                        </div>
+
+                        <div
+                            v-if="articlesLoading"
+                            class="rounded-lg border border-slate-200 p-4 text-center text-xs text-slate-500"
+                        >
+                            Memuat daftar artikel...
+                        </div>
+
+                        <div
+                            v-else-if="articlesError"
+                            class="rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700"
+                        >
+                            {{ articlesError }}
+
+                            <button
+                                type="button"
+                                class="mt-2 block font-semibold underline"
+                                @click="fetchArticles"
+                            >
+                                Coba lagi
+                            </button>
+                        </div>
+
+                        <div
+                            v-else-if="!articles.length"
+                            class="rounded-lg border border-dashed border-slate-300 p-4 text-center text-xs text-slate-500"
+                        >
+                            Belum ada artikel yang ditemukan.
+                        </div>
+
+                        <div v-else class="max-h-80 space-y-2 overflow-y-auto">
+                            <label
+                                v-for="article in articles"
+                                :key="article.id"
+                                class="flex cursor-pointer gap-3 rounded-lg border border-slate-200 p-3 transition hover:border-sky-300"
+                            >
+                                <input
+                                    type="checkbox"
+                                    :checked="selectedArticleIds.includes(String(article.id))"
+                                    class="mt-1 size-4 shrink-0 accent-[#14a2d8]"
+                                    @change="toggleArticle(article.id, $event.target.checked)"
+                                />
+
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-xs font-semibold text-slate-800">
+                                        {{ article.title || article.name || 'Tanpa judul' }}
+                                    </p>
+
+                                    <p class="mt-1 text-[10px] text-slate-500">
+                                        ID: {{ article.id }}
+                                        <span v-if="article.status">
+                                            · {{ article.status }}
+                                        </span>
+                                    </p>
+                                </div>
+                            </label>
+                        </div>
+
+                        <p class="text-[10px] leading-4 text-slate-500">
+                            Jika tidak ada artikel yang dipilih, preview dapat menggunakan
+                            artikel terbaru sesuai batas jumlah.
+                        </p>
+                    </div>
+
+                    <!-- Pesan dinamis untuk blok lain -->
+                    <div
+                        v-else-if="isDynamic"
+                        class="rounded-lg border border-sky-100 bg-sky-50 p-3"
+                    >
+                        <p class="text-xs font-semibold text-sky-900">
+                            Sumber data dinamis
+                        </p>
+
+                        <p class="mt-1 text-[11px] leading-5 text-sky-800">
+                            Konfigurasi sumber data untuk tipe blok ini belum tersedia.
+                        </p>
                     </div>
 
                     <div v-if="isInteractive">
@@ -421,5 +1004,10 @@ function updateNumber(field, value) {
                 </div>
             </div>
         </template>
+
+        <MediaLibrary
+            v-model="mediaLibraryOpen"
+            @select="handleMediaSelected"
+        />
     </aside>
 </template>

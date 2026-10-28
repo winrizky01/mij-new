@@ -1,9 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { publicApi } from '../services/api'
 
 import PublicLayout from '../layouts/PublicLayout.vue'
 import AdminLayout from '../layouts/AdminLayout.vue'
 import ErpLayout from '../layouts/ErpLayout.vue'
 
+// =====================================
+// PUBLIC WEBSITE
+// =====================================
+import DynamicPage from '../pages/public/DynamicPage.vue'
 import Home from '../pages/public/Home.vue'
 import Login from '../pages/Login.vue'
 import SelectSystem from '../pages/SelectSystem.vue'
@@ -21,6 +26,7 @@ import AdminUsers from '../pages/admin/Users.vue'
 import AdminSettings from '../pages/admin/Settings.vue'
 import AdminWebsiteContent from '../pages/admin/WebsiteContent.vue'
 import AdminWebsitePages from '../pages/admin/WebsitePages.vue'
+import AdminWebsiteTraffic from '../pages/admin/Traffics.vue'
 
 // =====================================
 // ERP
@@ -57,12 +63,17 @@ const router = createRouter({
         {
             path: '/',
             component: PublicLayout,
-
             children: [
                 {
                     path: '',
                     name: 'home',
-                    component: Home,
+                    component: DynamicPage,
+                    props: { slug: 'home' },
+                },
+                {
+                    path: ':slug',
+                    name: 'public-dynamic-page',
+                    component: DynamicPage,
                 },
             ],
         },
@@ -160,6 +171,12 @@ const router = createRouter({
                     name: 'admin.settings',
                     component: AdminSettings,
                 },
+
+                {
+                    path: 'traffic',
+                    name: 'admin.traffic',
+                    component: AdminWebsiteTraffic,
+                }
             ],
         },
 
@@ -371,6 +388,124 @@ router.beforeEach((to) => {
     }
 
     return true
+})
+
+/**
+ * Website traffic tracking.
+ * Hanya mencatat halaman publik, bukan halaman admin atau ERP.
+ */
+
+function getTrafficVisitorId() {
+    const key = 'mji_traffic_visitor_id'
+
+    try {
+        let id = localStorage.getItem(key)
+
+        if (!id) {
+            id = globalThis.crypto?.randomUUID
+                ? globalThis.crypto.randomUUID()
+                : `${Date.now()}-${Math.random().toString(36).slice(2)}`
+
+            localStorage.setItem(key, id)
+        }
+
+        return id
+    } catch {
+        // Jangan menghambat navigasi jika storage tidak tersedia.
+        return null
+    }
+}
+
+function getTrafficDevice() {
+    const ua = navigator.userAgent
+
+    if (/ipad|tablet/i.test(ua)) return 'tablet'
+    if (/mobile|android|iphone|ipod/i.test(ua)) return 'mobile'
+
+    return 'desktop'
+}
+
+function getTrafficSource(to) {
+    const params = new URLSearchParams(to.fullPath)
+    const campaignSource = params.get('utm_source')
+
+    if (campaignSource) {
+        try {
+            sessionStorage.setItem(
+                'mji_traffic_source',
+                campaignSource
+            )
+        } catch {
+            // Abaikan jika sessionStorage tidak tersedia.
+        }
+
+        return campaignSource
+    }
+
+    try {
+        const savedSource = sessionStorage.getItem(
+            'mji_traffic_source'
+        )
+
+        if (savedSource) {
+            return savedSource
+        }
+
+        if (document.referrer) {
+            const referrer = new URL(document.referrer)
+
+            if (referrer.hostname !== window.location.hostname) {
+                sessionStorage.setItem(
+                    'mji_traffic_source',
+                    referrer.hostname
+                )
+
+                return referrer.hostname
+            }
+        }
+
+        sessionStorage.setItem(
+            'mji_traffic_source',
+            'direct'
+        )
+    } catch {
+        // Abaikan jika sessionStorage tidak tersedia.
+    }
+
+    return 'direct'
+}
+
+router.afterEach((to, from, failure) => {
+    if (failure) return
+
+    const excludedPaths = [
+        '/admin',
+        '/erp',
+        '/login',
+        '/select-system',
+    ]
+
+    if (excludedPaths.some((path) =>
+        to.path === path || to.path.startsWith(`${path}/`)
+    )) {
+        return
+    }
+
+    const visitorId = getTrafficVisitorId()
+
+    // Tetap bisa mencatat kunjungan jika ID anonim tidak tersedia.
+    const payload = {
+        page: to.path,
+        source: getTrafficSource(to),
+        device: getTrafficDevice(),
+        visitor_id: visitorId,
+        referrer: document.referrer || null,
+    }
+
+    publicApi.traffic.track(payload).catch((error) => {
+        // Tracking tidak boleh merusak pengalaman pengunjung.
+        console.warn('Website traffic tracking gagal:', error.message)
+    })
 })
 
 export default router

@@ -172,7 +172,7 @@
 
 <script setup>
 import { onMounted, onUnmounted, ref } from 'vue'
-import api from '@/services/api'
+import { publicApi } from '@/services/api'
 
 const currentSlide  = ref(0)
 const heroSlides    = ref([])
@@ -187,11 +187,11 @@ async function fetchHeroSection() {
     errorMessage.value = ''
 
     try {
-        const response = await api.get('/website/home/sections')
+        const response = await publicApi.homeSections()
         const sections = response.data?.data ?? []
 
         const hero = sections.find(
-            section => section.type === 'hero'
+            (section) => section.type === 'image_slider'
         )
 
         if (!hero) {

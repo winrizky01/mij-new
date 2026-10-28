@@ -27,7 +27,7 @@
                     class="mt-0.5 truncate text-[10px] font-medium
                            tracking-[0.16em] text-blue-300"
                 >
-                    JAYA INDONESIA
+                    JASA INVESTINDO
                 </p>
             </div>
 

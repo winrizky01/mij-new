@@ -1438,13 +1438,24 @@ function openCreateModal() {
 }
 
 function openEditModal(article) {
-  editingArticle.value = article
+  console.log('Data artikel yang dipilih:', article)
+
+  if (!article?.id) {
+    formError.value = 'ID artikel tidak ditemukan. Periksa respons API daftar artikel.'
+    console.error('Artikel tidak memiliki ID:', article)
+    return
+  }
+
+  editingArticle.value = { ...article }
+
   resetArticleForm()
 
   Object.assign(form, {
     title: article.title ?? '',
     slug: article.slug ?? '',
-    category_id: article.category_id == null ? '' : String(article.category_id),
+    category_id: article.category_id == null
+      ? ''
+      : String(article.category_id),
     excerpt: article.excerpt ?? '',
     content: article.content ?? '',
     featured_image: article.featured_image ?? '',
@@ -1453,7 +1464,6 @@ function openEditModal(article) {
   })
 
   slugTouched.value = Boolean(article.slug)
-
   showArticleModal.value = true
 
   editor.value?.commands.setContent(article.content || '', false)
@@ -1543,13 +1553,13 @@ async function saveArticle() {
   }
 
   const payload = {
-    title: form.title.trim(),
-    slug: form.slug.trim(),
-    category_id: form.category_id || null,
-    excerpt: form.excerpt.trim(),
-    content: html,
+    title         : form.title.trim(),
+    slug          : form.slug.trim(),
+    category_id   : form.category_id || null,
+    excerpt       : form.excerpt.trim(),
+    content       : html,
     featured_image: form.featured_image || null,
-    status: form.status,
+    status        : form.status,
   }
 
   saving.value = true
@@ -1566,8 +1576,8 @@ async function saveArticle() {
       successMessage.value = 'Artikel berhasil ditambahkan.'
     }
 
-    showArticleModal.value = false
-    editingArticle.value = null
+    showArticleModal.value  = false
+    editingArticle.value    = null
 
     await loadArticles()
   } catch (error) {

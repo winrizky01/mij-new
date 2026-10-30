@@ -45,6 +45,7 @@ const categories = [
         blocks: [
             { type: 'container', label: 'Container / Section', description: 'Wadah konten', icon: LayoutTemplate },
             { type: 'columns', label: 'Columns', description: 'Layout beberapa kolom', icon: Columns3 },
+            { type: 'hero', label: 'Hero', description: 'Banner utama dengan slider, teks, dan statistik', icon: PanelsTopLeft, },
             { type: 'heading', label: 'Heading', description: 'Judul dan subjudul', icon: Type },
             { type: 'rich_text', label: 'Rich Text', description: 'Teks berformat', icon: AlignLeft },
             { type: 'image', label: 'Image', description: 'Gambar tunggal', icon: Image },

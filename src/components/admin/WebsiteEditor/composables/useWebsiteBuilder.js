@@ -53,12 +53,17 @@ export function useWebsiteBuilder(initialBlocks = []) {
                 overrides.columnIndex,
                 parent.columns
             );
+        } else {
+            delete block.columnIndex;
         }
 
-        parent.children = [...(parent.children ?? []), block];
+        parent.children = [
+            ...(parent.children ?? []),
+            block,
+        ];
 
-        // Trigger pembaruan reaktif dengan mengganti root array.
         blocks.value = [...blocks.value];
+
         selectedBlockId.value = block.id;
         isDirty.value = true;
 

@@ -1,4 +1,3 @@
-
 <script setup>
 import { computed } from 'vue'
 import PreviewBlock from './PreviewBlock.vue'

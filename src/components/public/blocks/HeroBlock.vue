@@ -111,7 +111,7 @@
                         {{ primaryButtonText }}
                     </a>
 
-                    <a
+                    <!-- <a
                         v-if="showSecondaryButton"
                         :href="secondaryButtonUrl"
                         class="inline-flex min-h-14 items-center justify-center rounded-md border border-white/80 bg-white/10 px-7 py-4 font-semibold text-white backdrop-blur-sm transition duration-300 hover:-translate-y-1 hover:bg-white/20"
@@ -119,7 +119,7 @@
                         :rel="secondaryButtonNewTab ? 'noopener noreferrer' : undefined"
                     >
                         {{ secondaryButtonText }}
-                    </a>
+                    </a> -->
                 </div>
             </div>
 
@@ -274,28 +274,64 @@ let slideTimer = null
 const settings = computed(() => props.settings ?? {})
 
 const slides = computed(() => {
-    const source = props.slides ?? settings.value.slides
+    const source =
+        props.slides ??
+        settings.value.slides ??
+        settings.value.images
 
+    // Format slider dari Website Builder
     if (Array.isArray(source) && source.length) {
         return source.map((slide) => ({
-            tag: slide.tag ?? '',
-            title: slide.title ?? '',
-            description: slide.description ?? '',
+            tag:
+                slide.tag ??
+                slide.subtitle ??
+                settings.value.subtitle ??
+                props.eyebrow ??
+                '',
+
+            title:
+                slide.title ??
+                settings.value.title ??
+                props.title ??
+                '',
+
+            description:
+                slide.description ??
+                settings.value.description ??
+                settings.value.content ??
+                props.description ??
+                '',
+
             bgImage:
                 slide.bgImage ??
                 slide.imageUrl ??
                 slide.image_url ??
                 slide.image ??
-                props.imageUrl ??
-                props.backgroundImage ??
                 '',
+
+            buttonText:
+                slide.buttonText ?? null,
+
+            buttonUrl:
+                slide.buttonUrl ?? null,
+
+            newTab:
+                slide.newTab ?? false,
         }))
     }
 
-    // Fallback untuk Hero satu gambar.
-    const title = props.title || settings.value.title || ''
+    // Fallback single hero
+    const title =
+        props.title ||
+        settings.value.title ||
+        ''
+
     const description =
-        props.description || settings.value.description || ''
+        props.description ||
+        settings.value.description ||
+        settings.value.content ||
+        ''
+
     const image =
         props.imageUrl ||
         props.backgroundImage ||
@@ -308,14 +344,12 @@ const slides = computed(() => {
         return []
     }
 
-    return [
-        {
-            tag: props.eyebrow || settings.value.eyebrow || '',
-            title,
-            description,
-            bgImage: image,
-        },
-    ]
+    return [{
+        tag: props.eyebrow || settings.value.subtitle || '',
+        title,
+        description,
+        bgImage: image,
+    }]
 })
 
 const activeSlide = computed(() => {

@@ -14,6 +14,55 @@ export const BLOCK_CATEGORIES = [
 ];
 
 export const BLOCK_REGISTRY = {
+    hero: {
+        type: "hero",
+        label: "Hero Block",
+        category: "layout",
+        description: "Hero dengan slider gambar, teks, tombol, dan statistik.",
+        icon: "panels-top-left",
+        defaults: {
+            name: "Hero Utama",
+            enabled: true,
+
+            eyebrow: "PARTNER BISNIS ANDA",
+            subtitle: "",
+            title: "Solusi Bisnis untuk Masa Depan",
+            description: "Kami membantu bisnis Anda berkembang melalui solusi yang tepat.",
+
+            buttonText: "Hubungi Kami",
+            buttonUrl: "/kontak",
+
+            height: 520,
+            autoplay: true,
+            autoplayInterval: 5000,
+            showArrows: true,
+            showDots: true,
+            overlay: true,
+            overlayColor: "#000000",
+            overlayOpacity: 40,
+
+            images: [
+                {
+                    imageUrl: "",
+                    alt: "",
+                    title: "",
+                    description: "",
+                    buttonText: "",
+                    buttonUrl: "",
+                    newTab: false,
+                },
+            ],
+
+            stats: [
+                {
+                    value: "150+",
+                    label: "Klien",
+                    description: "Telah mempercayai layanan kami.",
+                },
+            ],
+        },
+    },
+    
     container: {
         type: "container",
         label: "Container / Section",

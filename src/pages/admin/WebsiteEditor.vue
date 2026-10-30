@@ -818,30 +818,27 @@ onBeforeUnmount(() => {
 // --------------------------------------------------
 
 function syncSelectedBlock() {
-    if (!builder.blocks.value.some(
-        block => block.id === selectedBlockId.value
-    )) {
-        builder.selectBlock(
-            builder.blocks.value[0]?.id ?? null
-        )
+    // selectedBlock sudah menggunakan findBlock() rekursif.
+    if (selectedBlockId.value && !builder.selectedBlock.value) {
+        builder.selectBlock(builder.blocks.value[0]?.id ?? null)
     }
 }
 
 function handleCanvasAddBlock(payload) {
-    // Klik tombol tambah di dalam Container/Columns.
     if (payload?.parentId != null) {
         pendingInsertTarget.value = {
             parentId: payload.parentId,
-            columnIndex: Number(payload.columnIndex ?? 0),
-        }
+            columnIndex: payload.columnIndex == null
+                ? null
+                : Number(payload.columnIndex),
+        };
 
-        isBlockPickerOpen.value = true
-        return
+        isBlockPickerOpen.value = true;
+        return;
     }
 
-    // Klik tombol tambah umum di bawah canvas.
-    pendingInsertTarget.value = null
-    isBlockPickerOpen.value = true
+    pendingInsertTarget.value = null;
+    isBlockPickerOpen.value = true;
 }
 
 function handleAddBlock(payload) {

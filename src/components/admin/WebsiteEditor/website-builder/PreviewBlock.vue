@@ -1,190 +1,9 @@
-<script setup>
-import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue'
-import {
-    Image as ImageIcon,
-    Map,
-    Video,
-    Plus,
-} from 'lucide-vue-next'
-
-import ArticlesBlock from '../blocks/ArticlesBlock.vue'
-import ServicesBlock from '../blocks/ServicesBlock.vue'
-
-const props = defineProps({
-    block: { type: Object, required: true },
-    selectedBlockId: { type: [String, Number], default: null },
-    isPreviewMode: { type: Boolean, default: false },
-    depth: { type: Number, default: 0 },
-})
-
-const emit = defineEmits(['select', 'add-child'])
-
-const currentSlide = ref(0)
-let autoplayTimer = null
-
-const sliderImages = computed(() =>
-    (props.block.images || []).filter(item =>
-        typeof item === 'string'
-            ? item.trim() !== ''
-            : Boolean(item?.imageUrl || item?.url)
-    )
-)
-
-const activeSlide = computed(() =>
-    sliderImages.value[currentSlide.value] || null
-)
-
-function getSlideImage(item) {
-    if (typeof item === 'string') return item
-    return item?.imageUrl || item?.url || ''
-}
-
-function getSlideField(item, field) {
-    if (!item || typeof item === 'string') return ''
-    return item[field] || ''
-}
-
-function nextSlide() {
-    const total = sliderImages.value.length
-    if (total < 2) return
-
-    currentSlide.value = (currentSlide.value + 1) % total
-}
-
-function prevSlide() {
-    const total = sliderImages.value.length
-    if (total < 2) return
-
-    currentSlide.value = (currentSlide.value - 1 + total) % total
-}
-
-function goToSlide(index) {
-    currentSlide.value = index
-}
-
-function stopAutoplay() {
-    if (autoplayTimer) {
-        clearInterval(autoplayTimer)
-        autoplayTimer = null
-    }
-}
-
-function startAutoplay() {
-    stopAutoplay()
-
-    if (
-        !props.block.autoplay ||
-        sliderImages.value.length < 2
-    ) return
-
-    const interval = Math.max(
-        1000,
-        Number(props.block.autoplayInterval) || 5000
-    )
-
-    autoplayTimer = setInterval(nextSlide, interval)
-}
-
-watch(
-    () => [
-        props.block.id,
-        props.block.autoplay,
-        props.block.autoplayInterval,
-        sliderImages.value.length,
-    ],
-    () => {
-        if (currentSlide.value >= sliderImages.value.length) {
-            currentSlide.value = 0
-        }
-
-        startAutoplay()
-    },
-    { immediate: true }
-)
-
-onMounted(startAutoplay)
-onBeforeUnmount(stopAutoplay)
-
-const isSelected = computed(() =>
-    !props.isPreviewMode &&
-    props.selectedBlockId === props.block.id
-)
-
-const isLayout = computed(() =>
-    ['container', 'columns'].includes(props.block.type)
-)
-
-const columnCount = computed(() =>
-    Math.max(1, Math.min(6, Number(props.block.columns) || 2))
-)
-
-const children = computed(() =>
-    (props.block.children ?? []).filter(
-        child => child.enabled !== false
-    )
-)
-
-function columnChildren(index) {
-    return children.value.filter(
-        child => Number(child.columnIndex ?? 0) === index
-    )
-}
-
-const gridStyle = computed(() => ({
-    display: 'grid',
-    gridTemplateColumns: `repeat(${columnCount.value}, minmax(0, 1fr))`,
-    gap: `${Math.max(0, Number(props.block.gap) || 0)}px`,
-}))
-
-const sectionStyle = computed(() => {
-    const block = props.block
-    const backgrounds = {
-        white: '#ffffff',
-        light: '#f3f7fa',
-        brand: '#14a2d8',
-        dark: '#0f172a',
-    }
-
-    return {
-        backgroundColor:
-            block.backgroundColor ||
-            backgrounds[block.background] ||
-            '#ffffff',
-        textAlign: block.alignment || 'left',
-        color: ['brand', 'dark'].includes(block.background)
-            ? '#ffffff'
-            : '#1e293b',
-        paddingTop: `${Math.max(0, Number(block.paddingTop ?? 24))}px`,
-        paddingBottom: `${Math.max(0, Number(block.paddingBottom ?? 24))}px`,
-    }
-})
-
-function label(block) {
-    return block.name || block.label || block.type || 'Blok'
-}
-
-function selectBlock(event) {
-    // Klik kontrol di dalam blok tidak perlu memilih parent.
-    if (event.target.closest('[data-block-action]')) return
-
-    emit('select', props.block)
-}
-
-function addChild(columnIndex = 0) {
-    emit('add-child', {
-        parentId: props.block.id,
-        columnIndex,
-    })
-}
-</script>
-
 <template>
     <section
         :class="[
-            'group relative min-w-0 border-2 px-4 py-6 transition',
-            isSelected
-                ? 'border-[#14a2d8]'
-                : 'border-transparent',
+            'group relative min-w-0 border-2 transition',
+            block.type === 'hero' ? 'p-0' : 'px-4 py-6',
+            isSelected ? 'border-[#14a2d8]' : 'border-transparent',
             !isPreviewMode && 'cursor-pointer hover:border-sky-200',
         ]"
         :style="isLayout ? sectionStyle : {}"
@@ -235,11 +54,11 @@ function addChild(columnIndex = 0) {
                 />
 
                 <button
-                    v-if="!isPreviewMode && children.length === 0"
+                    v-if="!isPreviewMode"
                     type="button"
                     data-block-action
                     class="w-full rounded-lg border border-dashed border-slate-300 px-3 py-5 text-xs text-slate-500 hover:border-sky-400 hover:text-sky-700"
-                    @click.stop="addChild(0)"
+                    @click.stop="addChild()"
                 >
                     <Plus :size="14" class="mr-1 inline" />
                     Tambahkan blok ke Container
@@ -268,10 +87,10 @@ function addChild(columnIndex = 0) {
                     />
 
                     <button
-                        v-if="!isPreviewMode && columnChildren(index - 1).length === 0"
+                        v-if="!isPreviewMode"
                         type="button"
                         data-block-action
-                        class="flex min-h-24 w-full flex-col items-center justify-center gap-2 rounded-lg text-xs text-slate-400 hover:bg-sky-50 hover:text-sky-700"
+                        class="flex min-h-24 w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-slate-200 text-xs text-slate-400 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700"
                         @click.stop="addChild(index - 1)"
                     >
                         <Plus :size="18" />
@@ -642,15 +461,385 @@ function addChild(columnIndex = 0) {
                 {{ block.mediaType === 'map' ? 'Area peta' : 'Area video' }}
             </div>
         </template>
+        
+        <!-- Hero Utama -->
+        <template v-else-if="block.type === 'hero'">
+            <div
+                class="relative isolate w-full overflow-hidden bg-slate-900 text-white"
+                :style="{
+                minHeight: `${Math.max(300, Number(block.height) || 520)}px`,
+                }"
+            >
+                <!-- Background image -->
+                <img
+                    v-if="activeSlide && getSlideImage(activeSlide)"
+                    :src="getSlideImage(activeSlide)"
+                    :alt="getSlideField(activeSlide, 'alt') || block.title || ''"
+                    class="absolute inset-0 h-full w-full object-cover"
+                />
+
+                <!-- Background fallback -->
+                <div
+                    v-else
+                    class="absolute inset-0 bg-gradient-to-r from-slate-950 to-slate-700"
+                />
+
+                <!-- Overlay -->
+                <div
+                    v-if="block.overlay !== false"
+                    class="absolute inset-0"
+                    :style="{
+                        backgroundColor: block.overlayColor || '#000000',
+                        opacity:
+                        Math.max(
+                            0,
+                            Math.min(100, Number(block.overlayOpacity ?? 40)),
+                        ) / 100,
+                    }"
+                />
+
+                <!-- Hero content -->
+                <div
+                    class="relative z-10 flex flex-col justify-center p-8 sm:p-12 lg:p-16"
+                    :style="{
+                        minHeight: `${Math.max(300, Number(block.height) || 520)}px`,
+                    }"
+                    :class="{
+                        'items-center text-center': block.contentAlignment === 'center',
+                        'items-end text-right': block.contentAlignment === 'right',
+                        'items-start text-left': !['center', 'right'].includes(
+                        block.contentAlignment,
+                        ),
+                    }"
+                >
+                <p
+                    v-if="block.eyebrow || block.subtitle"
+                    class="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-sky-300"
+                >
+                    {{ block.eyebrow || block.subtitle }}
+                </p>
+
+                <h1 class="max-w-4xl text-3xl font-bold leading-tight sm:text-5xl lg:text-6xl">
+                    {{
+                    getSlideField(activeSlide, 'title') ||
+                    block.title ||
+                    'Judul utama hero'
+                    }}
+                </h1>
+
+                <p
+                    v-if="getSlideField(activeSlide, 'description') || block.description"
+                    class="mt-5 max-w-2xl whitespace-pre-line text-sm leading-7 text-white/90 sm:text-lg"
+                >
+                    {{
+                    getSlideField(activeSlide, 'description') || block.description
+                    }}
+                </p>
+
+                <a
+                    v-if="getSlideField(activeSlide, 'buttonText') || block.buttonText"
+                        :href="
+                        getSlideField(activeSlide, 'buttonUrl') ||
+                        block.buttonUrl ||
+                        block.url ||
+                        '#'
+                    "
+                    :target="
+                        (activeSlide?.newTab ?? block.buttonNewTab) === true
+                            ? '_blank'
+                            : undefined
+                    "
+                    :rel="
+                        (activeSlide?.newTab ?? block.buttonNewTab) === true
+                            ? 'noopener noreferrer'
+                            : undefined
+                    "
+                    data-block-action
+                    class="mt-7 inline-flex rounded-lg bg-[#14a2d8] px-6 py-3 text-sm font-semibold text-white transition hover:bg-sky-600"
+                    @click.stop
+                >
+                    {{
+                    getSlideField(activeSlide, 'buttonText') || block.buttonText
+                    }}
+                </a>
+                </div>
+
+                <!-- Previous / Next -->
+                <template v-if="sliderImages.length > 1 && block.showArrows !== false">
+                <button
+                    type="button"
+                    class="absolute left-4 top-1/2 z-20 -translate-y-1/2 rounded-full bg-black/40 p-3 text-white transition hover:bg-black/70"
+                    aria-label="Slide sebelumnya"
+                    @click.stop="prevSlide"
+                >
+                    <span aria-hidden="true">‹</span>
+                </button>
+
+                <button
+                    type="button"
+                    class="absolute right-4 top-1/2 z-20 -translate-y-1/2 rounded-full bg-black/40 p-3 text-white transition hover:bg-black/70"
+                    aria-label="Slide berikutnya"
+                    @click.stop="nextSlide"
+                >
+                    <span aria-hidden="true">›</span>
+                </button>
+                </template>
+
+                <!-- Slide indicators -->
+                <div
+                    v-if="sliderImages.length > 1 && block.showDots !== false"
+                    class="absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 gap-2"
+                >
+                    <button
+                        v-for="(item, index) in sliderImages"
+                        :key="index"
+                        type="button"
+                        class="h-2.5 rounded-full transition-all"
+                        :class="
+                        currentSlide === index
+                            ? 'w-7 bg-white'
+                            : 'w-2.5 bg-white/50 hover:bg-white/80'
+                        "
+                        :aria-label="`Buka slide ${index + 1}`"
+                        @click.stop="goToSlide(index)"
+                    />
+                </div>
+
+                <!-- Statistics -->
+                <div
+                    v-if="block.stats?.length"
+                    class="relative z-10 grid grid-cols-2 gap-5 border-t border-white/20 bg-black/20 px-8 py-6 sm:grid-cols-3 sm:px-12"
+                >
+                    <div
+                        v-for="(stat, index) in block.stats"
+                        :key="index"
+                    >
+                        <p class="text-2xl font-bold">{{ stat.value }}</p>
+                        <p class="text-sm font-semibold">{{ stat.label }}</p>
+                        <p
+                            v-if="stat.description"
+                            class="mt-1 text-xs text-white/70"
+                            >
+                            {{ stat.description }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </template>
 
         <!-- Unknown block -->
-        <template v-else>
+        <!-- <template v-else>
             <div class="rounded-lg border border-dashed border-slate-300 p-4">
                 <p class="text-sm font-semibold">{{ label(block) }}</p>
                 <p class="mt-1 text-xs opacity-70">
                     Preview untuk tipe blok ini belum tersedia.
                 </p>
             </div>
+        </template> -->
+        <!-- Debug unknown block -->
+        <template v-else>
+            <div class="rounded-lg border border-red-400 bg-red-50 p-4 text-red-800">
+                <p class="font-semibold">
+                    Preview belum tersedia
+                </p>
+
+                <p class="mt-2 text-sm">
+                    Type:
+                    <code>{{ JSON.stringify(block.type) }}</code>
+                </p>
+
+                <p class="mt-1 text-sm">
+                    ID:
+                    <code>{{ block.id }}</code>
+                </p>
+
+                <p class="mt-1 text-sm">
+                    Data:
+                    <code>{{ JSON.stringify(block) }}</code>
+                </p>
+            </div>
         </template>
     </section>
 </template>
+
+<script setup>
+import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import {
+    Image as ImageIcon,
+    Map,
+    Video,
+    Plus,
+} from 'lucide-vue-next'
+
+import ArticlesBlock from '../blocks/ArticlesBlock.vue'
+import ServicesBlock from '../blocks/ServicesBlock.vue'
+
+const props = defineProps({
+    block: { type: Object, required: true },
+    selectedBlockId: { type: [String, Number], default: null },
+    isPreviewMode: { type: Boolean, default: false },
+    depth: { type: Number, default: 0 },
+})
+
+const emit = defineEmits(['select', 'add-child'])
+
+const currentSlide = ref(0)
+let autoplayTimer = null
+
+const sliderImages = computed(() =>
+    (props.block.images || []).filter(item =>
+        typeof item === 'string'
+            ? item.trim() !== ''
+            : Boolean(item?.imageUrl || item?.url)
+    )
+)
+
+const activeSlide = computed(() =>
+    sliderImages.value[currentSlide.value] || null
+)
+
+function getSlideImage(item) {
+    if (typeof item === 'string') return item
+    return item?.imageUrl || item?.url || ''
+}
+
+function getSlideField(item, field) {
+    if (!item || typeof item === 'string') return ''
+    return item[field] || ''
+}
+
+function nextSlide() {
+    const total = sliderImages.value.length
+    if (total < 2) return
+
+    currentSlide.value = (currentSlide.value + 1) % total
+}
+
+function prevSlide() {
+    const total = sliderImages.value.length
+    if (total < 2) return
+
+    currentSlide.value = (currentSlide.value - 1 + total) % total
+}
+
+function goToSlide(index) {
+    currentSlide.value = index
+}
+
+function stopAutoplay() {
+    if (autoplayTimer) {
+        clearInterval(autoplayTimer)
+        autoplayTimer = null
+    }
+}
+
+function startAutoplay() {
+    stopAutoplay()
+
+    if (
+        !props.block.autoplay ||
+        sliderImages.value.length < 2
+    ) return
+
+    const interval = Math.max(
+        1000,
+        Number(props.block.autoplayInterval) || 5000
+    )
+
+    autoplayTimer = setInterval(nextSlide, interval)
+}
+
+watch(
+    () => [
+        props.block.id,
+        props.block.autoplay,
+        props.block.autoplayInterval,
+        sliderImages.value.length,
+    ],
+    () => {
+        if (currentSlide.value >= sliderImages.value.length) {
+            currentSlide.value = 0
+        }
+
+        startAutoplay()
+    },
+    { immediate: true }
+)
+
+onMounted(startAutoplay)
+onBeforeUnmount(stopAutoplay)
+
+const isSelected = computed(() =>
+    !props.isPreviewMode &&
+    props.selectedBlockId === props.block.id
+)
+
+const isLayout = computed(() =>
+    ['container', 'columns'].includes(props.block.type)
+)
+
+const columnCount = computed(() =>
+    Math.max(1, Math.min(6, Number(props.block.columns) || 2))
+)
+
+const children = computed(() =>
+    (props.block.children ?? []).filter(
+        child => child.enabled !== false
+    )
+)
+
+function columnChildren(index) {
+    return children.value.filter(child =>
+        Number(child.columnIndex ?? 0) === index
+    )
+}
+
+const gridStyle = computed(() => ({
+    display: 'grid',
+    gridTemplateColumns: `repeat(${columnCount.value}, minmax(0, 1fr))`,
+    gap: `${Math.max(0, Number(props.block.gap) || 0)}px`,
+}))
+
+const sectionStyle = computed(() => {
+    const block = props.block
+    const backgrounds = {
+        white: '#ffffff',
+        light: '#f3f7fa',
+        brand: '#14a2d8',
+        dark: '#0f172a',
+    }
+
+    return {
+        backgroundColor:
+            block.backgroundColor ||
+            backgrounds[block.background] ||
+            '#ffffff',
+        textAlign: block.alignment || 'left',
+        color: ['brand', 'dark'].includes(block.background)
+            ? '#ffffff'
+            : '#1e293b',
+        paddingTop: `${Math.max(0, Number(block.paddingTop ?? 24))}px`,
+        paddingBottom: `${Math.max(0, Number(block.paddingBottom ?? 24))}px`,
+    }
+})
+
+function label(block) {
+    return block.name || block.label || block.type || 'Blok'
+}
+
+function selectBlock(event) {
+    // Klik kontrol di dalam blok tidak perlu memilih parent.
+    if (event.target.closest('[data-block-action]')) return
+
+    emit('select', props.block)
+}
+
+function addChild(columnIndex = null) {
+    emit('add-child', {
+        parentId: props.block.id,
+        columnIndex: props.block.type === 'columns'
+            ? columnIndex
+            : null,
+    })
+}
+</script>

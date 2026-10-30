@@ -170,8 +170,22 @@ const isInteractive = computed(() =>
 
 const isColumns = computed(() => props.section?.type === 'columns')
 
+const isHero = computed(() =>
+    props.section?.type === 'hero'
+)
+
 const isImageSlider = computed(() =>
     props.section?.type === 'image_slider'
+)
+
+const supportsSlides = computed(() =>
+    ['hero', 'image_slider'].includes(props.section?.type)
+)
+
+const heroStats = computed(() =>
+    Array.isArray(props.section?.stats)
+        ? props.section.stats
+        : []
 )
 
 const sliderImages = computed(() =>
@@ -344,7 +358,7 @@ function updateNumber(field, value) {
                     </div>
 
                     <div
-                        v-if="['hero', 'services', 'articles', 'statistics', 'contact_info', 'faq', 'tabs', 'contact_form', 'whatsapp', 'map_video', 'heading', 'rich_text'].includes(section.type)"
+                        v-if="['services', 'articles', 'statistics', 'contact_info', 'faq', 'tabs', 'contact_form', 'whatsapp', 'map_video', 'heading', 'rich_text'].includes(section.type)"
                     >
                         <label class="mb-1.5 block text-xs font-medium text-slate-600">
                             Eyebrow / Label kecil
@@ -388,8 +402,137 @@ function updateNumber(field, value) {
                         />
                     </div>
 
+                    <!-- HERO SETTINGS -->
+                    <template v-if="isHero">
+                        <div class="space-y-4 rounded-xl border border-sky-100 bg-sky-50/50 p-3">
+                            <h4 class="text-xs font-bold text-slate-800">
+                                Pengaturan Hero
+                            </h4>
+
+                            <div>
+                                <label class="mb-1 block text-xs font-medium text-slate-600">
+                                    Subtitle / Eyebrow
+                                </label>
+                                <input
+                                    :value="section.subtitle || ''"
+                                    type="text"
+                                    class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                                    placeholder="Solusi Industri Terpercaya"
+                                    @input="update('subtitle', $event.target.value)"
+                                />
+                            </div>
+
+                            <div>
+                                <label class="mb-1 block text-xs font-medium text-slate-600">
+                                    Teks Tombol
+                                </label>
+                                <input
+                                    :value="section.buttonText || ''"
+                                    type="text"
+                                    class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                                    placeholder="Hubungi Kami"
+                                    @input="update('buttonText', $event.target.value)"
+                                />
+                            </div>
+
+                            <div>
+                                <label class="mb-1 block text-xs font-medium text-slate-600">
+                                    URL Tombol
+                                </label>
+                                <input
+                                    :value="section.buttonUrl || ''"
+                                    type="text"
+                                    class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                                    placeholder="/kontak"
+                                    @input="update('buttonUrl', $event.target.value)"
+                                />
+                            </div>
+
+                            <div>
+                                <label class="mb-1 block text-xs font-medium text-slate-600">
+                                    Tinggi Hero (px)
+                                </label>
+                                <input
+                                    :value="section.height ?? 520"
+                                    type="number"
+                                    min="180"
+                                    max="1200"
+                                    class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                                    @input="updateNumber('height', $event.target.value)"
+                                />
+                            </div>
+                        </div>
+
+                        <!-- Statistik Hero -->
+                        <div class="space-y-3 rounded-xl border border-slate-200 p-3">
+                            <div class="flex items-center justify-between">
+                                <h4 class="text-xs font-bold text-slate-800">
+                                    Statistik Hero
+                                </h4>
+
+                                <button
+                                    type="button"
+                                    class="text-xs font-semibold text-sky-700"
+                                    @click="update('stats', [
+                                        ...heroStats,
+                                        { value: '', label: '' }
+                                    ])"
+                                >
+                                    + Tambah
+                                </button>
+                            </div>
+
+                            <div
+                                v-for="(stat, index) in heroStats"
+                                :key="index"
+                                class="space-y-2 rounded-lg border border-slate-200 p-3"
+                            >
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-semibold text-slate-600">
+                                        Statistik {{ index + 1 }}
+                                    </span>
+
+                                    <button
+                                        type="button"
+                                        class="text-xs text-rose-600"
+                                        @click="update(
+                                            'stats',
+                                            heroStats.filter((_, i) => i !== index)
+                                        )"
+                                    >
+                                        Hapus
+                                    </button>
+                                </div>
+
+                                <input
+                                    :value="stat.value || ''"
+                                    type="text"
+                                    placeholder="Nilai, misalnya 10+"
+                                    class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                                    @input="update('stats', heroStats.map((item, i) =>
+                                        i === index
+                                            ? { ...item, value: $event.target.value }
+                                            : item
+                                    ))"
+                                />
+
+                                <input
+                                    :value="stat.label || ''"
+                                    type="text"
+                                    placeholder="Label, misalnya Tahun Pengalaman"
+                                    class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                                    @input="update('stats', heroStats.map((item, i) =>
+                                        i === index
+                                            ? { ...item, label: $event.target.value }
+                                            : item
+                                    ))"
+                                />
+                            </div>
+                        </div>
+                    </template>
+
                     <!-- Image Slider Settings -->
-                    <template v-if="isImageSlider">
+                    <template v-if="supportsSlides">
                         <div class="space-y-4 rounded-xl border border-sky-100 bg-sky-50/50 p-3">
                             <div class="flex items-center justify-between">
                                 <h4 class="text-xs font-bold text-slate-800">
@@ -686,7 +829,7 @@ function updateNumber(field, value) {
                     </template>
 
                     <template
-                        v-if="['hero', 'button', 'whatsapp'].includes(section.type)"
+                        v-if="['button', 'whatsapp'].includes(section.type)"
                     >
                         <div>
                             <label class="mb-1.5 block text-xs font-medium text-slate-600">
@@ -715,7 +858,7 @@ function updateNumber(field, value) {
                         </div>
                     </template>
 
-                    <div v-if="['image', 'hero'].includes(section.type)">
+                    <div v-if="['image'].includes(section.type)">
                         <label class="mb-1.5 block text-xs font-medium text-slate-600">
                             URL gambar sementara
                         </label>

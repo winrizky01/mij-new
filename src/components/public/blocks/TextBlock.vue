@@ -29,8 +29,11 @@ const alignmentClass = computed(() => ({
 </script>
 
 <template>
-  <section
+  <!-- <section
     class="px-6 py-14 sm:px-10 lg:px-20"
+    :style="{ backgroundColor, color: textColor }"
+  > -->
+  <section
     :style="{ backgroundColor, color: textColor }"
   >
     <div

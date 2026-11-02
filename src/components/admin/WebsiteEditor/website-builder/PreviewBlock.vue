@@ -120,11 +120,26 @@
 
         <!-- Rich Text -->
         <template v-else-if="block.type === 'rich_text'">
-            <h3 v-if="block.title" class="text-xl font-bold">
+            <h3
+                v-if="block.title"
+                class="mb-3 text-xl font-bold"
+            >
                 {{ block.title }}
             </h3>
-            <p class="mt-2 whitespace-pre-line text-sm leading-6 opacity-80">
-                {{ block.content || block.description || 'Tulis konten teks di inspector.' }}
+
+            <!-- Konten HTML dari Tiptap -->
+            <div
+                v-if="block.content"
+                class="rich-text-content text-sm leading-7"
+                v-html="safeRichText"
+            />
+
+            <!-- Fallback jika belum ada konten HTML -->
+            <p
+                v-else
+                class="whitespace-pre-line text-sm leading-6 opacity-80"
+            >
+                {{ block.description || 'Tulis konten teks di inspector.' }}
             </p>
         </template>
 
@@ -423,20 +438,10 @@
 
         <!-- Contact Form -->
         <template v-else-if="block.type === 'contact_form'">
-            <h3 class="text-xl font-bold">
-                {{ block.title || 'Hubungi Kami' }}
-            </h3>
-            <p v-if="block.description" class="mt-2 text-sm opacity-70">
-                {{ block.description }}
-            </p>
-            <div class="mt-4 space-y-3">
-                <div class="h-9 rounded-lg border border-slate-200" />
-                <div class="h-9 rounded-lg border border-slate-200" />
-                <div class="h-20 rounded-lg border border-slate-200" />
-                <span class="inline-flex rounded-lg bg-[#14a2d8] px-4 py-2 text-xs font-semibold text-white">
-                    {{ block.submitText || 'Kirim Pesan' }}
-                </span>
-            </div>
+            <ContactFormBlock
+                :block="block"
+                :is-preview-mode="isPreviewMode"
+            />
         </template>
 
         <!-- WhatsApp -->
@@ -670,9 +675,11 @@ import {
     Video,
     Plus,
 } from 'lucide-vue-next'
+import DOMPurify from 'dompurify'
 
 import ArticlesBlock from '../blocks/ArticlesBlock.vue'
 import ServicesBlock from '../blocks/ServicesBlock.vue'
+import ContactFormBlock from '../blocks/ContactFormBlock.vue'
 
 const props = defineProps({
     block: { type: Object, required: true },
@@ -842,4 +849,74 @@ function addChild(columnIndex = null) {
             : null,
     })
 }
+
+const safeRichText = computed(() =>
+    DOMPurify.sanitize(props.block.content || '')
+)
 </script>
+
+<style scoped>
+.rich-text-content :deep(p) {
+    margin-bottom: 0.75rem;
+}
+
+.rich-text-content :deep(h1) {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 1rem;
+}
+
+.rich-text-content :deep(h2) {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 0.75rem;
+}
+
+.rich-text-content :deep(h3) {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+}
+
+.rich-text-content :deep(ul) {
+    list-style-type: disc;
+    padding-left: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.rich-text-content :deep(ol) {
+    list-style-type: decimal;
+    padding-left: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.rich-text-content :deep(li) {
+    margin-bottom: 0.25rem;
+}
+
+.rich-text-content :deep(blockquote) {
+    border-left: 4px solid #14a2d8;
+    padding-left: 1rem;
+    margin: 1rem 0;
+    color: #64748b;
+}
+
+.rich-text-content :deep(a) {
+    color: #14a2d8;
+    text-decoration: underline;
+}
+
+.rich-text-content :deep(img) {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+    margin: 1rem 0;
+}
+
+.rich-text-content :deep(hr) {
+    margin: 1.5rem 0;
+    border-color: #e2e8f0;
+}
+</style>

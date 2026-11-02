@@ -11,6 +11,7 @@ import {
 } from 'lucide-vue-next'
 
 import MediaLibrary from '../../MediaLibraryModal.vue'
+import RichTextEditor from '../blocks/RichTextEditor.vue'
 
 const props = defineProps({
     section: {
@@ -388,7 +389,7 @@ function updateNumber(field, value) {
                     </div>
 
                     <div
-                        v-if="!['spacer_divider', 'image', 'gallery', 'button'].includes(section.type)"
+                        v-if="!['spacer_divider', 'image', 'gallery', 'button', 'rich_text',].includes(section.type)"
                     >
                         <label class="mb-1.5 block text-xs font-medium text-slate-600">
                             Deskripsi
@@ -400,6 +401,29 @@ function updateNumber(field, value) {
                             placeholder="Masukkan deskripsi atau konten"
                             @input="update('description', $event.target.value)"
                         />
+                    </div>
+
+                    <!-- RICH TEXT EDITOR -->
+                    <div
+                        v-if="section.type === 'rich_text'"
+                        class="space-y-2"
+                    >
+                        <div>
+                            <label class="mb-1.5 block text-xs font-medium text-slate-600">
+                                Konten Rich Text
+                            </label>
+
+                            <p class="mb-3 text-[11px] leading-5 text-slate-500">
+                                Format konten seperti menggunakan editor WordPress.
+                                Kamu bisa mengatur heading, teks, warna, gambar, tautan,
+                                dan daftar.
+                            </p>
+
+                            <RichTextEditor
+                                :model-value="section.content || ''"
+                                @update:model-value="update('content', $event)"
+                            />
+                        </div>
                     </div>
 
                     <!-- HERO SETTINGS -->

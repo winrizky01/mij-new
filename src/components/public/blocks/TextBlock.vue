@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue'
+import DOMPurify from 'dompurify'
 
 const props = defineProps({
   title: { type: String, default: '' },
@@ -26,16 +27,14 @@ const alignmentClass = computed(() => ({
   center: 'text-center',
   right: 'text-right',
 }[props.alignment] || 'text-left'))
+
+const safeContent = computed(() =>
+  DOMPurify.sanitize(props.content || '')
+)
 </script>
 
 <template>
-  <!-- <section
-    class="px-6 py-14 sm:px-10 lg:px-20"
-    :style="{ backgroundColor, color: textColor }"
-  > -->
-  <section
-    :style="{ backgroundColor, color: textColor }"
-  >
+  <section :style="{ backgroundColor, color: textColor }">
     <div
       class="mx-auto flex max-w-7xl flex-col items-center gap-10"
       :class="hasImage ? layoutClass : ''"
@@ -69,17 +68,13 @@ const alignmentClass = computed(() => ({
 
         <div
           v-if="content"
-          class="mt-5 whitespace-pre-line leading-8"
+          class="rich-text-content mt-5 leading-8"
           :class="alignmentClass"
-        >
-          {{ content }}
-        </div>
+          v-html="safeContent"
+        />
       </div>
 
-      <div
-        v-if="hasImage"
-        class="w-full md:w-1/2"
-      >
+      <div v-if="hasImage" class="w-full md:w-1/2">
         <img
           :src="imageUrl"
           :alt="title || 'Ilustrasi'"
@@ -90,3 +85,51 @@ const alignmentClass = computed(() => ({
     </div>
   </section>
 </template>
+
+<style scoped>
+.rich-text-content :deep(p) {
+  margin-bottom: 1rem;
+}
+
+.rich-text-content :deep(h1),
+.rich-text-content :deep(h2),
+.rich-text-content :deep(h3) {
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 1.25rem 0 0.75rem;
+}
+
+.rich-text-content :deep(ul) {
+  list-style: disc;
+  padding-left: 1.5rem;
+  margin: 1rem 0;
+}
+
+.rich-text-content :deep(ol) {
+  list-style: decimal;
+  padding-left: 1.5rem;
+  margin: 1rem 0;
+}
+
+.rich-text-content :deep(li) {
+  margin-bottom: 0.4rem;
+}
+
+.rich-text-content :deep(a) {
+  color: #0284c7;
+  text-decoration: underline;
+}
+
+.rich-text-content :deep(blockquote) {
+  border-left: 4px solid #14a2d8;
+  padding-left: 1rem;
+  margin: 1rem 0;
+  opacity: 0.8;
+}
+
+.rich-text-content :deep(img) {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+}
+</style>

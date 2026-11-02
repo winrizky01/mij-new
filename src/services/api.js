@@ -593,16 +593,23 @@ export const adminApi = {
 
         settings: {
             list(params = {}) {
-                return get(
-                    '/admin/website/settings',
-                    params
-                )
+                return get('/website/settings', params)
             },
 
             update(data) {
+                return put('/website/settings/bulk', data)
+            },
+
+            updateOne(key, data) {
                 return put(
-                    '/admin/website/settings',
+                    `/website/settings/${encodeURIComponent(key)}`,
                     data
+                )
+            },
+
+            delete(key) {
+                return destroy(
+                    `/website/settings/${encodeURIComponent(key)}`
                 )
             },
         },
@@ -651,7 +658,51 @@ export const adminApi = {
             },
         },
 
+        navigation: {
+            list() {
+                return get('/website/menus')
+            },
 
+            show(id) {
+                return get(`/website/menus/${id}`)
+            },
+
+            create(data) {
+                return post('/website/menus', data)
+            },
+
+            update(id, data) {
+                return put(`/website/menus/${id}`, data)
+            },
+
+            delete(id) {
+                return destroy(`/website/menus/${id}`)
+            },
+
+            createItem(menuId, data) {
+                return post(`/website/menus/${menuId}/items`, data)
+            },
+
+            updateItem(menuId, itemId, data) {
+                return put(
+                    `/website/menus/${menuId}/items/${itemId}`,
+                    data
+                )
+            },
+
+            deleteItem(menuId, itemId) {
+                return destroy(
+                    `/website/menus/${menuId}/items/${itemId}`
+                )
+            },
+
+            reorder(menuId, items) {
+                return post(
+                    `/website/menus/${menuId}/items/reorder`,
+                    { items }
+                )
+            },
+        },
     },
 }
 

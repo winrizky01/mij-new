@@ -5,6 +5,7 @@ import ServicesBlock from './blocks/ServicesBlock.vue'
 import ArticlesBlock from './blocks/ArticlesBlock.vue'
 import SpacerDivider from './blocks/SpacerDivider.vue'
 import TextBlock from './blocks/TextBlock.vue'
+import ContactFormBlock from './blocks/ContactFormBlock.vue'  
 
 defineOptions({
   name: 'BlockRenderer',
@@ -24,7 +25,7 @@ const blockComponents = {
   articles: ArticlesBlock,
   spacer_divider: SpacerDivider,
   rich_text: TextBlock,
-
+  contact_form: ContactFormBlock,
 }
 
 // Normalisasi data section dan settings API.
@@ -35,31 +36,24 @@ function getBlockProps(block) {
     ...block,
     ...settings,
 
-    settings: {
-      ...settings,
-      title: block.title ?? settings.title ?? '',
-      subtitle: block.subtitle ?? settings.subtitle ?? '',
-      content: block.content ?? settings.content ?? '',
-    },
-
     title: block.title ?? settings.title ?? '',
-    eyebrow:
-      block.eyebrow ??
-      settings.eyebrow ??
-      block.subtitle ??
-      settings.subtitle ??
-      '',
+    subtitle: block.subtitle ?? settings.subtitle ?? '',
 
     description:
       block.description ??
       settings.description ??
-      block.content ??
-      settings.content ??
       '',
 
     content:
       block.content ??
       settings.content ??
+      '',
+
+    eyebrow:
+      block.eyebrow ??
+      settings.eyebrow ??
+      block.subtitle ??
+      settings.subtitle ??
       '',
 
     imageUrl:
@@ -70,11 +64,15 @@ function getBlockProps(block) {
       '',
 
     imagePosition:
+      block.imagePosition ??
       settings.imagePosition ??
       settings.image_position ??
       'right',
 
-    alignment: block.alignment ?? settings.alignment ?? 'left',
+    alignment:
+      block.alignment ??
+      settings.alignment ??
+      'left',
 
     backgroundColor:
       block.backgroundColor ??
@@ -86,30 +84,34 @@ function getBlockProps(block) {
       settings.textColor ??
       '#1f2937',
 
-    slides: settings.slides ?? settings.images ?? [],
-    stats: settings.stats ?? [],
+    slides: block.images ?? settings.slides ?? settings.images ?? [],
+    stats: block.stats ?? settings.stats ?? [],
 
     buttonText:
+      block.buttonText ??
       block.button_text ??
-      settings.button_text ??
       settings.buttonText ??
+      settings.button_text ??
       '',
 
     buttonUrl:
+      block.buttonUrl ??
       block.button_url ??
-      settings.button_url ??
       settings.buttonUrl ??
+      settings.button_url ??
       '',
 
-    autoplay: settings.autoplay ?? true,
+    autoplay: block.autoplay ?? settings.autoplay ?? true,
 
     autoplayInterval:
+      block.autoplayInterval ??
       settings.autoplayInterval ??
       settings.autoplay_interval ??
       6000,
 
-    showDots: settings.showDots ?? true,
-    showStats: settings.showStats ?? true,
+    showDots: block.showDots ?? settings.showDots ?? true,
+    showArrows: block.showArrows ?? settings.showArrows ?? true,
+    showStats: block.showStats ?? settings.showStats ?? true,
   }
 }
 
@@ -166,7 +168,7 @@ function getColumnChildren(block, index) {
       <!-- Container -->
       <section v-if="block.type === 'container'" :style="getContainerStyle(getSettings(block))">
         <div :class="[
-          'mx-auto w-full',
+          'mx-auto w-full px-5',
           getContainerWidth(getSettings(block).maxWidth),
         ]">
           <div :class="{
@@ -183,11 +185,13 @@ function getColumnChildren(block, index) {
 
       <!-- Columns -->
       <section v-else-if="block.type === 'columns'" class="mx-auto w-full max-w-7xl py-8">
-        <div class="grid grid-cols-1 md:grid-cols-2" :class="{
-          'lg:grid-cols-2': getColumnCount(block) === 2,
-          'lg:grid-cols-3': getColumnCount(block) === 3,
-          'lg:grid-cols-4': getColumnCount(block) === 4,
-        }" :style="{
+        <div
+          class="grid grid-cols-1"
+          :class="{
+            'md:grid-cols-2': getColumnCount(block) >= 2,
+            'lg:grid-cols-3': getColumnCount(block) === 3,
+            'lg:grid-cols-4': getColumnCount(block) >= 4,
+          }" :style="{
           gap: `${getSettings(block).gap ?? 24}px`,
         }">
           <div v-for="index in getColumnCount(block)" :key="index" class="min-w-0">
@@ -215,6 +219,8 @@ function getColumnChildren(block, index) {
           {{ block.title }}
         </component>
 
+        <div class="mt-5 h-1 w-14 rounded-full bg-[#0052cc]"></div>
+        
         <p v-if="block.description" class="mt-4 whitespace-pre-line leading-8 text-gray-600">
           {{ block.description }}
         </p>

@@ -14,6 +14,8 @@
           {{ title }}
         </h2>
 
+        <div class="mt-5 h-1 w-14 rounded-full bg-[#0052cc]"></div>
+
         <p
           class="mt-4 leading-relaxed text-gray-600"
         >

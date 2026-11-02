@@ -27,6 +27,7 @@ import AdminSettings from '../pages/admin/Settings.vue'
 import AdminWebsiteContent from '../pages/admin/WebsiteContent.vue'
 import AdminWebsitePages from '../pages/admin/WebsitePages.vue'
 import AdminWebsiteTraffic from '../pages/admin/Traffics.vue'
+import AdminWebsiteNavigation from '../pages/admin/WebsiteNavigation.vue'
 
 // =====================================
 // ERP
@@ -176,7 +177,16 @@ const router = createRouter({
                     path: 'traffic',
                     name: 'admin.traffic',
                     component: AdminWebsiteTraffic,
-                }
+                },
+
+                {
+                    path: 'navigation',
+                    name: 'admin.website-navigation',
+                    component: AdminWebsiteNavigation,
+                    meta: {
+                        title: 'Header & Navigation',
+                    },
+                },
             ],
         },
 

@@ -12,12 +12,10 @@
         >
             <!-- Logo -->
             <a
-                href="#home"
+                href="/"
                 class="group flex items-center gap-3.5 text-xl font-bold tracking-tight"
             >
-                <div
-                    class="relative flex h-12 w-12 shrink-0 items-center justify-center"
-                >
+                <div class="relative flex h-12 w-12 shrink-0 items-center justify-center">
                     <img
                         src="/icon.png"
                         alt="Manunggal Jasa Investindo Logo"
@@ -30,15 +28,10 @@
                 </div>
 
                 <div class="flex flex-col">
-                    <span
-                        class="text-xl font-bold leading-none text-[#003366] transition-colors duration-300 group-hover:text-[#0052cc]"
-                    >
+                    <span class="text-xl font-bold leading-none text-[#003366] transition-colors duration-300 group-hover:text-[#0052cc]">
                         Manunggal
                     </span>
-
-                    <span
-                        class="mt-1 text-[10px] font-semibold uppercase tracking-widest text-gray-400 transition-colors duration-300 group-hover:text-[#fd2029]"
-                    >
+                    <span class="mt-1 text-[10px] font-semibold uppercase tracking-widest text-gray-400 transition-colors duration-300 group-hover:text-[#fd2029]">
                         Jasa Investindo
                     </span>
                 </div>
@@ -46,104 +39,108 @@
 
             <!-- Desktop Navigation -->
             <div class="hidden items-center gap-1 md:flex lg:gap-2">
-                <a
-                    href="#home"
-                    class="rounded-lg px-4 py-2 text-md font-medium text-gray-700 transition-all duration-200 hover:bg-blue-50/60 hover:text-[#0052cc]"
-                >
-                    Beranda
-                </a>
-
-                <a
-                    href="#about"
-                    class="rounded-lg px-4 py-2 text-md font-medium text-gray-700 transition-all duration-200 hover:bg-blue-50/60 hover:text-[#0052cc]"
-                >
-                    Tentang Kami
-                </a>
-
-                <!-- Services Dropdown -->
-                <div
-                    class="relative"
-                    @mouseenter="servicesDropdownOpen = true"
-                    @mouseleave="servicesDropdownOpen = false"
-                >
-                    <a
-                        href="#services"
-                        class="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-md font-medium text-gray-700 transition-all duration-200 hover:bg-blue-50/60 hover:text-[#0052cc]"
+                <template v-for="item in navigationItems" :key="item.id">
+                    <!-- Dropdown -->
+                    <div
+                        v-if="item.type === 'dropdown'"
+                        class="relative"
+                        @mouseenter="activeDropdown = item.id"
+                        @mouseleave="activeDropdown = null"
                     >
-                        <span>Layanan</span>
-
-                        <svg
-                            :class="[
-                                'h-4 w-4 transition-transform duration-200',
-                                servicesDropdownOpen
-                                    ? 'rotate-180 text-[#0052cc]'
-                                    : 'text-gray-400',
-                            ]"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            stroke-width="2"
+                        <button
+                            type="button"
+                            class="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-md font-medium text-gray-700 transition-all duration-200 hover:bg-blue-50/60 hover:text-[#0052cc]"
+                            @click="toggleDropdown(item.id)"
                         >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                d="M19 9l-7 7-7-7"
-                            />
-                        </svg>
-                    </a>
+                            {{ item.label }}
 
-                    <Transition
-                        enter-active-class="transition duration-200 ease-out"
-                        enter-from-class="translate-y-2 opacity-0"
-                        enter-to-class="translate-y-0 opacity-100"
-                        leave-active-class="transition duration-150 ease-in"
-                        leave-from-class="translate-y-0 opacity-100"
-                        leave-to-class="translate-y-2 opacity-0"
-                    >
-                        <div
-                            v-if="servicesDropdownOpen"
-                            class="absolute left-1/2 top-full w-80 -translate-x-1/2 pt-2 lg:w-96"
+                            <svg
+                                :class="[
+                                    'h-4 w-4 transition-transform duration-200',
+                                    activeDropdown === item.id
+                                        ? 'rotate-180 text-[#0052cc]'
+                                        : 'text-gray-400',
+                                ]"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                stroke-width="2"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="M19 9l-7 7-7-7"
+                                />
+                            </svg>
+                        </button>
+
+                        <Transition
+                            enter-active-class="transition duration-200 ease-out"
+                            enter-from-class="translate-y-2 opacity-0"
+                            enter-to-class="translate-y-0 opacity-100"
+                            leave-active-class="transition duration-150 ease-in"
+                            leave-from-class="translate-y-0 opacity-100"
+                            leave-to-class="translate-y-2 opacity-0"
                         >
                             <div
-                                class="rounded-2xl border border-gray-100 bg-white p-3 shadow-2xl shadow-blue-950/10 ring-1 ring-black/5"
+                                v-if="activeDropdown === item.id"
+                                class="absolute left-1/2 top-full w-80 -translate-x-1/2 pt-2 lg:w-96"
                             >
-                                <a
-                                    v-for="service in services"
-                                    :key="service.name"
-                                    href="#services"
-                                    class="group/item flex items-start gap-3.5 rounded-xl p-3 transition-colors hover:bg-blue-50/80"
-                                >
-                                    <div
-                                        class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-gray-50 text-xl transition-transform duration-200 group-hover/item:scale-110 group-hover/item:bg-white group-hover/item:shadow-sm"
+                                <div class="rounded-2xl border border-gray-100 bg-white p-3 shadow-2xl shadow-blue-950/10 ring-1 ring-black/5">
+                                    <a
+                                        v-for="child in item.children || []"
+                                        :key="child.id"
+                                        :href="child.url || '#'"
+                                        :target="child.target || '_self'"
+                                        :rel="child.target === '_blank' ? 'noopener noreferrer' : undefined"
+                                        class="group/item flex items-center gap-3.5 rounded-xl p-3 transition-colors hover:bg-blue-50/80"
+                                        @click="activeDropdown = null"
                                     >
-                                        {{ service.icon }}
-                                    </div>
+                                        <div class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-gray-50 text-xl transition-transform duration-200 group-hover/item:scale-110 group-hover/item:bg-white group-hover/item:shadow-sm">
+                                            <svg
+                                                class="h-5 w-5 text-[#0052cc]"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke="currentColor"
+                                                stroke-width="1.8"
+                                            >
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    d="M9 5l7 7-7 7"
+                                                />
+                                            </svg>
+                                        </div>
 
-                                    <div>
-                                        <p
-                                            class="text-sm font-semibold text-gray-900 transition-colors group-hover/item:text-[#0052cc]"
-                                        >
-                                            {{ service.name }}
-                                        </p>
+                                        <div>
+                                            <p class="text-sm font-semibold text-gray-900 transition-colors group-hover/item:text-[#0052cc]">
+                                                {{ child.label }}
+                                            </p>
+                                        </div>
+                                    </a>
 
-                                        <p
-                                            class="mt-0.5 line-clamp-1 text-xs text-gray-500"
-                                        >
-                                            {{ service.description }}
-                                        </p>
-                                    </div>
-                                </a>
+                                    <p
+                                        v-if="!item.children?.length"
+                                        class="px-3 py-4 text-sm text-gray-400"
+                                    >
+                                        Belum ada submenu.
+                                    </p>
+                                </div>
                             </div>
-                        </div>
-                    </Transition>
-                </div>
+                        </Transition>
+                    </div>
 
-                <a
-                    href="#contact"
-                    class="rounded-lg px-4 py-2 text-md font-medium text-gray-700 transition-all duration-200 hover:bg-blue-50/60 hover:text-[#0052cc]"
-                >
-                    Kontak
-                </a>
+                    <!-- Normal Link -->
+                    <a
+                        v-else
+                        :href="item.url || '#'"
+                        :target="item.target || '_self'"
+                        :rel="item.target === '_blank' ? 'noopener noreferrer' : undefined"
+                        class="rounded-lg px-4 py-2 text-md font-medium text-gray-700 transition-all duration-200 hover:bg-blue-50/60 hover:text-[#0052cc]"
+                    >
+                        {{ item.label }}
+                    </a>
+                </template>
             </div>
 
             <!-- CTA -->
@@ -186,11 +183,7 @@
                     stroke="currentColor"
                     stroke-width="2"
                 >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M4 6h16M4 12h16M4 18h16"
-                    />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
 
                 <svg
@@ -201,11 +194,7 @@
                     stroke="currentColor"
                     stroke-width="2"
                 >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M6 18L18 6M6 6l12 12"
-                    />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
         </nav>
@@ -224,15 +213,60 @@
                 class="border-t border-gray-100 bg-white/95 px-5 py-5 backdrop-blur-xl md:hidden"
             >
                 <div class="mx-auto flex max-w-7xl flex-col gap-2">
-                    <a
-                        v-for="item in mobileMenu"
-                        :key="item.label"
-                        :href="item.href"
-                        class="flex items-center rounded-xl px-4 py-3 text-base font-medium text-gray-800 transition hover:bg-blue-50 hover:text-[#0052cc]"
-                        @click="mobileMenuOpen = false"
-                    >
-                        {{ item.label }}
-                    </a>
+                    <template v-for="item in navigationItems" :key="item.id">
+                        <!-- Mobile Dropdown -->
+                        <div v-if="item.type === 'dropdown'">
+                            <button
+                                type="button"
+                                class="flex w-full items-center justify-between rounded-xl px-4 py-3 text-left text-base font-medium text-gray-800 transition hover:bg-blue-50 hover:text-[#0052cc]"
+                                @click="toggleMobileDropdown(item.id)"
+                            >
+                                {{ item.label }}
+
+                                <svg
+                                    :class="[
+                                        'h-4 w-4 transition-transform',
+                                        mobileDropdown === item.id ? 'rotate-180' : '',
+                                    ]"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+
+                            <div
+                                v-if="mobileDropdown === item.id"
+                                class="ml-4 mt-1 flex flex-col gap-1 border-l-2 border-blue-100 pl-3"
+                            >
+                                <a
+                                    v-for="child in item.children || []"
+                                    :key="child.id"
+                                    :href="child.url || '#'"
+                                    :target="child.target || '_self'"
+                                    :rel="child.target === '_blank' ? 'noopener noreferrer' : undefined"
+                                    class="rounded-lg px-4 py-2.5 text-sm text-gray-600 transition hover:bg-blue-50 hover:text-[#0052cc]"
+                                    @click="mobileMenuOpen = false"
+                                >
+                                    {{ child.label }}
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Mobile Normal Link -->
+                        <a
+                            v-else
+                            :href="item.url || '#'"
+                            :target="item.target || '_self'"
+                            :rel="item.target === '_blank' ? 'noopener noreferrer' : undefined"
+                            class="flex items-center rounded-xl px-4 py-3 text-base font-medium text-gray-800 transition hover:bg-blue-50 hover:text-[#0052cc]"
+                            @click="mobileMenuOpen = false"
+                        >
+                            {{ item.label }}
+                        </a>
+                    </template>
 
                     <div class="mt-3 border-t border-gray-100 pt-3">
                         <a
@@ -249,11 +283,7 @@
                                 stroke="currentColor"
                                 stroke-width="2"
                             >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    d="M14 5l7 7m0 0l-7 7m7-7H3"
-                                />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                             </svg>
                         </a>
                     </div>
@@ -264,63 +294,60 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import api from '@/services/api'
 
 const mobileMenuOpen = ref(false)
-const servicesDropdownOpen = ref(false)
+const activeDropdown = ref(null)
+const mobileDropdown = ref(null)
 const isScrolled = ref(false)
 
-const services = [
-    {
-        icon: '🚚',
-        name: 'Trucking',
-        description:
-            'Layanan pengiriman dan logistik terpercaya ke seluruh nusantara dengan armada modern dan profesional.',
-    },
-    {
-        icon: '💻',
-        name: 'Software House',
-        description:
-            'Pengembangan software custom, web application, dan sistem informasi sesuai kebutuhan bisnis Anda.',
-    },
-    {
-        icon: '🔧',
-        name: 'Panggil Tukang',
-        description:
-            'Platform aplikasi mobile untuk menemukan tukang profesional terverifikasi dengan rating dan review terbaik.',
-    },
-    {
-        icon: '📱',
-        name: 'Digital Marketing',
-        description:
-            'Layanan manajemen media sosial, content creation, dan kampanye digital yang terukur dan efektif.',
-    },
-]
+const menus = ref([])
+const loadingNavigation = ref(false)
 
-const mobileMenu = [
-    {
-        label: 'Beranda',
-        href: '#home',
-    },
-    {
-        label: 'Tentang Kami',
-        href: '#about',
-    },
-    {
-        label: 'Layanan',
-        href: '#services',
-    },
-    {
-        label: 'Kontak',
-        href: '#contact',
-    },
-]
+const navigationItems = computed(() => {
+    return menus.value.filter(item => item.is_active)
+})
+
+function toggleDropdown(id) {
+    activeDropdown.value =
+        activeDropdown.value === id ? null : id
+}
+
+function toggleMobileDropdown(id) {
+    mobileDropdown.value =
+        mobileDropdown.value === id ? null : id
+}
+
+async function loadNavigation() {
+    loadingNavigation.value = true
+
+    try {
+        const response = await api.get('/public/website/navigation/header')
+        // Mendukung response Axios maupun response body langsung.
+        const body = response?.data ?? response
+        const result = body?.data ?? body
+
+        menus.value = Array.isArray(result?.items)
+            ? result.items
+            : Array.isArray(result)
+                ? result
+                : []
+    } catch (error) {
+        console.error('Gagal mengambil navigasi website:', error)
+        menus.value = []
+    } finally {
+        loadingNavigation.value = false
+    }
+}
 
 function handleScroll() {
     isScrolled.value = window.scrollY > 20
 }
 
 onMounted(() => {
+    loadNavigation()
+
     handleScroll()
     window.addEventListener('scroll', handleScroll)
 })

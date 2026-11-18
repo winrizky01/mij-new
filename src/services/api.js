@@ -1,4 +1,5 @@
-import axios from 'axios'
+import axios from "axios";
+import { Warehouse } from "lucide-vue-next";
 
 /*
 |--------------------------------------------------------------------------
@@ -13,9 +14,7 @@ import axios from 'axios'
 |
 */
 
-const API_URL =
-    import.meta.env.VITE_API_URL ||
-    'http://127.0.0.1:8000/api'
+const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
 
 /*
 |--------------------------------------------------------------------------
@@ -24,13 +23,13 @@ const API_URL =
 */
 
 const api = axios.create({
-    baseURL: API_URL,
-    headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-    },
-    timeout: 30_000,
-})
+  baseURL: API_URL,
+  headers: {
+    Accept: "application/json",
+    "Content-Type": "application/json",
+  },
+  timeout: 30_000,
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -38,49 +37,46 @@ const api = axios.create({
 |--------------------------------------------------------------------------
 */
 
-const TOKEN_KEY = 'mji_token'
-const USER_KEY = 'mji_user'
+const TOKEN_KEY = "mji_token";
+const USER_KEY = "mji_user";
 
 export function getToken() {
-    return localStorage.getItem(TOKEN_KEY)
+  return localStorage.getItem(TOKEN_KEY);
 }
 
 export function setToken(token) {
-    if (token) {
-        localStorage.setItem(TOKEN_KEY, token)
-    }
+  if (token) {
+    localStorage.setItem(TOKEN_KEY, token);
+  }
 }
 
 export function removeToken() {
-    localStorage.removeItem(TOKEN_KEY)
+  localStorage.removeItem(TOKEN_KEY);
 }
 
 export function getUser() {
-    try {
-        const user = localStorage.getItem(USER_KEY)
+  try {
+    const user = localStorage.getItem(USER_KEY);
 
-        return user ? JSON.parse(user) : null
-    } catch {
-        return null
-    }
+    return user ? JSON.parse(user) : null;
+  } catch {
+    return null;
+  }
 }
 
 export function setUser(user) {
-    if (user) {
-        localStorage.setItem(
-            USER_KEY,
-            JSON.stringify(user)
-        )
-    }
+  if (user) {
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+  }
 }
 
 export function removeUser() {
-    localStorage.removeItem(USER_KEY)
+  localStorage.removeItem(USER_KEY);
 }
 
 export function clearAuth() {
-    removeToken()
-    removeUser()
+  removeToken();
+  removeUser();
 }
 
 /*
@@ -90,17 +86,17 @@ export function clearAuth() {
 */
 
 api.interceptors.request.use(
-    (config) => {
-        const token = getToken()
+  (config) => {
+    const token = getToken();
 
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`
-        }
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
 
-        return config
-    },
-    (error) => Promise.reject(error)
-)
+    return config;
+  },
+  (error) => Promise.reject(error),
+);
 
 /*
 |--------------------------------------------------------------------------
@@ -136,33 +132,31 @@ api.interceptors.request.use(
 // )
 
 api.interceptors.response.use(
-    (response) => response,
+  (response) => response,
 
-    (error) => {
-        const status = error.response?.status
+  (error) => {
+    const status = error.response?.status;
 
-        if (status === 401) {
-            clearAuth()
+    if (status === 401) {
+      clearAuth();
 
-            window.dispatchEvent(
-                new CustomEvent('mji:unauthorized')
-            )
-        }
-
-        if (status === 403) {
-            const message =
-                'Kamu tidak memiliki izin untuk melakukan tindakan ini. Hubungi administrator ERP jika membutuhkan akses.'
-
-            window.dispatchEvent(
-                new CustomEvent('mji:forbidden', {
-                    detail: { message },
-                })
-            )
-        }
-
-        return Promise.reject(error)
+      window.dispatchEvent(new CustomEvent("mji:unauthorized"));
     }
-)
+
+    if (status === 403) {
+      const message =
+        "Kamu tidak memiliki izin untuk melakukan tindakan ini. Hubungi administrator ERP jika membutuhkan akses.";
+
+      window.dispatchEvent(
+        new CustomEvent("mji:forbidden", {
+          detail: { message },
+        }),
+      );
+    }
+
+    return Promise.reject(error);
+  },
+);
 
 /*
 |--------------------------------------------------------------------------
@@ -170,50 +164,51 @@ api.interceptors.response.use(
 |--------------------------------------------------------------------------
 */
 export function getApiError(error) {
-    const response = error?.response
-    const status = response?.status
+  const response = error?.response;
+  const status = response?.status;
 
-    if (!response) {
-        return {
-            status: 0,
-            message: 'Tidak dapat terhubung ke server. Periksa koneksi jaringan.',
-            errors: {},
-        }
-    }
-
-    if (status === 401) {
-        return {
-            status,
-            message: 'Sesi kamu telah berakhir. Silakan login kembali.',
-            errors: {},
-        }
-    }
-
-    if (status === 403) {
-        return {
-            status,
-            message: 'Kamu tidak memiliki akses untuk melakukan tindakan ini.',
-            errors: {},
-        }
-    }
-
-    if (status === 422) {
-        return {
-            status,
-            message: response.data?.message || 'Periksa kembali data yang kamu masukkan.',
-            errors: response.data?.errors || {},
-        }
-    }
-
+  if (!response) {
     return {
-        status,
-        message: status >= 500
-            ? 'Terjadi kesalahan pada server. Silakan coba lagi.'
-            : response.data?.message || 'Permintaan tidak dapat diproses.',
-        errors: response.data?.errors || {},
-    }
-}
+      status: 0,
+      message: "Tidak dapat terhubung ke server. Periksa koneksi jaringan.",
+      errors: {},
+    };
+  }
 
+  if (status === 401) {
+    return {
+      status,
+      message: "Sesi kamu telah berakhir. Silakan login kembali.",
+      errors: {},
+    };
+  }
+
+  if (status === 403) {
+    return {
+      status,
+      message: "Kamu tidak memiliki akses untuk melakukan tindakan ini.",
+      errors: {},
+    };
+  }
+
+  if (status === 422) {
+    return {
+      status,
+      message:
+        response.data?.message || "Periksa kembali data yang kamu masukkan.",
+      errors: response.data?.errors || {},
+    };
+  }
+
+  return {
+    status,
+    message:
+      status >= 500
+        ? "Terjadi kesalahan pada server. Silakan coba lagi."
+        : response.data?.message || "Permintaan tidak dapat diproses.",
+    errors: response.data?.errors || {},
+  };
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -223,71 +218,37 @@ export function getApiError(error) {
 | Bisa dipakai untuk endpoint apa pun.
 |
 */
-export async function get(
-    url,
-    params = {},
-    config = {}
-) {
-    const response = await api.get(url, {
-        params,
-        ...config,
-    })
+export async function get(url, params = {}, config = {}) {
+  const response = await api.get(url, {
+    params,
+    ...config,
+  });
 
-    return response.data
+  return response.data;
 }
 
-export async function post(
-    url,
-    data = {},
-    config = {}
-) {
-    const response = await api.post(
-        url,
-        data,
-        config
-    )
+export async function post(url, data = {}, config = {}) {
+  const response = await api.post(url, data, config);
 
-    return response.data
+  return response.data;
 }
 
-export async function put(
-    url,
-    data = {},
-    config = {}
-) {
-    const response = await api.put(
-        url,
-        data,
-        config
-    )
+export async function put(url, data = {}, config = {}) {
+  const response = await api.put(url, data, config);
 
-    return response.data
+  return response.data;
 }
 
-export async function patch(
-    url,
-    data = {},
-    config = {}
-) {
-    const response = await api.patch(
-        url,
-        data,
-        config
-    )
+export async function patch(url, data = {}, config = {}) {
+  const response = await api.patch(url, data, config);
 
-    return response.data
+  return response.data;
 }
 
-export async function destroy(
-    url,
-    config = {}
-) {
-    const response = await api.delete(
-        url,
-        config
-    )
+export async function destroy(url, config = {}) {
+  const response = await api.delete(url, config);
 
-    return response.data
+  return response.data;
 }
 
 /*
@@ -296,25 +257,16 @@ export async function destroy(
 |--------------------------------------------------------------------------
 */
 
-export async function upload(
-    url,
-    formData,
-    config = {}
-) {
-    const response = await api.post(
-        url,
-        formData,
-        {
-            ...config,
-            headers: {
-                ...config.headers,
-                'Content-Type':
-                    'multipart/form-data',
-            },
-        }
-    )
+export async function upload(url, formData, config = {}) {
+  const response = await api.post(url, formData, {
+    ...config,
+    headers: {
+      ...config.headers,
+      "Content-Type": "multipart/form-data",
+    },
+  });
 
-    return response.data
+  return response.data;
 }
 
 /*
@@ -323,18 +275,14 @@ export async function upload(
 |--------------------------------------------------------------------------
 */
 
-export async function download(
-    url,
-    params = {},
-    config = {}
-) {
-    const response = await api.get(url, {
-        params,
-        responseType: 'blob',
-        ...config,
-    })
+export async function download(url, params = {}, config = {}) {
+  const response = await api.get(url, {
+    params,
+    responseType: "blob",
+    ...config,
+  });
 
-    return response
+  return response;
 }
 
 /*
@@ -344,56 +292,53 @@ export async function download(
 */
 
 export const authApi = {
-    async login(email, password) {
-        const data = await post(
-            '/auth/login',
-            {
-                email,
-                password,
-            }
-        )
+  async login(email, password) {
+    const data = await post("/auth/login", {
+      email,
+      password,
+    });
 
-        if (data.token) {
-            setToken(data.token)
-        }
+    if (data.token) {
+      setToken(data.token);
+    }
 
-        if (data.user) {
-            setUser(data.user)
-        }
+    if (data.user) {
+      setUser(data.user);
+    }
 
-        return data
-    },
+    return data;
+  },
 
-    async me() {
-        const data = await get('/auth/me')
+  async me() {
+    const data = await get("/auth/me");
 
-        if (data.user) {
-            setUser(data.user)
-        }
+    if (data.user) {
+      setUser(data.user);
+    }
 
-        return data
-    },
+    return data;
+  },
 
-    async logout() {
-        try {
-            return await post('/auth/logout')
-        } finally {
-            clearAuth()
-        }
-    },
+  async logout() {
+    try {
+      return await post("/auth/logout");
+    } finally {
+      clearAuth();
+    }
+  },
 
-    isAuthenticated() {
-        return !!getToken()
-    },
+  isAuthenticated() {
+    return !!getToken();
+  },
 
-    getCurrentUser() {
-        return getUser()
-    },
+  getCurrentUser() {
+    return getUser();
+  },
 
-    getToken() {
-        return getToken()
-    },
-}
+  getToken() {
+    return getToken();
+  },
+};
 
 /*
 |--------------------------------------------------------------------------
@@ -401,30 +346,28 @@ export const authApi = {
 |--------------------------------------------------------------------------
 */
 export const publicApi = {
-    home() {
-        return get('/public/website/home')
-    },
+  home() {
+    return get("/public/website/home");
+  },
 
-    homeSections() {
-        return get('/public/website/home/sections')
-    },
+  homeSections() {
+    return get("/public/website/home/sections");
+  },
 
-    settings(params = {}) {
-        return get('/public/website/settings', params)
-    },
+  settings(params = {}) {
+    return get("/public/website/settings", params);
+  },
 
-    page(slug) {
-        return get(
-            `/public/website/pages/${encodeURIComponent(slug)}`
-        )
-    },
+  page(slug) {
+    return get(`/public/website/pages/${encodeURIComponent(slug)}`);
+  },
 
-    traffic: {
-        track(payload) {
-            return post('/public/website/traffic/track', payload)
-        },
+  traffic: {
+    track(payload) {
+      return post("/public/website/traffic/track", payload);
     },
-}
+  },
+};
 
 /*
 |--------------------------------------------------------------------------
@@ -433,278 +376,204 @@ export const publicApi = {
 */
 
 export const adminApi = {
-    dashboard() {
-        return get('/admin/dashboard')
+  dashboard() {
+    return get("/admin/dashboard");
+  },
+
+  website: {
+    content(params = {}) {
+      return get("/admin/website/content", params);
     },
 
-    website: {
-        content(params = {}) {
-            return get(
-                '/admin/website/content',
-                params
-            )
-        },
+    pages: {
+      list(params = {}) {
+        return get("/website/pages", params);
+      },
 
-        pages: {
-            list(params = {}) {
-                return get('/website/pages', params)
-            },
+      show(id) {
+        return get(`/website/pages/${id}`);
+      },
 
-            show(id) {
-                return get(`/website/pages/${id}`)
-            },
+      create(data) {
+        return post("/website/pages", data);
+      },
 
-            create(data) {
-                return post('/website/pages', data)
-            },
+      update(id, data) {
+        return put(`/website/pages/${id}`, data);
+      },
 
-            update(id, data) {
-                return put(`/website/pages/${id}`, data)
-            },
+      delete(id) {
+        return destroy(`/website/pages/${id}`);
+      },
 
-            delete(id) {
-                return destroy(`/website/pages/${id}`)
-            },
+      saveDraft(id, blocks) {
+        return put(`/website/pages/${id}/draft`, {
+          blocks,
+        });
+      },
 
-            saveDraft(id, blocks) {
-                return put(`/website/pages/${id}/draft`, {
-                    blocks,
-                })
-            },
-
-            publish(id) {
-                return post(`/website/pages/${id}/publish`)
-            },
-        },
-
-        services: {
-            list(params = {}) {
-                return get(
-                    '/website/services',
-                    params
-                )
-            },
-
-            show(id) {
-                return get(
-                    `/website/services/${id}`
-                )
-            },
-
-            create(data) {
-                return post(
-                    '/website/services',
-                    data
-                )
-            },
-
-            update(id, data) {
-                return put(
-                    `/website/services/${id}`,
-                    data
-                )
-            },
-
-            delete(id) {
-                return destroy(
-                    `/website/services/${id}`
-                )
-            },
-        },
-
-        articles: {
-            list(params = {}) {
-                return get(
-                    '/admin/website/articles',
-                    params
-                )
-            },
-
-            show(id) {
-                return get(
-                    `/admin/website/articles/${id}`
-                )
-            },
-
-            create(data) {
-                return post(
-                    '/admin/website/articles',
-                    data
-                )
-            },
-
-            update(id, data) {
-                return put(
-                    `/admin/website/articles/${id}`,
-                    data
-                )
-            },
-
-            delete(id) {
-                return destroy(
-                    `/admin/website/articles/${id}`
-                )
-            },
-        },
-
-        media: {
-            list(params = {}) {
-                return get(
-                    '/admin/website/media',
-                    params
-                )
-            },
-
-            upload(formData) {
-                return upload(
-                    '/admin/website/media',
-                    formData
-                )
-            },
-
-            delete(id) {
-                return destroy(
-                    `/admin/website/media/${id}`
-                )
-            },
-        },
-
-        inquiries: {
-            list(params = {}) {
-                return get(
-                    '/admin/website/inquiries',
-                    params
-                )
-            },
-
-            show(id) {
-                return get(
-                    `/admin/website/inquiries/${id}`
-                )
-            },
-
-            update(id, data) {
-                return put(
-                    `/admin/website/inquiries/${id}`,
-                    data
-                )
-            },
-        },
-
-        settings: {
-            list(params = {}) {
-                return get('/website/settings', params)
-            },
-
-            update(data) {
-                return put('/website/settings/bulk', data)
-            },
-
-            updateOne(key, data) {
-                return put(
-                    `/website/settings/${encodeURIComponent(key)}`,
-                    data
-                )
-            },
-
-            delete(key) {
-                return destroy(
-                    `/website/settings/${encodeURIComponent(key)}`
-                )
-            },
-        },
-
-        users: {
-            list(params = {}) {
-                return get(
-                    '/admin/users',
-                    params
-                )
-            },
-
-            show(id) {
-                return get(
-                    `/admin/users/${id}`
-                )
-            },
-
-            create(data) {
-                return post(
-                    '/admin/users',
-                    data
-                )
-            },
-
-            update(id, data) {
-                return put(
-                    `/admin/users/${id}`,
-                    data
-                )
-            },
-
-            delete(id) {
-                return destroy(
-                    `/admin/users/${id}`
-                )
-            },
-        },
-
-        traffics: {
-            dashboard(params = {}) {
-                return get(
-                    '/website/traffic',
-                    params
-                )
-            },
-        },
-
-        navigation: {
-            list() {
-                return get('/website/menus')
-            },
-
-            show(id) {
-                return get(`/website/menus/${id}`)
-            },
-
-            create(data) {
-                return post('/website/menus', data)
-            },
-
-            update(id, data) {
-                return put(`/website/menus/${id}`, data)
-            },
-
-            delete(id) {
-                return destroy(`/website/menus/${id}`)
-            },
-
-            createItem(menuId, data) {
-                return post(`/website/menus/${menuId}/items`, data)
-            },
-
-            updateItem(menuId, itemId, data) {
-                return put(
-                    `/website/menus/${menuId}/items/${itemId}`,
-                    data
-                )
-            },
-
-            deleteItem(menuId, itemId) {
-                return destroy(
-                    `/website/menus/${menuId}/items/${itemId}`
-                )
-            },
-
-            reorder(menuId, items) {
-                return post(
-                    `/website/menus/${menuId}/items/reorder`,
-                    { items }
-                )
-            },
-        },
+      publish(id) {
+        return post(`/website/pages/${id}/publish`);
+      },
     },
-}
+
+    services: {
+      list(params = {}) {
+        return get("/website/services", params);
+      },
+
+      show(id) {
+        return get(`/website/services/${id}`);
+      },
+
+      create(data) {
+        return post("/website/services", data);
+      },
+
+      update(id, data) {
+        return put(`/website/services/${id}`, data);
+      },
+
+      delete(id) {
+        return destroy(`/website/services/${id}`);
+      },
+    },
+
+    articles: {
+      list(params = {}) {
+        return get("/admin/website/articles", params);
+      },
+
+      show(id) {
+        return get(`/admin/website/articles/${id}`);
+      },
+
+      create(data) {
+        return post("/admin/website/articles", data);
+      },
+
+      update(id, data) {
+        return put(`/admin/website/articles/${id}`, data);
+      },
+
+      delete(id) {
+        return destroy(`/admin/website/articles/${id}`);
+      },
+    },
+
+    media: {
+      list(params = {}) {
+        return get("/admin/website/media", params);
+      },
+
+      upload(formData) {
+        return upload("/admin/website/media", formData);
+      },
+
+      delete(id) {
+        return destroy(`/admin/website/media/${id}`);
+      },
+    },
+
+    inquiries: {
+      list(params = {}) {
+        return get("/admin/website/inquiries", params);
+      },
+
+      show(id) {
+        return get(`/admin/website/inquiries/${id}`);
+      },
+
+      update(id, data) {
+        return put(`/admin/website/inquiries/${id}`, data);
+      },
+    },
+
+    settings: {
+      list(params = {}) {
+        return get("/website/settings", params);
+      },
+
+      update(data) {
+        return put("/website/settings/bulk", data);
+      },
+
+      updateOne(key, data) {
+        return put(`/website/settings/${encodeURIComponent(key)}`, data);
+      },
+
+      delete(key) {
+        return destroy(`/website/settings/${encodeURIComponent(key)}`);
+      },
+    },
+
+    users: {
+      list(params = {}) {
+        return get("/admin/users", params);
+      },
+
+      show(id) {
+        return get(`/admin/users/${id}`);
+      },
+
+      create(data) {
+        return post("/admin/users", data);
+      },
+
+      update(id, data) {
+        return put(`/admin/users/${id}`, data);
+      },
+
+      delete(id) {
+        return destroy(`/admin/users/${id}`);
+      },
+    },
+
+    traffics: {
+      dashboard(params = {}) {
+        return get("/website/traffic", params);
+      },
+    },
+
+    navigation: {
+      list() {
+        return get("/website/menus");
+      },
+
+      show(id) {
+        return get(`/website/menus/${id}`);
+      },
+
+      create(data) {
+        return post("/website/menus", data);
+      },
+
+      update(id, data) {
+        return put(`/website/menus/${id}`, data);
+      },
+
+      delete(id) {
+        return destroy(`/website/menus/${id}`);
+      },
+
+      createItem(menuId, data) {
+        return post(`/website/menus/${menuId}/items`, data);
+      },
+
+      updateItem(menuId, itemId, data) {
+        return put(`/website/menus/${menuId}/items/${itemId}`, data);
+      },
+
+      deleteItem(menuId, itemId) {
+        return destroy(`/website/menus/${menuId}/items/${itemId}`);
+      },
+
+      reorder(menuId, items) {
+        return post(`/website/menus/${menuId}/items/reorder`, { items });
+      },
+    },
+  },
+};
 
 /*
 |--------------------------------------------------------------------------
@@ -713,817 +582,642 @@ export const adminApi = {
 */
 
 export const erpApi = {
-    dashboard() {
-        return get('/erp/dashboard')
+  dashboard() {
+    return get("/erp/dashboard");
+  },
+
+  accessManagement: {
+    users() {
+      return get("/erp/access-management/users");
     },
 
-    accessManagement: {
-        users() {
-            return get('/erp/access-management/users')
-        },
-
-        roles() {
-            return get('/erp/access-management/roles')
-        },
-
-        permissions() {
-            return get('/erp/access-management/permissions')
-        },
-
-        updateUserRoles(userId, roleIds) {
-            return put(
-                `/erp/access-management/users/${userId}/roles`,
-                { role_ids: roleIds }
-            )
-        },
-
-        updateRolePermissions(roleId, permissionIds) {
-            return put(
-                `/erp/access-management/roles/${roleId}/permissions`,
-                { permission_ids: permissionIds }
-            )
-        },
+    roles() {
+      return get("/erp/access-management/roles");
     },
 
-    master: {
-        products: {
-            list(params = {}) {
-                return api.get('/erp/products', { params })
-            },
-
-            get(id) {
-                return api.get(`/erp/products/${id}`)
-            },
-
-            create(data) {
-                return api.post('/erp/products', data)
-            },
-
-            update(id, data) {
-                return api.put(`/erp/products/${id}`, data)
-            },
-
-            remove(id) {
-                return api.delete(`/erp/products/${id}`)
-            },
-        },
-
-        productTypes: {
-            list(params = {}) {
-                return api.get('/erp/product-types', { params })
-            },
-
-            get(id) {
-                return api.get(`/erp/product-types/${id}`)
-            },
-
-            create(data) {
-                return api.post('/erp/product-types', data)
-            },
-
-            update(id, data) {
-                return api.put(`/erp/product-types/${id}`, data)
-            },
-
-            remove(id) {
-                return api.delete(`/erp/product-types/${id}`)
-            },
-        },
-
-        productCategories: {
-            list(params = {}) {
-                return api.get('/erp/product-categories', { params })
-            },
-
-            get(id) {
-                return api.get(`/erp/product-categories/${id}`)
-            },
-
-            create(data) {
-                return api.post('/erp/product-categories', data)
-            },
-
-            update(id, data) {
-                return api.put(`/erp/product-categories/${id}`, data)
-            },
-
-            remove(id) {
-                return api.delete(`/erp/product-categories/${id}`)
-            },
-        },
-
-        units: {
-            list(params = {}) {
-                return api.get('/erp/units', { params })
-            },
-
-            get(id) {
-                return api.get(`/erp/units/${id}`)
-            },
-
-            create(data) {
-                return api.post('/erp/units', data)
-            },
-
-            update(id, data) {
-                return api.put(`/erp/units/${id}`, data)
-            },
-
-            remove(id) {
-                return api.delete(`/erp/units/${id}`)
-            },
-        },
-
-        partners: {
-            list(params = {}) {
-                return get(
-                    '/erp/partners',
-                    params
-                )
-            },
-
-            show(id) {
-                return get(
-                    `/erp/partners/${id}`
-                )
-            },
-
-            create(data) {
-                return post(
-                    '/erp/partners',
-                    data
-                )
-            },
-
-            update(id, data) {
-                return put(
-                    `/erp/partners/${id}`,
-                    data
-                )
-            },
-
-            delete(id) {
-                return destroy(
-                    `/erp/partners/${id}`
-                )
-            },
-        },
-
-        employees: {
-            list(params = {}) {
-                return get(
-                    '/erp/employees',
-                    params
-                )
-            },
-
-            show(id) {
-                return get(
-                    `/erp/employees/${id}`
-                )
-            },
-
-            create(data) {
-                return post(
-                    '/erp/employees',
-                    data
-                )
-            },
-
-            update(id, data) {
-                return put(
-                    `/erp/employees/${id}`,
-                    data
-                )
-            },
-
-            delete(id) {
-                return destroy(
-                    `/erp/employees/${id}`
-                )
-            },
-        },
-
-        general: {
-            list(params = {}) {
-                return get(
-                    '/erp/generals',
-                    params
-                )
-            },
-
-            show(id) {
-                return get(
-                    `/erp/generals/${id}`
-                )
-            },
-
-            create(data) {
-                return post(
-                    '/erp/generals',
-                    data
-                )
-            },
-
-            update(id, data) {
-                return put(
-                    `/erp/generals/${id}`,
-                    data
-                )
-            },
-
-            delete(id) {
-                return destroy(
-                    `/erp/generals/${id}`
-                )
-            },
-        },
-
-        departments: {
-            list(params = {}) {
-                return api.get('/erp/departments', { params })
-            },
-
-            get(id) {
-                return api.get(`/erp/departments/${id}`)
-            },
-
-            create(data) {
-                return api.post('/erp/departments', data)
-            },
-
-            update(id, data) {
-                return api.put(`/erp/departments/${id}`, data)
-            },
-
-            remove(id) {
-                return api.delete(`/erp/departments/${id}`)
-            },
-        },
-
-        truckTypes: {
-            list(params = {}) {
-                return get('/erp/truck-types', params)
-            },
-
-            show(id) {
-                return get(`/erp/truck-types/${id}`)
-            },
-
-            create(data) {
-                return post('/erp/truck-types', data)
-            },
-
-            update(id, data) {
-                return put(`/erp/truck-types/${id}`, data)
-            },
-
-            delete(id) {
-                return destroy(`/erp/truck-types/${id}`)
-            },   
-        },
-
-        trucks: {
-            list(params = {}) {
-                return api.get('/erp/trucks', { params })
-            },
-
-            get(id) {
-                return api.get(`/erp/trucks/${id}`)
-            },
-
-            create(data) {
-                return api.post('/erp/trucks', data)
-            },
-
-            update(id, data) {
-                return api.put(`/erp/trucks/${id}`, data)
-            },
-
-            remove(id) {
-                return api.delete(`/erp/trucks/${id}`)
-            },
-
-            plateHistory(id) {
-                return api.get(
-                    `/erp/trucks/${id}/plate-history`
-                )
-            },
-
-            changePlate(id, data) {
-                return api.post(
-                    `/erp/trucks/${id}/change-plate`,
-                    data
-                )
-            },
-
-            kirHistory(id) {
-                return api.get(
-                    `/erp/trucks/${id}/kir-history`
-                )
-            },
-
-            updateKir(id, data) {
-                return api.post(
-                    `/erp/trucks/${id}/update-kir`,
-                    data
-                )
-            },
-        },
-
-        shippingTariffs: {
-            list(params = {}) {
-                return get('/erp/shipping-tariffs', params)
-            },
-
-            show(id) {
-                return get(`/erp/shipping-tariffs/${id}`)
-            },
-
-            create(data) {
-                return post('/erp/shipping-tariffs', data)
-            },
-
-            update(id, data) {
-                return put(`/erp/shipping-tariffs/${id}`, data)
-            },
-
-            delete(id) {
-                return destroy(`/erp/shipping-tariffs/${id}`)
-            }
-        },
-
-        provinces: {
-            list(params = {}) {
-                return get('/erp/provinces', params)
-            },
-
-            show(id) {
-                return get(`/erp/provinces/${id}`)
-            },
-
-            create(data) {
-                return post('/erp/provinces', data)
-            },
-
-            update(id, data) {
-                return put(`/erp/provinces/${id}`, data)
-            },
-            
-            delete(id) {
-                return destroy(`/erp/provinces/${id}`)
-            }
-        },
-
-        cities: {
-            list(params = {}) {
-                return get('/erp/cities', params)
-            },
-
-            show(id) {
-                return get(`/erp/cities/${id}`)
-            },
-
-            create(data) {
-                return post('/erp/cities', data)
-            },
-
-            update(id, data) {
-                return put(`/erp/cities/${id}`, data)
-            },
-
-            delete(id) {
-                return destroy(`/erp/cities/${id}`)
-            }
-        },
-
+    permissions() {
+      return get("/erp/access-management/permissions");
     },
 
-    sales: {
-        quotations: {
-            list(params = {}) {
-                return api.get('/erp/quotations', { params })
-            },
-
-            show(id) {
-                return api.get(`/erp/quotations/${id}`)
-            },
-
-            create(payload) {
-                return api.post('/erp/quotations', payload)
-            },
-
-            update(id, payload) {
-                return api.put(`/erp/quotations/${id}`, payload)
-            },
-
-            delete(id) {
-                return api.delete(`/erp/quotations/${id}`)
-            },
-
-            convert(id) {
-                return api.post(`/erp/quotations/${id}/convert`)
-            },
-
-            pdf(id) {
-                return api.get(
-                    `/erp/quotations/${id}/pdf`,
-                    {
-                        responseType: 'blob',
-                    }
-                )
-            },
-        },
-        
-        invoices: {
-            list(params = {}) {
-                return api.get(
-                    '/erp/sales-invoices',
-                    { params }
-                )
-            },
-
-            show(id) {
-                return api.get(
-                    `/erp/sales-invoices/${id}`
-                )
-            },
-
-            store(payload) {
-                return api.post(
-                    '/erp/sales-invoices',
-                    payload
-                )
-            },
-
-            update(id, payload) {
-                return api.put(
-                    `/erp/sales-invoices/${id}`,
-                    payload
-                )
-            },
-
-            approve(id) {
-                return api.post(
-                    `/erp/sales-invoices/${id}/approve`
-                )
-            },
-
-            payment(id, payload) {
-                return api.post(
-                    `/erp/sales-invoices/${id}/payment`,
-                    payload
-                )
-            },
-
-            cancel(id) {
-                return api.post(
-                    `/erp/sales-invoices/${id}/cancel`
-                )
-            },
-
-            pdf(id) {
-                return api.get(
-                    `/erp/sales-invoices/${id}/pdf`,
-                    {
-                        responseType: 'blob',
-                    }
-                )
-            },
-        },
+    updateUserRoles(userId, roleIds) {
+      return put(`/erp/access-management/users/${userId}/roles`, {
+        role_ids: roleIds,
+      });
     },
 
-    purchases: {
-        requests: {
-            list(params = {}) {
-                return get(
-                    '/erp/purchase-requests',
-                    params
-                )
-            },
+    updateRolePermissions(roleId, permissionIds) {
+      return put(`/erp/access-management/roles/${roleId}/permissions`, {
+        permission_ids: permissionIds,
+      });
+    },
+  },
 
-            show(id) {
-                return get(
-                    `/erp/purchase-requests/${id}`
-                )
-            },
+  master: {
+    products: {
+      list(params = {}) {
+        return api.get("/erp/products", { params });
+      },
 
-            create(data) {
-                return post(
-                    '/erp/purchase-requests',
-                    data
-                )
-            },
+      get(id) {
+        return api.get(`/erp/products/${id}`);
+      },
 
-            update(id, data) {
-                return put(
-                    `/erp/purchase-requests/${id}`,
-                    data
-                )
-            },
+      create(data) {
+        return api.post("/erp/products", data);
+      },
 
-            delete(id) {
-                return destroy(
-                    `/erp/purchase-requests/${id}`
-                )
-            },
-        },
+      update(id, data) {
+        return api.put(`/erp/products/${id}`, data);
+      },
 
-        orders: {
-            list(params = {}) {
-                return get(
-                    '/erp/purchase-orders',
-                    params
-                )
-            },
-
-            show(id) {
-                return get(
-                    `/erp/purchase-orders/${id}`
-                )
-            },
-
-            create(data) {
-                return post(
-                    '/erp/purchase-orders',
-                    data
-                )
-            },
-
-            update(id, data) {
-                return put(
-                    `/erp/purchase-orders/${id}`,
-                    data
-                )
-            },
-
-            order(id) {
-                return api.post(`/erp/purchase-orders/${id}/order`)
-            },
-
-            delete(id) {
-                return destroy(
-                    `/erp/purchase-orders/${id}`
-                )
-            },
-        },
-
-        receipts: {
-            list(params = {}) {
-                return get(
-                    '/erp/purchase-receipts',
-                    params
-                )
-            },
-
-            show(id) {
-                return get(
-                    `/erp/purchase-receipts/${id}`
-                )
-            },
-
-            create(data) {
-                return post(
-                    '/erp/purchase-receipts',
-                    data
-                )
-            },
-
-            receive(id, data) {
-                return post(
-                    `/erp/purchase-receipts/${id}/receive`,
-                    data
-                )
-            },
-
-            update(id, data) {
-                return put(
-                    `/erp/purchase-receipts/${id}`,
-                    data
-                )
-            },
-        },
-
+      remove(id) {
+        return api.delete(`/erp/products/${id}`);
+      },
     },
 
-    shipments: {
-        list(params = {}) {
-            return api.get(
-                '/erp/shipments',
-                { params }
-            )
-        },
+    productTypes: {
+      list(params = {}) {
+        return api.get("/erp/product-types", { params });
+      },
 
-        get(id) {
-            return api.get(
-                `/erp/shipments/${id}`
-            )
-        },
+      get(id) {
+        return api.get(`/erp/product-types/${id}`);
+      },
 
-        create(data) {
-            return api.post(
-                '/erp/shipments',
-                data
-            )
-        },
+      create(data) {
+        return api.post("/erp/product-types", data);
+      },
 
-        update(id, data) {
-            return api.put(
-                `/erp/shipments/${id}`,
-                data
-            )
-        },
+      update(id, data) {
+        return api.put(`/erp/product-types/${id}`, data);
+      },
 
-        correction(id, data) {
-            return api.post(
-                `/erp/shipments/${id}/correction`,
-                data
-            )
-        },
-
-        remove(id) {
-            return api.delete(
-                `/erp/shipments/${id}`
-            )
-        },
+      remove(id) {
+        return api.delete(`/erp/product-types/${id}`);
+      },
     },
 
-    inventory: {
-        stocks: {
-            list(params = {}) {
-                return get(
-                    '/erp/stocks',
-                    params
-                )
-            },
+    productCategories: {
+      list(params = {}) {
+        return api.get("/erp/product-categories", { params });
+      },
 
-            show(id) {
-                return get(
-                    `/erp/stocks/${id}`
-                )
-            },
-        },
+      get(id) {
+        return api.get(`/erp/product-categories/${id}`);
+      },
 
-        adjustments: {
-            list(params = {}) {
-                return get(
-                    '/erp/stock-adjustments',
-                    params
-                )
-            },
+      create(data) {
+        return api.post("/erp/product-categories", data);
+      },
 
-            show(id) {
-                return get(
-                    `/erp/stock-adjustments/${id}`
-                )
-            },
+      update(id, data) {
+        return api.put(`/erp/product-categories/${id}`, data);
+      },
 
-            create(data) {
-                return post(
-                    '/erp/stock-adjustments',
-                    data
-                )
-            },
-
-            update(id, data) {
-                return put(
-                    `/erp/stock-adjustments/${id}`,
-                    data
-                )
-            },
-
-            approve(id) {
-                return api.post(
-                    `/erp/stock-adjustments/${id}/approve`
-                )
-            },
-
-            cancel(id) {
-                return api.post(
-                    `/erp/stock-adjustments/${id}/cancel`
-                )
-            },
-        },
-
-        issues: {
-            list(params = {}) {
-                return get(
-                    '/erp/stock-issues',
-                    params
-                )
-            },
-
-            show(id) {
-                return get(
-                    `/erp/stock-issues/${id}`
-                )
-            },
-
-            create(data) {
-                return post(
-                    '/erp/stock-issues',
-                    data
-                )
-            },
-
-            update(id, data) {
-                return put(
-                    `/erp/stock-issues/${id}`,
-                    data
-                )
-            },
-
-            submit(id, data) {
-                return post(
-                    `/erp/stock-issues/${id}/submit`,
-                    data
-                )
-            },
-
-            approve(id) {
-                return post(
-                    `/erp/stock-issues/${id}/approve`,
-                )
-            },
-
-            issue(id) {
-                return post(
-                    `/erp/stock-issues/${id}/issue`,
-                )
-            },
-
-            cancel(id) {
-                return post(
-                    `/erp/stock-issues/${id}/cancel`,
-                )
-            },
-        },
-
-        mutations: {
-            list(params = {}) {
-                return get(
-                    '/erp/stock-mutations',
-                    params
-                )
-            },
-
-            show(id) {
-                return get(
-                    `/erp/stock-mutations/${id}`
-                )
-            },
-
-            create(data) {
-                return post(
-                    '/erp/stock-mutations',
-                    data
-                )
-            },
-
-            update(id, data) {
-                return put(
-                    `/erp/stock-mutations/${id}`,
-                    data
-                )
-            },
-
-        },
+      remove(id) {
+        return api.delete(`/erp/product-categories/${id}`);
+      },
     },
 
-    finance: {
-        // Disiapkan untuk tahap accounting berikutnya.
+    units: {
+      list(params = {}) {
+        return api.get("/erp/units", { params });
+      },
+
+      get(id) {
+        return api.get(`/erp/units/${id}`);
+      },
+
+      create(data) {
+        return api.post("/erp/units", data);
+      },
+
+      update(id, data) {
+        return api.put(`/erp/units/${id}`, data);
+      },
+
+      remove(id) {
+        return api.delete(`/erp/units/${id}`);
+      },
     },
 
-    reports: {
-        sales(params = {}) {
-            return get(
-                '/erp/reports/sales',
-                params
-            )
-        },
+    partners: {
+      list(params = {}) {
+        return get("/erp/partners", params);
+      },
 
-        purchases(params = {}) {
-            return get(
-                '/erp/reports/purchases',
-                params
-            )
-        },
+      show(id) {
+        return get(`/erp/partners/${id}`);
+      },
 
-        inventory(params = {}) {
-            return get(
-                '/erp/reports/inventory',
-                params
-            )
-        },
+      create(data) {
+        return post("/erp/partners", data);
+      },
 
-        finance(params = {}) {
-            return get(
-                '/erp/reports/finance',
-                params
-            )
-        },
+      update(id, data) {
+        return put(`/erp/partners/${id}`, data);
+      },
+
+      delete(id) {
+        return destroy(`/erp/partners/${id}`);
+      },
     },
-}
+
+    employees: {
+      list(params = {}) {
+        return get("/erp/employees", params);
+      },
+
+      show(id) {
+        return get(`/erp/employees/${id}`);
+      },
+
+      create(data) {
+        return post("/erp/employees", data);
+      },
+
+      update(id, data) {
+        return put(`/erp/employees/${id}`, data);
+      },
+
+      delete(id) {
+        return destroy(`/erp/employees/${id}`);
+      },
+    },
+
+    general: {
+      list(params = {}) {
+        return get("/erp/generals", params);
+      },
+
+      show(id) {
+        return get(`/erp/generals/${id}`);
+      },
+
+      create(data) {
+        return post("/erp/generals", data);
+      },
+
+      update(id, data) {
+        return put(`/erp/generals/${id}`, data);
+      },
+
+      delete(id) {
+        return destroy(`/erp/generals/${id}`);
+      },
+    },
+
+    departments: {
+      list(params = {}) {
+        return api.get("/erp/departments", { params });
+      },
+
+      get(id) {
+        return api.get(`/erp/departments/${id}`);
+      },
+
+      create(data) {
+        return api.post("/erp/departments", data);
+      },
+
+      update(id, data) {
+        return api.put(`/erp/departments/${id}`, data);
+      },
+
+      remove(id) {
+        return api.delete(`/erp/departments/${id}`);
+      },
+    },
+
+    truckTypes: {
+      list(params = {}) {
+        return get("/erp/truck-types", params);
+      },
+
+      show(id) {
+        return get(`/erp/truck-types/${id}`);
+      },
+
+      create(data) {
+        return post("/erp/truck-types", data);
+      },
+
+      update(id, data) {
+        return put(`/erp/truck-types/${id}`, data);
+      },
+
+      delete(id) {
+        return destroy(`/erp/truck-types/${id}`);
+      },
+    },
+
+    trucks: {
+      list(params = {}) {
+        return api.get("/erp/trucks", { params });
+      },
+
+      get(id) {
+        return api.get(`/erp/trucks/${id}`);
+      },
+
+      create(data) {
+        return api.post("/erp/trucks", data);
+      },
+
+      update(id, data) {
+        return api.put(`/erp/trucks/${id}`, data);
+      },
+
+      remove(id) {
+        return api.delete(`/erp/trucks/${id}`);
+      },
+
+      plateHistory(id) {
+        return api.get(`/erp/trucks/${id}/plate-history`);
+      },
+
+      changePlate(id, data) {
+        return api.post(`/erp/trucks/${id}/change-plate`, data);
+      },
+
+      kirHistory(id) {
+        return api.get(`/erp/trucks/${id}/kir-history`);
+      },
+
+      updateKir(id, data) {
+        return api.post(`/erp/trucks/${id}/update-kir`, data);
+      },
+    },
+
+    shippingTariffs: {
+      list(params = {}) {
+        return get("/erp/shipping-tariffs", params);
+      },
+
+      show(id) {
+        return get(`/erp/shipping-tariffs/${id}`);
+      },
+
+      create(data) {
+        return post("/erp/shipping-tariffs", data);
+      },
+
+      update(id, data) {
+        return put(`/erp/shipping-tariffs/${id}`, data);
+      },
+
+      delete(id) {
+        return destroy(`/erp/shipping-tariffs/${id}`);
+      },
+    },
+
+    provinces: {
+      list(params = {}) {
+        return get("/erp/provinces", params);
+      },
+
+      show(id) {
+        return get(`/erp/provinces/${id}`);
+      },
+
+      create(data) {
+        return post("/erp/provinces", data);
+      },
+
+      update(id, data) {
+        return put(`/erp/provinces/${id}`, data);
+      },
+
+      delete(id) {
+        return destroy(`/erp/provinces/${id}`);
+      },
+    },
+
+    cities: {
+      list(params = {}) {
+        return get("/erp/cities", params);
+      },
+
+      show(id) {
+        return get(`/erp/cities/${id}`);
+      },
+
+      create(data) {
+        return post("/erp/cities", data);
+      },
+
+      update(id, data) {
+        return put(`/erp/cities/${id}`, data);
+      },
+
+      delete(id) {
+        return destroy(`/erp/cities/${id}`);
+      },
+    },
+
+    warehouses: {
+      list(params = {}) {
+        return get("/erp/warehouses", params);
+      },
+
+      show(id) {
+        return get(`/erp/warehouses/${id}`);
+      },
+
+      create(data) {
+        return post("/erp/warehouses", data);
+      },
+
+      update(id, data) {
+        return put(`/erp/warehouses/${id}`, data);
+      },
+
+      delete(id) {
+        return destroy(`/erp/warehouses/${id}`);
+      },
+    },
+  },
+
+  sales: {
+    quotations: {
+      list(params = {}) {
+        return api.get("/erp/quotations", { params });
+      },
+
+      show(id) {
+        return api.get(`/erp/quotations/${id}`);
+      },
+
+      create(payload) {
+        return api.post("/erp/quotations", payload);
+      },
+
+      update(id, payload) {
+        return api.put(`/erp/quotations/${id}`, payload);
+      },
+
+      delete(id) {
+        return api.delete(`/erp/quotations/${id}`);
+      },
+
+      convert(id) {
+        return api.post(`/erp/quotations/${id}/convert`);
+      },
+
+      pdf(id) {
+        return api.get(`/erp/quotations/${id}/pdf`, {
+          responseType: "blob",
+        });
+      },
+    },
+
+    invoices: {
+      list(params = {}) {
+        return api.get("/erp/sales-invoices", { params });
+      },
+
+      show(id) {
+        return api.get(`/erp/sales-invoices/${id}`);
+      },
+
+      store(payload) {
+        return api.post("/erp/sales-invoices", payload);
+      },
+
+      update(id, payload) {
+        return api.put(`/erp/sales-invoices/${id}`, payload);
+      },
+
+      approve(id) {
+        return api.post(`/erp/sales-invoices/${id}/approve`);
+      },
+
+      payment(id, payload) {
+        return api.post(`/erp/sales-invoices/${id}/payment`, payload);
+      },
+
+      cancel(id) {
+        return api.post(`/erp/sales-invoices/${id}/cancel`);
+      },
+
+      pdf(id) {
+        return api.get(`/erp/sales-invoices/${id}/pdf`, {
+          responseType: "blob",
+        });
+      },
+    },
+  },
+
+  purchases: {
+    requests: {
+      list(params = {}) {
+        return get("/erp/purchase-requests", params);
+      },
+
+      show(id) {
+        return get(`/erp/purchase-requests/${id}`);
+      },
+
+      create(data) {
+        return post("/erp/purchase-requests", data);
+      },
+
+      update(id, data) {
+        return put(`/erp/purchase-requests/${id}`, data);
+      },
+
+      delete(id) {
+        return destroy(`/erp/purchase-requests/${id}`);
+      },
+    },
+
+    orders: {
+      list(params = {}) {
+        return get("/erp/purchase-orders", params);
+      },
+
+      show(id) {
+        return get(`/erp/purchase-orders/${id}`);
+      },
+
+      create(data) {
+        return post("/erp/purchase-orders", data);
+      },
+
+      update(id, data) {
+        return put(`/erp/purchase-orders/${id}`, data);
+      },
+
+      order(id) {
+        return api.post(`/erp/purchase-orders/${id}/order`);
+      },
+
+      delete(id) {
+        return destroy(`/erp/purchase-orders/${id}`);
+      },
+    },
+
+    receipts: {
+      list(params = {}) {
+        return get("/erp/purchase-receipts", params);
+      },
+
+      show(id) {
+        return get(`/erp/purchase-receipts/${id}`);
+      },
+
+      create(data) {
+        return post("/erp/purchase-receipts", data);
+      },
+
+      receive(id, data) {
+        return post(`/erp/purchase-receipts/${id}/receive`, data);
+      },
+
+      update(id, data) {
+        return put(`/erp/purchase-receipts/${id}`, data);
+      },
+    },
+  },
+
+  shipments: {
+    list(params = {}) {
+      return api.get("/erp/shipments", { params });
+    },
+
+    get(id) {
+      return api.get(`/erp/shipments/${id}`);
+    },
+
+    create(data) {
+      return api.post("/erp/shipments", data);
+    },
+
+    update(id, data) {
+      return api.put(`/erp/shipments/${id}`, data);
+    },
+
+    correction(id, data) {
+      return api.post(`/erp/shipments/${id}/correction`, data);
+    },
+
+    remove(id) {
+      return api.delete(`/erp/shipments/${id}`);
+    },
+  },
+
+  inventory: {
+    stocks: {
+      list(params = {}) {
+        return get("/erp/stocks", params);
+      },
+
+      show(id) {
+        return get(`/erp/stocks/${id}`);
+      },
+    },
+
+    adjustments: {
+      list(params = {}) {
+        return get("/erp/stock-adjustments", params);
+      },
+
+      show(id) {
+        return get(`/erp/stock-adjustments/${id}`);
+      },
+
+      create(data) {
+        return post("/erp/stock-adjustments", data);
+      },
+
+      update(id, data) {
+        return put(`/erp/stock-adjustments/${id}`, data);
+      },
+
+      approve(id) {
+        return api.post(`/erp/stock-adjustments/${id}/approve`);
+      },
+
+      cancel(id) {
+        return api.post(`/erp/stock-adjustments/${id}/cancel`);
+      },
+    },
+
+    issues: {
+      list(params = {}) {
+        return get("/erp/stock-issues", params);
+      },
+
+      show(id) {
+        return get(`/erp/stock-issues/${id}`);
+      },
+
+      create(data) {
+        return post("/erp/stock-issues", data);
+      },
+
+      update(id, data) {
+        return put(`/erp/stock-issues/${id}`, data);
+      },
+
+      submit(id, data) {
+        return post(`/erp/stock-issues/${id}/submit`, data);
+      },
+
+      approve(id) {
+        return post(`/erp/stock-issues/${id}/approve`);
+      },
+
+      issue(id) {
+        return post(`/erp/stock-issues/${id}/issue`);
+      },
+
+      cancel(id) {
+        return post(`/erp/stock-issues/${id}/cancel`);
+      },
+    },
+
+    mutations: {
+      list(params = {}) {
+        return get("/erp/stock-mutations", params);
+      },
+
+      show(id) {
+        return get(`/erp/stock-mutations/${id}`);
+      },
+
+      create(data) {
+        return post("/erp/stock-mutations", data);
+      },
+
+      update(id, data) {
+        return put(`/erp/stock-mutations/${id}`, data);
+      },
+    },
+  },
+
+  finance: {
+    // Disiapkan untuk tahap accounting berikutnya.
+  },
+
+  reports: {
+    sales(params = {}) {
+      return get("/erp/reports/sales", params);
+    },
+
+    purchases(params = {}) {
+      return get("/erp/reports/purchases", params);
+    },
+
+    inventory(params = {}) {
+      return get("/erp/reports/inventory", params);
+    },
+
+    finance(params = {}) {
+      return get("/erp/reports/finance", params);
+    },
+  },
+};
 
 /*
 |--------------------------------------------------------------------------
@@ -1531,4 +1225,4 @@ export const erpApi = {
 |--------------------------------------------------------------------------
 */
 
-export default api
+export default api;

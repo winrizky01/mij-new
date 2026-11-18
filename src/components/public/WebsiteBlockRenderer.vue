@@ -30,89 +30,98 @@ const blockComponents = {
 
 // Normalisasi data section dan settings API.
 function getBlockProps(block) {
-  const settings = block.settings ?? {}
+    const {
+        children: blockChildren,
+        settings: rawSettings,
+        ...blockData
+    } = block
 
-  return {
-    ...block,
-    ...settings,
+    const {
+        children: settingsChildren,
+        ...settings
+    } = rawSettings ?? {}
 
-    title: block.title ?? settings.title ?? '',
-    subtitle: block.subtitle ?? settings.subtitle ?? '',
+    return {
+        ...blockData,
+        ...settings,
 
-    description:
-      block.description ??
-      settings.description ??
-      '',
+        title: block.title ?? settings.title ?? '',
+        subtitle: block.subtitle ?? settings.subtitle ?? '',
 
-    content:
-      block.content ??
-      settings.content ??
-      '',
+        description:
+            block.description ??
+            settings.description ??
+            '',
 
-    eyebrow:
-      block.eyebrow ??
-      settings.eyebrow ??
-      block.subtitle ??
-      settings.subtitle ??
-      '',
+        content:
+            block.content ??
+            settings.content ??
+            '',
 
-    imageUrl:
-      block.imageUrl ??
-      settings.imageUrl ??
-      settings.image_url ??
-      block.image ??
-      '',
+        eyebrow:
+            block.eyebrow ??
+            settings.eyebrow ??
+            block.subtitle ??
+            settings.subtitle ??
+            '',
 
-    imagePosition:
-      block.imagePosition ??
-      settings.imagePosition ??
-      settings.image_position ??
-      'right',
+        imageUrl:
+            block.imageUrl ??
+            settings.imageUrl ??
+            settings.image_url ??
+            block.image ??
+            '',
 
-    alignment:
-      block.alignment ??
-      settings.alignment ??
-      'left',
+        imagePosition:
+            block.imagePosition ??
+            settings.imagePosition ??
+            settings.image_position ??
+            'right',
 
-    backgroundColor:
-      block.backgroundColor ??
-      settings.backgroundColor ??
-      '#ffffff',
+        alignment:
+            block.alignment ??
+            settings.alignment ??
+            'left',
 
-    textColor:
-      block.textColor ??
-      settings.textColor ??
-      '#1f2937',
+        backgroundColor:
+            block.backgroundColor ??
+            settings.backgroundColor ??
+            '#ffffff',
 
-    slides: block.images ?? settings.slides ?? settings.images ?? [],
-    stats: block.stats ?? settings.stats ?? [],
+        textColor:
+            block.textColor ??
+            settings.textColor ??
+            '#1f2937',
 
-    buttonText:
-      block.buttonText ??
-      block.button_text ??
-      settings.buttonText ??
-      settings.button_text ??
-      '',
+        slides: block.images ?? settings.slides ?? settings.images ?? [],
+        stats: block.stats ?? settings.stats ?? [],
 
-    buttonUrl:
-      block.buttonUrl ??
-      block.button_url ??
-      settings.buttonUrl ??
-      settings.button_url ??
-      '',
+        buttonText:
+            block.buttonText ??
+            block.button_text ??
+            settings.buttonText ??
+            settings.button_text ??
+            '',
 
-    autoplay: block.autoplay ?? settings.autoplay ?? true,
+        buttonUrl:
+            block.buttonUrl ??
+            block.button_url ??
+            settings.buttonUrl ??
+            settings.button_url ??
+            '',
 
-    autoplayInterval:
-      block.autoplayInterval ??
-      settings.autoplayInterval ??
-      settings.autoplay_interval ??
-      6000,
+        autoplay: block.autoplay ?? settings.autoplay ?? true,
 
-    showDots: block.showDots ?? settings.showDots ?? true,
-    showArrows: block.showArrows ?? settings.showArrows ?? true,
-    showStats: block.showStats ?? settings.showStats ?? true,
-  }
+        autoplayInterval:
+            block.autoplayInterval ??
+            settings.autoplayInterval ??
+            settings.autoplay_interval ??
+            6000,
+
+        showDots: block.showDots ?? settings.showDots ?? true,
+        showArrows: block.showArrows ?? settings.showArrows ?? true,
+        showStats: block.showStats ?? settings.showStats ?? true,
+    }
 }
 
 function getContainerStyle(settings = {}) {

@@ -1,5 +1,4 @@
 import axios from "axios";
-import { Warehouse } from "lucide-vue-next";
 
 /*
 |--------------------------------------------------------------------------
@@ -106,31 +105,6 @@ api.interceptors.request.use(
 | 401 = token invalid / expired
 |
 */
-
-// api.interceptors.response.use(
-//     (response) => response,
-
-//     (error) => {
-//         if (error.response?.status === 401) {
-//             clearAuth()
-
-//             /*
-//              * Jangan langsung redirect menggunakan window.location
-//              * di sini. Router Vue akan menangani redirect.
-//              *
-//              * Event ini bisa digunakan oleh App.vue / auth store
-//              * kalau nanti kita ingin membuat global auth handler.
-//              */
-
-//             window.dispatchEvent(
-//                 new CustomEvent('mji:unauthorized')
-//             )
-//         }
-
-//         return Promise.reject(error)
-//     }
-// )
-
 api.interceptors.response.use(
   (response) => response,
 

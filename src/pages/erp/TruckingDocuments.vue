@@ -34,6 +34,7 @@
               <th class="p-3">Kendaraan</th>
               <th class="p-3">Nomor Plat</th>
               <th class="p-3">Jenis Dokumen</th>
+              <th class="p-3">Tanggal Dokumen</th>
               <th class="p-3">Berlaku Sampai</th>
               <th class="p-3">Status</th>
               <th class="p-3 text-right">Aksi</th>

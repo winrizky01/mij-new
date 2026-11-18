@@ -20,10 +20,70 @@
         </div>
       </div>
 
-      <button type="button" @click="openAdjustment"
-        class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#14a2d8] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#118fc0]">
-        <SlidersHorizontal class="h-4 w-4" />
-        Penyesuaian Stok
+      <div class="flex flex-wrap items-center gap-2.5">
+        <button type="button" @click="openClosingModal"
+          class="inline-flex items-center justify-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-800 shadow-sm transition hover:bg-amber-100">
+          <Lock class="h-4 w-4" />
+          Closing Stok
+        </button>
+
+        <button type="button" @click="openAdjustment"
+          class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#14a2d8] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#118fc0]">
+          <SlidersHorizontal class="h-4 w-4" />
+          Penyesuaian Stok
+        </button>
+      </div>
+    </div>
+
+    <!-- =========================================================
+             EARLY MONTH CLOSING WARNING BANNER
+        ========================================================== -->
+    <div v-if="showEarlyMonthBanner"
+      class="mb-5 flex flex-col justify-between gap-4 rounded-2xl border border-amber-300 bg-amber-50/90 p-4 shadow-sm sm:flex-row sm:items-center">
+      <div class="flex items-start gap-3">
+        <div class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+          <CalendarClock class="h-5 w-5" />
+        </div>
+
+        <div>
+          <div class="flex flex-wrap items-center gap-2">
+            <h2 class="text-sm font-bold text-amber-900">
+              Peringatan Closing Stok Awal Bulan
+            </h2>
+            <span class="rounded-full bg-amber-200/80 px-2 py-0.5 text-[11px] font-semibold text-amber-900">
+              Wajib Manual
+            </span>
+          </div>
+
+          <p class="mt-1 text-xs leading-relaxed text-amber-800">
+            Memasuki awal bulan, segera lakukan closing stok manual untuk periode
+            <span class="font-bold">{{ previousPeriodLabel }}</span>
+            agar saldo akhir terkunci dan tercatat sebagai saldo awal bulan berjalan.
+          </p>
+        </div>
+      </div>
+
+      <div class="flex shrink-0 items-center gap-2 self-end sm:self-center">
+        <button type="button" @click="openClosingModal"
+          class="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-amber-700">
+          <Lock class="h-3.5 w-3.5" />
+          Konfirmasi Closing
+        </button>
+      </div>
+    </div>
+
+    <!-- =========================================================
+             SUCCESS ALERT
+        ========================================================== -->
+    <div v-if="successMessage"
+      class="mb-5 flex items-center justify-between gap-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+      <div class="flex items-center gap-2">
+        <CheckCircle2 class="h-4 w-4 shrink-0" />
+        <span>{{ successMessage }}</span>
+      </div>
+
+      <button type="button" @click="successMessage = ''" class="text-xs font-semibold hover:underline">
+        Tutup
       </button>
     </div>
 
@@ -235,7 +295,7 @@
                     </span>
 
                     <span v-if="item.brand" class="text-xs text-slate-400">
-                      • {{ item.brand }}
+                      - {{ item.brand }}
                     </span>
                   </div>
                 </div>
@@ -454,11 +514,8 @@
                   <p class="text-xs text-slate-400">Stok Saat Ini</p>
 
                   <p class="mt-1 text-3xl font-bold" :class="{
-                    'text-emerald-600':
-                      getStockStatus(selectedItem) === 'safe',
-
+                    'text-emerald-600': getStockStatus(selectedItem) === 'safe',
                     'text-amber-600': getStockStatus(selectedItem) === 'low',
-
                     'text-red-600': getStockStatus(selectedItem) === 'empty',
                   }">
                     {{
@@ -516,6 +573,130 @@
     </Teleport>
 
     <!-- =========================================================
+             CLOSING STOCK CONFIRMATION MODAL
+        ========================================================== -->
+    <Teleport to="body">
+      <div v-if="showClosingModal"
+        class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm"
+        @click.self="closeClosingModal">
+        <div class="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl">
+          <!-- Header -->
+          <div class="flex items-start justify-between border-b border-slate-100 px-5 py-4 sm:px-6">
+            <div class="flex items-center gap-3">
+              <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                <Lock class="h-5 w-5" />
+              </div>
+
+              <div>
+                <h2 class="text-base font-bold text-slate-800">
+                  Konfirmasi Closing Stok Bulanan
+                </h2>
+
+                <p class="text-xs text-slate-500">
+                  Tutup buku mutasi stok manual awal bulan.
+                </p>
+              </div>
+            </div>
+
+            <button type="button" @click="closeClosingModal" :disabled="closingSaving"
+              class="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 disabled:opacity-50">
+              <XCircle class="h-5 w-5" />
+            </button>
+          </div>
+
+          <!-- Body -->
+          <div class="space-y-4 p-5 sm:p-6">
+            <div v-if="closingError"
+              class="rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs text-red-700">
+              {{ closingError }}
+            </div>
+
+            <!-- Period & Warehouse -->
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <label class="mb-1.5 block text-xs font-semibold text-slate-700">
+                  Periode Closing <span class="text-red-500">*</span>
+                </label>
+
+                <input v-model="closingForm.period" type="month"
+                  class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-[#14a2d8] focus:ring-2 focus:ring-[#14a2d8]/10" />
+              </div>
+
+              <div>
+                <label class="mb-1.5 block text-xs font-semibold text-slate-700">
+                  Gudang
+                </label>
+
+                <select v-model="closingForm.warehouse_id"
+                  class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-[#14a2d8] focus:ring-2 focus:ring-[#14a2d8]/10">
+                  <option value="">Semua Gudang</option>
+                  <option v-for="warehouse in warehouses" :key="warehouse.id" :value="warehouse.id">
+                    {{ warehouse.name }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Info Box -->
+            <div class="rounded-xl border border-amber-200 bg-amber-50/70 p-3.5 text-xs text-amber-900">
+              <p class="font-bold">Perhatian sebelum melanjutkan:</p>
+              <ul class="mt-1.5 list-disc space-y-1 pl-4 text-amber-800">
+                <li>
+                  Saldo akhir periode <span class="font-semibold">{{ formatPeriodLabel(closingForm.period) }}</span>
+                  akan dikunci sebagai saldo awal bulan berikutnya.
+                </li>
+                <li>
+                  Pastikan seluruh transaksi masuk, keluar, dan penyesuaian stok periode tersebut sudah diinput.
+                </li>
+                <li>
+                  Proses closing stok wajib dilakukan manual setiap awal bulan.
+                </li>
+              </ul>
+            </div>
+
+            <!-- Notes -->
+            <div>
+              <label class="mb-1.5 block text-xs font-semibold text-slate-700">
+                Catatan Closing <span class="font-normal text-slate-400">(opsional)</span>
+              </label>
+
+              <textarea v-model="closingForm.notes" rows="2"
+                placeholder="Contoh: Closing stok akhir bulan setelah stock opname..."
+                class="w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#14a2d8] focus:ring-2 focus:ring-[#14a2d8]/10"></textarea>
+            </div>
+
+            <!-- Confirmation Checkbox -->
+            <label class="flex cursor-pointer items-start gap-2.5 rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <input v-model="closingForm.confirmed" type="checkbox"
+                class="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#14a2d8] focus:ring-[#14a2d8]" />
+              <span class="text-xs leading-relaxed text-slate-700">
+                Saya memastikan data stok periode
+                <span class="font-semibold">{{ formatPeriodLabel(closingForm.period) }}</span>
+                sudah benar dan siap dilakukan closing stok.
+              </span>
+            </label>
+          </div>
+
+          <!-- Footer -->
+          <div class="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50/70 px-5 py-4 sm:px-6">
+            <button type="button" @click="closeClosingModal" :disabled="closingSaving"
+              class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50">
+              Batal
+            </button>
+
+            <button type="button" @click="handleConfirmClosing"
+              :disabled="closingSaving || !closingForm.confirmed || !closingForm.period"
+              class="inline-flex items-center gap-2 rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60">
+              <RefreshCw v-if="closingSaving" class="h-4 w-4 animate-spin" />
+              <Lock v-else class="h-4 w-4" />
+              {{ closingSaving ? "Memproses..." : "Ya, Proses Closing" }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- =========================================================
              ADJUSTMENT MODAL
         ========================================================== -->
     <StockAdjustmentModal :show="showAdjustmentModal" @close="showAdjustmentModal = false"
@@ -533,6 +714,9 @@ import {
   XCircle,
   Eye,
   SlidersHorizontal,
+  Lock,
+  CalendarClock,
+  CheckCircle2,
 } from "lucide-vue-next";
 
 import { erpApi, getApiError } from "@/services/api";
@@ -547,6 +731,7 @@ import StockAdjustmentModal from "../../components/erp/stock/StockAdjustmentModa
 
 const loading = ref(false);
 const error = ref("");
+const successMessage = ref("");
 
 const items = ref([]);
 const warehouses = ref([]);
@@ -564,6 +749,134 @@ const filters = ref({
   warehouse_id: "",
   status: "",
 });
+
+/*
+|--------------------------------------------------------------------------
+| Closing Stock State & Helpers
+|--------------------------------------------------------------------------
+*/
+
+function getPreviousMonthPeriod() {
+  const now = new Date();
+  const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const year = prevMonthDate.getFullYear();
+  const month = String(prevMonthDate.getMonth() + 1).padStart(2, "0");
+  return `${year}-${month}`;
+}
+
+function formatPeriodLabel(periodStr) {
+  if (!periodStr) return "-";
+  const [year, month] = periodStr.split("-").map(Number);
+  if (!year || !month) return periodStr;
+
+  const date = new Date(year, month - 1, 1);
+  return date.toLocaleDateString("id-ID", {
+    month: "long",
+    year: "numeric",
+  });
+}
+
+const defaultClosingPeriod = getPreviousMonthPeriod();
+const closedPeriods = ref(
+  JSON.parse(localStorage.getItem("erp_closed_stock_periods") || "[]")
+);
+
+const showClosingModal = ref(false);
+const closingSaving = ref(false);
+const closingError = ref("");
+
+const closingForm = ref({
+  period: defaultClosingPeriod,
+  warehouse_id: "",
+  notes: "",
+  confirmed: false,
+});
+
+const previousPeriodLabel = computed(() =>
+  formatPeriodLabel(defaultClosingPeriod)
+);
+
+// Peringatan aktif setiap awal bulan (tanggal 1 s/d 7) jika periode bulan lalu belum di-closing
+const showEarlyMonthBanner = computed(() => {
+  const today = new Date();
+  const isEarlyMonth = today.getDate() <= 7;
+  const alreadyClosed = closedPeriods.value.includes(defaultClosingPeriod);
+  return isEarlyMonth && !alreadyClosed;
+});
+
+function openClosingModal() {
+  closingError.value = "";
+  closingForm.value = {
+    period: defaultClosingPeriod,
+    warehouse_id: filters.value.warehouse_id || "",
+    notes: "",
+    confirmed: false,
+  };
+  showClosingModal.value = true;
+}
+
+function closeClosingModal() {
+  if (closingSaving.value) return;
+  showClosingModal.value = false;
+  closingError.value = "";
+}
+
+async function handleConfirmClosing() {
+  alert("Opps, masih dalam develop")
+  return false;
+  if (closingSaving.value || !closingForm.value.confirmed || !closingForm.value.period) {
+    return;
+  }
+
+  closingSaving.value = true;
+  closingError.value = "";
+  error.value = "";
+
+  try {
+    const [year, month] = closingForm.value.period.split("-").map(Number);
+
+    const payload = {
+      period: closingForm.value.period,
+      year,
+      month,
+      warehouse_id: closingForm.value.warehouse_id || null,
+      notes: closingForm.value.notes.trim() || null,
+    };
+
+    // Sesuaikan dengan endpoint closing stok di services/api.js
+    if (erpApi.inventory.closings?.create) {
+      await erpApi.inventory.closings.create(payload);
+    } else if (erpApi.inventory.stocks?.closing) {
+      await erpApi.inventory.stocks.closing(payload);
+    } else {
+      throw new Error("Endpoint closing stok belum terdaftar di erpApi.inventory.");
+    }
+
+    // Tandai periode sudah di-closing agar banner peringatan awal bulan hilang
+    if (!closedPeriods.value.includes(closingForm.value.period)) {
+      closedPeriods.value.push(closingForm.value.period);
+      localStorage.setItem(
+        "erp_closed_stock_periods",
+        JSON.stringify(closedPeriods.value)
+      );
+    }
+
+    showClosingModal.value = false;
+    successMessage.value = `Closing stok periode ${formatPeriodLabel(
+      closingForm.value.period
+    )} berhasil diproses.`;
+
+    await loadStocks();
+  } catch (err) {
+    console.error("[Stock Closing]", err);
+    closingError.value = getApiError(
+      err,
+      "Gagal memproses closing stok bulanan."
+    );
+  } finally {
+    closingSaving.value = false;
+  }
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -719,8 +1032,8 @@ async function loadStocks() {
     }));
 
     /*
-     * Ambil daftar warehouse dari response stock.
-     * Jadi tidak perlu hardcode lagi.
+- Ambil daftar warehouse dari response stock.
+- Jadi tidak perlu hardcode lagi.
      */
     const warehouseMap = new Map();
 
@@ -814,8 +1127,8 @@ async function openDetail(item) {
     console.error(err);
 
     /*
-     * Kalau detail gagal, tetap tampilkan
-     * data yang sudah ada di tabel.
+- Kalau detail gagal, tetap tampilkan
+- data yang sudah ada di tabel.
      */
     selectedItem.value = item;
     showDetailModal.value = true;
@@ -852,7 +1165,6 @@ async function handleAdjustmentSaved(payload) {
 
     // Refresh stok setelah penyesuaian berhasil.
     await loadStocks();
-
   } catch (err) {
     console.error("[Stock Adjustment]", err);
 

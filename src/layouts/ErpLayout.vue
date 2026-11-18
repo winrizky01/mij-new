@@ -212,20 +212,8 @@
                 </span>
               </RouterLink>
 
-
-              <RouterLink to="/erp/shipments" class="erp-nav" @click="closeSidebar">
-                <span class="erp-icon">
-                  🚚
-                </span>
-
-                <span>
-                  Pengiriman
-                </span>
-              </RouterLink>
-
             </div>
           </div>
-
 
           <!-- INVENTORY -->
           <div class="mb-6">
@@ -281,6 +269,46 @@
             </div>
           </div>
 
+          <!-- TRUCKING -->
+          <div class="mb-6">
+            <p class="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+              Trucking
+            </p>
+
+            <div class="space-y-1">
+
+              <RouterLink to="/erp/trucking-shipments" class="erp-nav" @click="closeSidebar">
+                <span class="erp-icon">🚛</span>
+                <span>Pengiriman</span>
+              </RouterLink>
+
+              <!-- <RouterLink to="/erp/trucking/vehicles" class="erp-nav" @click="closeSidebar">
+                <span class="erp-icon">🚚</span>
+                <span>Data Armada</span>
+              </RouterLink> -->
+
+              <RouterLink to="/erp/trucking-plate-changes" class="erp-nav" @click="closeSidebar">
+                <span class="erp-icon">🔢</span>
+                <span>Riwayat Ganti Plat</span>
+              </RouterLink>
+
+              <RouterLink to="/erp/trucking-documents" class="erp-nav" @click="closeSidebar">
+                <span class="erp-icon">📄</span>
+                <span>Pajak & KIR</span>
+              </RouterLink>
+
+              <RouterLink to="/erp/trucking-maintenance" class="erp-nav" @click="closeSidebar">
+                <span class="erp-icon">🔧</span>
+                <span>Service & Perawatan</span>
+              </RouterLink>
+
+              <RouterLink to="/erp/trucking-expenses" class="erp-nav" @click="closeSidebar">
+                <span class="erp-icon">💰</span>
+                <span>Biaya Operasional</span>
+              </RouterLink>
+
+            </div>
+          </div>
 
           <!-- KEUANGAN -->
           <div class="mb-6">

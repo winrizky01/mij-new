@@ -54,6 +54,10 @@ import ErpCashBank from "../pages/erp/CashBank.vue";
 import ErpReceivables from "../pages/erp/Receivables.vue";
 import ErpPayables from "../pages/erp/Payables.vue";
 import ErpReportShipment from "../pages/erp/reports/ShipmentReport.vue";
+import ErpTruckingPlateChange from "../pages/erp/TruckingPlateChange.vue";
+import ErpTruckingDocuments from "../pages/erp/TruckingDocuments.vue";
+import ErpTruckingMaintenance from "../pages/erp/TruckingMaintenance.vue";
+import ErpTruckingExpense from "../pages/erp/TruckingExpenses.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -265,9 +269,33 @@ const router = createRouter({
         },
 
         {
-          path: "shipments",
-          name: "erp.shipments",
+          path: "trucking-shipments",
+          name: "erp.trucking-shipments",
           component: ErpShipments,
+        },
+
+        {
+          path: "trucking-plate-changes",
+          name: "erp.trucking-plate-changes",
+          component: ErpTruckingPlateChange,
+        },
+
+        {
+          path: "trucking-documents",
+          name: "erp.trucking-documents",
+          component: ErpTruckingDocuments,
+        },
+
+        {
+          path: "trucking-maintenance",
+          name: "erp.trucking-maintenance",
+          component: ErpTruckingMaintenance,
+        },
+
+        {
+          path: "trucking-expenses",
+          name: "erp.trucking-expenses",
+          component: ErpTruckingExpense,
         },
 
         {

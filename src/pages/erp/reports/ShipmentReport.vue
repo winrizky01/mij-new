@@ -29,7 +29,11 @@ import { useToast } from '@/composables/useToast'
 const toast = useToast()
 
 const today = new Date()
-const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
+
+const currentMonth = [
+  today.getFullYear(),
+  String(today.getMonth() + 1).padStart(2, '0'),
+].join('-')
 
 const loading = ref(false)
 const shipments = ref([])
@@ -45,11 +49,12 @@ const filters = ref({
   search: '',
 })
 
-const selectedDriverName = computed(() => {
-  return shipments.value.find(
-    item => String(item.driverId) === String(selectedDriver.value)
-  )?.driver || 'Seluruh driver'
-})
+// Mengubah nilai menjadi angka dengan aman.
+function toNumber(value, fallback = 0) {
+  const result = Number(value)
+
+  return Number.isFinite(result) ? result : fallback
+}
 
 // =====================================================
 // STATUS
@@ -78,115 +83,123 @@ const statusClass = status => ({
 }[status] || 'bg-slate-100 text-slate-600')
 
 // =====================================================
-// RESPONSE NORMALIZATION
+// API RESPONSE
 // =====================================================
 
+// Mendukung response Laravel pagination maupun non-pagination.
 function extractPagination(response) {
   const body = response?.data
 
-  // Laravel: { data: [...], current_page, last_page }
   if (Array.isArray(body?.data)) {
     return {
       rows: body.data,
-      currentPage: Number(body.current_page || 1),
       lastPage: Number(body.last_page || 1),
     }
   }
 
-  // Custom response: { data: { data: [...] } }
   if (Array.isArray(body?.data?.data)) {
     return {
       rows: body.data.data,
-      currentPage: Number(body.data.current_page || 1),
       lastPage: Number(body.data.last_page || 1),
     }
   }
 
-  // Non-paginated response
   if (Array.isArray(body)) {
     return {
       rows: body,
-      currentPage: 1,
       lastPage: 1,
     }
   }
 
   return {
     rows: [],
-    currentPage: 1,
     lastPage: 1,
   }
 }
 
 // =====================================================
-// NORMALIZE SHIPMENT
+// SHIPMENT NORMALIZATION
 // =====================================================
 
+// Semua struktur API dinormalisasi di sini.
+// Bagian lain cukup membaca struktur hasil normalisasi.
 function normalizeShipment(item) {
   const driver = item.driver || {}
   const truck = item.truck || {}
 
-  // Snapshot tujuan shipment
-  const province =
-    item.destination_province_name ||
-    item.destination_province ||
-    item.destination?.province?.name ||
-    item.destination?.province_name ||
-    ''
+  const driverRate = toNumber(item.driver_rate)
+  const driverAdditional = toNumber(item.driver_additional)
+  const driverCorrection = toNumber(item.driver_correction)
+  const driverBalen = toNumber(item.balen_driver_payment)
 
-  const destination =
-    item.destination_company ||
-    item.destination_city_name ||
-    item.destination_city ||
-    item.destination?.name ||
-    item.destination?.city?.name ||
-    '-'
+  const vendorRate = toNumber(item.vendor_rate)
+  const vendorAdditional = toNumber(item.vendor_additional)
+  const vendorCorrection = toNumber(item.vendor_correction)
+  const vendorBalen = toNumber(item.balen_vendor_charge)
 
-  // Komponen biaya dinamis dari backend
-  const rawCosts = item.cost_components || item.costs || []
+  // Total dasar dari backend.
+  // Jika tidak disediakan, gunakan penjumlahan komponen.
+  const driverBaseTotal = item.driver_total == null
+    ? driverRate + driverAdditional + driverCorrection
+    : toNumber(item.driver_total)
 
-  let costs = []
+  const vendorBaseTotal = item.vendor_total == null
+    ? vendorRate + vendorAdditional + vendorCorrection
+    : toNumber(item.vendor_total)
 
-  if (Array.isArray(rawCosts)) {
-    costs = rawCosts.map((cost, index) => ({
-      key: String(cost.id ?? cost.key ?? index),
-      label: cost.name || cost.label || 'Komponen biaya',
-      amount: Number(
-        cost.amount ?? cost.total ?? cost.value ?? 0
-      ),
-    }))
-  } else if (rawCosts && typeof rawCosts === 'object') {
-    costs = Object.entries(rawCosts).map(([key, value]) => ({
-      key,
-      label: key,
-      amount: Number(
-        typeof value === 'object'
-          ? value.amount ?? value.total ?? 0
-          : value
-      ),
-    }))
+  const costs = {
+    driver: {
+      rate: driverRate,
+      additional: driverAdditional,
+      correction: driverCorrection,
+      balen: driverBalen,
+      baseTotal: driverBaseTotal,
+      total: driverBaseTotal + driverBalen,
+    },
+
+    vendor: {
+      rate: vendorRate,
+      additional: vendorAdditional,
+      correction: vendorCorrection,
+      balen: vendorBalen,
+      baseTotal: vendorBaseTotal,
+      total: vendorBaseTotal + vendorBalen,
+    },
   }
 
   return {
     id: item.id,
-
     number: item.shipment_number || '-',
     date: item.shipment_date || '',
 
-    driverId: driver.id || item.driver_id,
-    driver: driver.name || '-',
+    driverId: driver.id ?? item.driver_id ?? null,
+    driver: driver.name || item.driver_name || '-',
 
-    truckId: truck.id || item.truck_id,
-    truck: truck.plate_number || truck.name || truck.code || '-',
+    truckId: truck.id ?? item.truck_id ?? null,
+    truck: truck.plate_number || truck.name || '-',
 
-    destination,
-    province,
+    destination:
+      item.destination_company ||
+      item.destination_city ||
+      '-',
+
+    province:
+      item.destination_province_name ||
+      item.destination_province ||
+      '',
 
     status: item.status || 'draft',
 
-    driverTotal: Number(item.driver_total || 0),
-
     costs,
+
+    // Total pembayaran driver termasuk balen.
+    driverTotal: costs.driver.total,
+
+    // Total biaya vendor termasuk balen.
+    vendorTotal: costs.vendor.total,
+
+    // Selisih per shipment.
+    mjiTotal: costs.vendor.total - costs.driver.total,
   }
 }
 
@@ -217,7 +230,6 @@ async function loadShipments() {
 
       lastPage = pagination.lastPage
       page++
-
     } while (page <= lastPage)
 
     shipments.value = allRows.map(normalizeShipment)
@@ -242,7 +254,7 @@ const drivers = computed(() => {
   const unique = new Map()
 
   shipments.value.forEach(item => {
-    if (item.driverId && item.driver !== '-') {
+    if (item.driverId != null && item.driver !== '-') {
       unique.set(String(item.driverId), {
         id: item.driverId,
         name: item.driver,
@@ -256,26 +268,31 @@ const drivers = computed(() => {
 })
 
 // =====================================================
-// FILTERED DATA
+// FILTERED SHIPMENTS
 // =====================================================
 
 const filteredShipments = computed(() => {
   const keyword = filters.value.search.trim().toLowerCase()
 
   return shipments.value
-    .filter(item =>
-      !filters.value.month ||
-      item.date.startsWith(filters.value.month)
-    )
-    .filter(item =>
-      !filters.value.driver ||
-      String(item.driverId) === String(filters.value.driver)
-    )
-    .filter(item =>
-      filters.value.status === 'all' ||
-      item.status === filters.value.status
-    )
     .filter(item => {
+      if (!filters.value.month) return true
+
+      return String(item.date).startsWith(filters.value.month)
+    })
+    .filter(item => {
+      if (!filters.value.driver) return true
+
+      return String(item.driverId) === String(filters.value.driver)
+    })
+    .filter(item => {
+      if (filters.value.status === 'all') return true
+
+      return item.status === filters.value.status
+    })
+    .filter(item => {
+      if (filters.value.region === 'all') return true
+
       if (filters.value.region === 'jatim') {
         return item.province === 'Jawa Timur'
       }
@@ -299,25 +316,152 @@ const filteredShipments = computed(() => {
         String(value || '').toLowerCase().includes(keyword)
       )
     })
-    .sort((a, b) => b.date.localeCompare(a.date))
+    .sort((a, b) =>
+      String(b.date).localeCompare(String(a.date))
+    )
 })
+
+// =====================================================
+// FINANCIAL SUMMARY
+// =====================================================
+
+// Seluruh perhitungan keuangan terpusat di sini.
+// Sumber perhitungan adalah data shipment yang sudah difilter.
+const financialSummary = computed(() => {
+  const result = {
+    driver: {
+      rate: 0,
+      additional: 0,
+      correction: 0,
+      balen: 0,
+      baseTotal: 0,
+      adjustment: 0,
+      total: 0,
+    },
+
+    vendor: {
+      rate: 0,
+      additional: 0,
+      correction: 0,
+      balen: 0,
+      baseTotal: 0,
+      adjustment: 0,
+      total: 0,
+    },
+
+    mji: 0,
+    shipmentCount: filteredShipments.value.length,
+  }
+
+  filteredShipments.value.forEach(item => {
+    const driver = item.costs.driver
+    const vendor = item.costs.vendor
+
+    // DRIVER
+    result.driver.rate += driver.rate
+    result.driver.additional += driver.additional
+    result.driver.correction += driver.correction
+    result.driver.balen += driver.balen
+    result.driver.baseTotal += driver.baseTotal
+    result.driver.total += driver.total
+
+    // Selisih untuk rekonsiliasi apabila total backend
+    // berbeda dari jumlah tiga komponen dasarnya.
+    result.driver.adjustment +=
+      driver.baseTotal -
+      driver.rate -
+      driver.additional -
+      driver.correction
+
+    // VENDOR
+    result.vendor.rate += vendor.rate
+    result.vendor.additional += vendor.additional
+    result.vendor.correction += vendor.correction
+    result.vendor.balen += vendor.balen
+    result.vendor.baseTotal += vendor.baseTotal
+    result.vendor.total += vendor.total
+
+    result.vendor.adjustment +=
+      vendor.baseTotal -
+      vendor.rate -
+      vendor.additional -
+      vendor.correction
+  })
+
+  // OPSI B: MJI = Total Vendor - Total Driver.
+  result.mji = result.vendor.total - result.driver.total
+
+  return result
+})
+
+// Alias untuk binding pada kartu ringkasan.
+const driverRateTotal = computed(() =>
+  financialSummary.value.driver.rate
+)
+
+const driverAdditionalTotal = computed(() =>
+  financialSummary.value.driver.additional
+)
+
+const driverCorrectionTotal = computed(() =>
+  financialSummary.value.driver.correction
+)
+
+const driverAdjustmentTotal = computed(() =>
+  financialSummary.value.driver.adjustment
+)
+
+const driverBalenTotal = computed(() =>
+  financialSummary.value.driver.balen
+)
+
+const driverGrandTotal = computed(() =>
+  financialSummary.value.driver.total
+)
+
+const vendorRateTotal = computed(() =>
+  financialSummary.value.vendor.rate
+)
+
+const vendorAdditionalTotal = computed(() =>
+  financialSummary.value.vendor.additional
+)
+
+const vendorCorrectionTotal = computed(() =>
+  financialSummary.value.vendor.correction
+)
+
+const vendorAdjustmentTotal = computed(() =>
+  financialSummary.value.vendor.adjustment
+)
+
+const vendorBalenTotal = computed(() =>
+  financialSummary.value.vendor.balen
+)
+
+const vendorGrandTotal = computed(() =>
+  financialSummary.value.vendor.total
+)
+
+const mjiTotal = computed(() =>
+  financialSummary.value.mji
+)
 
 // =====================================================
 // KPI
 // =====================================================
 
-const totalTrips = computed(() => filteredShipments.value.length)
+const totalTrips = computed(() =>
+  filteredShipments.value.length
+)
 
 const totalMoney = computed(() =>
-  filteredShipments.value.reduce(
-    (sum, item) => sum + item.driverTotal,
-    0
-  )
+  driverGrandTotal.value
 )
 
 const jatimTrips = computed(() =>
-  filteredShipments.value.filter(
-    item => item.province === 'Jawa Timur'
+  filteredShipments.value.filter(item =>
+    item.province === 'Jawa Timur'
   ).length
 )
 
@@ -326,15 +470,27 @@ const outsideTrips = computed(() =>
 )
 
 const averageCost = computed(() =>
-  totalTrips.value ? totalMoney.value / totalTrips.value : 0
+  totalTrips.value
+    ? totalMoney.value / totalTrips.value
+    : 0
 )
 
 const jatimPercent = computed(() =>
-  totalTrips.value ? jatimTrips.value / totalTrips.value * 100 : 0
+  totalTrips.value
+    ? jatimTrips.value / totalTrips.value * 100
+    : 0
 )
 
 const outsidePercent = computed(() =>
-  totalTrips.value ? outsideTrips.value / totalTrips.value * 100 : 0
+  totalTrips.value
+    ? outsideTrips.value / totalTrips.value * 100
+    : 0
+)
+
+const completedTrips = computed(() =>
+  filteredShipments.value.filter(item =>
+    item.status === 'completed'
+  ).length
 )
 
 // =====================================================
@@ -345,7 +501,7 @@ const driverSummary = computed(() => {
   const grouped = new Map()
 
   filteredShipments.value.forEach(item => {
-    const key = String(item.driverId || item.driver)
+    const key = String(item.driverId ?? item.driver)
 
     if (!grouped.has(key)) {
       grouped.set(key, {
@@ -375,49 +531,87 @@ const driverSummary = computed(() => {
     }
   })
 
-  return [...grouped.values()].sort(
-    (a, b) => b.total - a.total
+  return [...grouped.values()].sort((a, b) =>
+    b.total - a.total
   )
 })
 
 // =====================================================
-// COST BREAKDOWN
+// DRIVER DETAIL MODAL
 // =====================================================
 
-function summarizeCosts(rows) {
-  const grouped = new Map()
+const selectedDriverName = computed(() => {
+  if (selectedDriver.value == null) {
+    return 'Seluruh driver'
+  }
 
-  rows.forEach(item => {
-    item.costs.forEach(cost => {
-      if (!grouped.has(cost.key)) {
-        grouped.set(cost.key, {
-          key: cost.key,
-          label: cost.label,
-          total: 0,
-        })
-      }
-
-      grouped.get(cost.key).total += cost.amount
-    })
-  })
-
-  return [...grouped.values()]
-}
-
-const costBreakdown = computed(() =>
-  summarizeCosts(filteredShipments.value)
-)
+  return shipments.value.find(item =>
+    String(item.driverId) === String(selectedDriver.value)
+  )?.driver || 'Driver tidak ditemukan'
+})
 
 const selectedCostShipments = computed(() =>
-  filteredShipments.value.filter(item =>
-    !selectedDriver.value ||
-    String(item.driverId) === String(selectedDriver.value)
-  )
+  filteredShipments.value.filter(item => {
+    if (selectedDriver.value == null) return true
+
+    return String(item.driverId) === String(selectedDriver.value)
+  })
 )
 
-const detailCostBreakdown = computed(() =>
-  summarizeCosts(selectedCostShipments.value)
-)
+// Ringkasan setiap komponen untuk modal.
+const detailCostBreakdown = computed(() => {
+  const rows = selectedCostShipments.value
+
+  const summary = {
+    rate: 0,
+    additional: 0,
+    correction: 0,
+    adjustment: 0,
+    balen: 0,
+  }
+
+  rows.forEach(item => {
+    const cost = item.costs.driver
+
+    summary.rate += cost.rate
+    summary.additional += cost.additional
+    summary.correction += cost.correction
+    summary.adjustment +=
+      cost.baseTotal -
+      cost.rate -
+      cost.additional -
+      cost.correction
+    summary.balen += cost.balen
+  })
+
+  return [
+    {
+      key: 'rate',
+      label: 'Tarif driver',
+      total: summary.rate,
+    },
+    {
+      key: 'additional',
+      label: 'Tambahan driver',
+      total: summary.additional,
+    },
+    {
+      key: 'correction',
+      label: 'Koreksi driver',
+      total: summary.correction,
+    },
+    {
+      key: 'adjustment',
+      label: 'Penyesuaian rekonsiliasi',
+      total: summary.adjustment,
+    },
+    {
+      key: 'balen',
+      label: 'Balen driver',
+      total: summary.balen,
+    },
+  ]
+})
 
 const detailTotalMoney = computed(() =>
   selectedCostShipments.value.reduce(
@@ -430,14 +624,41 @@ const detailTotalMoney = computed(() =>
 // FORMATTERS
 // =====================================================
 
+function formatDate(value) {
+  if (!value) return '-'
+
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) return '-'
+
+  return new Intl.DateTimeFormat('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(date)
+}
+
+function formatDateTime(value) {
+  if (!value) return '-'
+
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) return '-'
+
+  return new Intl.DateTimeFormat('id-ID', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(date)
+}
+
 const money = value => new Intl.NumberFormat('id-ID', {
   style: 'currency',
   currency: 'IDR',
   maximumFractionDigits: 0,
-}).format(value || 0)
+}).format(toNumber(value))
 
 const number = value =>
-  new Intl.NumberFormat('id-ID').format(value || 0)
+  new Intl.NumberFormat('id-ID').format(toNumber(value))
 
 const monthLabel = computed(() => {
   if (!filters.value.month) return 'Semua periode'
@@ -470,42 +691,70 @@ function resetFilters() {
   selectedDriver.value = null
 }
 
-// Membuka rincian biaya berdasarkan driver yang dipilih
-const openDriver = (driverId) => {
-  selectedDriver.value = driverId;
-  showCostDetails.value = true;
-};
+function openDriver(driverId) {
+  selectedDriver.value = driverId
+  showCostDetails.value = true
+}
+
+function closeCostDetails() {
+  showCostDetails.value = false
+  selectedDriver.value = null
+}
 
 // =====================================================
 // EXPORT CSV
 // =====================================================
 
 function exportCsv() {
-  const rows = [
-    [
-      'Nomor Pengiriman',
-      'Tanggal',
-      'Driver',
-      'Truk',
-      'Tujuan',
-      'Provinsi',
-      'Status',
-      'Total Uang Driver',
-    ],
+  const headers = [
+    'Nomor Pengiriman',
+    'Tanggal',
+    'Driver',
+    'Truk',
+    'Tujuan',
+    'Provinsi',
+    'Status',
 
-    ...filteredShipments.value.map(item => [
-      item.number,
-      item.date,
-      item.driver,
-      item.truck,
-      item.destination,
-      item.province,
-      statusLabel(item.status),
-      item.driverTotal,
-    ]),
+    'Tarif Driver',
+    'Tambahan Driver',
+    'Koreksi Driver',
+    'Balen Driver',
+    'Total Driver',
+
+    'Tarif Vendor',
+    'Tambahan Vendor',
+    'Koreksi Vendor',
+    'Balen Vendor',
+    'Total Vendor',
+
+    'Selisih MJI',
   ]
 
-  const csv = rows
+  const rows = filteredShipments.value.map(item => [
+    item.number,
+    item.date,
+    item.driver,
+    item.truck,
+    item.destination,
+    item.province,
+    statusLabel(item.status),
+
+    item.costs.driver.rate,
+    item.costs.driver.additional,
+    item.costs.driver.correction,
+    item.costs.driver.balen,
+    item.driverTotal,
+
+    item.costs.vendor.rate,
+    item.costs.vendor.additional,
+    item.costs.vendor.correction,
+    item.costs.vendor.balen,
+    item.vendorTotal,
+
+    item.mjiTotal,
+  ])
+
+  const csv = [headers, ...rows]
     .map(row =>
       row.map(value =>
         `"${String(value ?? '').replaceAll('"', '""')}"`
@@ -524,7 +773,9 @@ function exportCsv() {
   link.href = url
   link.download = `laporan-driver-${filters.value.month || 'semua-periode'}.csv`
 
+  document.body.appendChild(link)
   link.click()
+  link.remove()
 
   URL.revokeObjectURL(url)
 }
@@ -537,7 +788,6 @@ onMounted(() => {
   loadShipments()
 })
 </script>
-
 
 <template>
   <div class="min-h-screen space-y-6 bg-slate-50/70 p-4 md:p-6">
@@ -719,9 +969,11 @@ onMounted(() => {
       </div>
     </section>
 
-    <!-- REGIONAL ANALYSIS + COST BREAKDOWN -->
-    <section class="grid grid-cols-1 gap-6 xl:grid-cols-5">
-      <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm xl:col-span-2">
+    <!-- REGIONAL ANALYSIS + FINANCIAL BREAKDOWN -->
+    <section class="grid gap-6 xl:grid-cols-4">
+
+      <!-- KOMPOSISI WILAYAH -->
+      <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div class="flex items-start justify-between">
           <div>
             <h2 class="font-bold text-[#003366]">Komposisi wilayah perjalanan</h2>
@@ -736,7 +988,7 @@ onMounted(() => {
           <div>
             <div class="mb-2 flex items-center justify-between gap-3">
               <div class="flex items-center gap-2">
-                <span class="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                <span class="h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
                 <span class="text-sm font-medium text-slate-700">Dalam Provinsi Jatim</span>
               </div>
               <span class="text-sm font-bold text-slate-800">
@@ -744,14 +996,15 @@ onMounted(() => {
               </span>
             </div>
             <div class="h-3 overflow-hidden rounded-full bg-slate-100">
-              <div class="h-full rounded-full bg-emerald-500 transition-all" :style="{ width: `${jatimPercent}%` }" />
+              <div class="h-full rounded-full bg-emerald-500 transition-all" :style="{ width: `${jatimPercent}%` }">
+              </div>
             </div>
           </div>
 
           <div>
             <div class="mb-2 flex items-center justify-between gap-3">
               <div class="flex items-center gap-2">
-                <span class="h-2.5 w-2.5 rounded-full bg-orange-500" />
+                <span class="h-2.5 w-2.5 rounded-full bg-orange-500"></span>
                 <span class="text-sm font-medium text-slate-700">Luar Provinsi Jatim</span>
               </div>
               <span class="text-sm font-bold text-slate-800">
@@ -759,7 +1012,8 @@ onMounted(() => {
               </span>
             </div>
             <div class="h-3 overflow-hidden rounded-full bg-slate-100">
-              <div class="h-full rounded-full bg-orange-500 transition-all" :style="{ width: `${outsidePercent}%` }" />
+              <div class="h-full rounded-full bg-orange-500 transition-all" :style="{ width: `${outsidePercent}%` }">
+              </div>
             </div>
           </div>
         </div>
@@ -773,48 +1027,171 @@ onMounted(() => {
         </div>
       </div>
 
-      <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm xl:col-span-3">
+      <!-- RINCIAN DRIVER -->
+      <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div class="flex items-start justify-between gap-3">
           <div>
-            <h2 class="font-bold text-[#003366]">Rincian komponen uang driver</h2>
+            <h2 class="font-bold text-[#003366]">Rincian Driver</h2>
             <p class="mt-1 text-xs text-slate-500">
-              Akumulasi komponen untuk pengiriman yang sedang difilter
+              Akumulasi pembayaran driver
             </p>
           </div>
-          <button type="button" @click="showCostDetails = true"
-            class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50">
-            <Eye class="h-3.5 w-3.5" />
-            Detail
-          </button>
+          <div class="rounded-xl bg-blue-50 p-2.5 text-blue-600">
+            <Wallet class="h-5 w-5" />
+          </div>
         </div>
 
         <div class="mt-5 divide-y divide-slate-100">
-          <div v-for="component in costBreakdown" :key="component.key"
-            class="flex items-center justify-between gap-4 py-3">
-            <div class="flex items-center gap-3">
-              <div class="rounded-lg bg-slate-100 p-2 text-slate-500">
-                <ReceiptText class="h-4 w-4" />
-              </div>
-              <span class="text-sm text-slate-600">{{ component.label }}</span>
-            </div>
+          <div class="flex items-center justify-between gap-3 py-3">
+            <span class="text-sm text-slate-600">Tarif driver</span>
             <span class="text-sm font-semibold tabular-nums text-slate-800">
-              {{ money(component.total) }}
+              {{ money(driverRateTotal) }}
+            </span>
+          </div>
+
+          <div class="flex items-center justify-between gap-3 py-3">
+            <span class="text-sm text-slate-600">Tambahan driver</span>
+            <span class="text-sm font-semibold tabular-nums text-slate-800">
+              {{ money(driverAdditionalTotal) }}
+            </span>
+          </div>
+
+          <div class="flex items-center justify-between gap-3 py-3">
+            <span class="text-sm text-slate-600">Koreksi driver</span>
+            <span class="text-sm font-semibold tabular-nums text-slate-800">
+              {{ money(driverCorrectionTotal) }}
+            </span>
+          </div>
+
+          <!-- <div class="flex items-center justify-between gap-3 py-3">
+            <span class="text-sm text-slate-600">Penyesuaian rekonsiliasi</span>
+            <span class="text-sm font-semibold tabular-nums text-slate-800">
+              {{ money(driverAdjustmentTotal) }}
+            </span>
+          </div> -->
+
+          <div class="flex items-center justify-between gap-3 py-3">
+            <span class="text-sm text-slate-600">Balen driver</span>
+            <span class="text-sm font-semibold tabular-nums text-slate-800">
+              {{ money(driverBalenTotal) }}
             </span>
           </div>
         </div>
 
-        <div class="mt-3 flex items-center justify-between rounded-xl bg-blue-50 p-4">
-          <div>
-            <p class="text-xs font-medium text-blue-700">Total uang driver</p>
-            <p class="mt-1 text-xl font-bold text-[#003366]">{{ money(totalMoney) }}</p>
-          </div>
-          <Wallet class="h-6 w-6 text-[#0052cc]" />
+        <div class="mt-3 rounded-xl bg-blue-50 p-4">
+          <p class="text-xs font-medium text-blue-700">Total pembayaran driver</p>
+          <p class="mt-1 text-xl font-bold text-[#003366]">
+            {{ money(driverGrandTotal) }}
+          </p>
         </div>
-        <p class="mt-3 text-xs leading-5 text-slate-400">
-          Nilai komponen pada tampilan ini merupakan simulasi. Saat backend dibuat,
-          total komponen harus direkonsiliasi dengan total uang driver dari sumber data.
-        </p>
       </div>
+
+      <!-- RINCIAN VENDOR -->
+      <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <h2 class="font-bold text-[#003366]">Rincian Vendor</h2>
+            <p class="mt-1 text-xs text-slate-500">
+              Akumulasi biaya vendor pengiriman
+            </p>
+          </div>
+          <div class="rounded-xl bg-orange-50 p-2.5 text-orange-600">
+            <ReceiptText class="h-5 w-5" />
+          </div>
+        </div>
+
+        <div class="mt-5 divide-y divide-slate-100">
+          <div class="flex items-center justify-between gap-3 py-3">
+            <span class="text-sm text-slate-600">Tarif vendor</span>
+            <span class="text-sm font-semibold tabular-nums text-slate-800">
+              {{ money(vendorRateTotal) }}
+            </span>
+          </div>
+
+          <div class="flex items-center justify-between gap-3 py-3">
+            <span class="text-sm text-slate-600">Tambahan vendor</span>
+            <span class="text-sm font-semibold tabular-nums text-slate-800">
+              {{ money(vendorAdditionalTotal) }}
+            </span>
+          </div>
+
+          <div class="flex items-center justify-between gap-3 py-3">
+            <span class="text-sm text-slate-600">Koreksi vendor</span>
+            <span class="text-sm font-semibold tabular-nums text-slate-800">
+              {{ money(vendorCorrectionTotal) }}
+            </span>
+          </div>
+
+          <!-- <div class="flex items-center justify-between gap-3 py-3">
+            <span class="text-sm text-slate-600">Penyesuaian rekonsiliasi</span>
+            <span class="text-sm font-semibold tabular-nums text-slate-800">
+              {{ money(vendorAdjustmentTotal) }}
+            </span>
+          </div> -->
+
+          <div class="flex items-center justify-between gap-3 py-3">
+            <span class="text-sm text-slate-600">Balen vendor</span>
+            <span class="text-sm font-semibold tabular-nums text-slate-800">
+              {{ money(vendorBalenTotal) }}
+            </span>
+          </div>
+        </div>
+
+        <div class="mt-3 rounded-xl bg-orange-50 p-4">
+          <p class="text-xs font-medium text-orange-700">Total biaya vendor</p>
+          <p class="mt-1 text-xl font-bold text-[#003366]">
+            {{ money(vendorGrandTotal) }}
+          </p>
+        </div>
+      </div>
+
+      <!-- SELISIH MJI -->
+      <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <h2 class="font-bold text-[#003366]">Selisih MJI</h2>
+            <p class="mt-1 text-xs text-slate-500">
+              Selisih biaya vendor dan pembayaran driver
+            </p>
+          </div>
+          <div class="rounded-xl bg-emerald-50 p-2.5 text-emerald-600">
+            <ChartNoAxesColumn class="h-5 w-5" />
+          </div>
+        </div>
+
+        <div class="mt-5 space-y-4">
+          <div>
+            <p class="text-xs text-slate-500">Total biaya vendor</p>
+            <p class="mt-1 text-base font-bold text-slate-800">
+              {{ money(vendorGrandTotal) }}
+            </p>
+          </div>
+
+          <div>
+            <p class="text-xs text-slate-500">Total pembayaran driver</p>
+            <p class="mt-1 text-base font-bold text-slate-800">
+              {{ money(driverGrandTotal) }}
+            </p>
+          </div>
+
+          <div class="border-t border-dashed border-slate-200 pt-4">
+            <p class="text-xs font-medium text-emerald-700">
+              Selisih Vendor - Driver
+            </p>
+            <p class="mt-1 text-2xl font-bold" :class="mjiTotal >= 0 ? 'text-emerald-600' : 'text-red-600'">
+              {{ money(mjiTotal) }}
+            </p>
+          </div>
+        </div>
+
+        <div class="mt-4 rounded-xl bg-slate-50 p-3">
+          <p class="text-xs leading-5 text-slate-500">
+            Selisih dihitung dari total biaya vendor dikurangi total pembayaran
+            driver, termasuk komponen balen.
+          </p>
+        </div>
+      </div>
+
     </section>
 
     <!-- DRIVER SUMMARY -->
@@ -948,7 +1325,7 @@ onMounted(() => {
             <tr v-for="item in filteredShipments" :key="item.id" class="transition hover:bg-slate-50/80">
               <td class="px-5 py-4">
                 <p class="text-sm font-semibold text-slate-800">{{ item.number }}</p>
-                <p class="mt-1 text-xs text-slate-400">{{ item.date }}</p>
+                <p class="mt-1 text-xs text-slate-400">{{ formatDateTime(item.date) }}</p>
               </td>
               <td class="px-5 py-4">
                 <p class="text-sm font-medium text-slate-800">{{ item.driver }}</p>
@@ -987,57 +1364,88 @@ onMounted(() => {
       </div>
     </section>
 
-    <!-- COST DETAIL MODAL -->
+    <!-- DRIVER DETAIL MODAL -->
     <div v-if="showCostDetails"
       class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-[2px]"
-      @click.self="showCostDetails = false">
+      @click.self="closeCostDetails">
       <div class="w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+
+        <!-- HEADER -->
         <div class="flex items-start justify-between border-b border-slate-100 p-5">
           <div>
-            <h3 class="text-lg font-bold text-[#003366]">Rincian uang driver</h3>
+            <h3 class="text-lg font-bold text-[#003366]">
+              Rincian pembayaran driver
+            </h3>
+
             <p class="mt-1 text-sm text-slate-500">
               {{ selectedDriverName }} · {{ monthLabel }}
             </p>
+
+            <p class="mt-1 text-xs text-slate-400">
+              {{ number(selectedCostShipments.length) }} pengiriman
+            </p>
           </div>
-          <button type="button" @click="showCostDetails = false"
+
+          <button type="button" @click="closeCostDetails"
             class="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
             <X class="h-5 w-5" />
           </button>
         </div>
 
+        <!-- BODY -->
         <div class="p-5">
-          <div class="space-y-3">
-            <div v-for="component in detailCostBreakdown" :key="component.key"
-              class="flex items-center justify-between gap-4 py-2">
-              <span class="text-sm text-slate-600">
-                {{ component.label }}
-              </span>
 
-              <span class="text-sm font-semibold text-slate-800">
-                {{ money(detailTotalMoney) }}
-              </span>
-            </div>
-          </div>
+          <div v-if="!selectedCostShipments.length" class="rounded-xl bg-slate-50 p-8 text-center">
+            <ReceiptText class="mx-auto h-8 w-8 text-slate-300" />
 
-          <div class="mt-4 rounded-xl bg-blue-50 p-4">
-            <p class="text-xs font-medium text-blue-700">Total uang driver</p>
-            <p class="mt-1 text-2xl font-bold text-[#003366]">
-              {{
-                money(
-                  filteredShipments
-                    .filter(item => !selectedDriver || item.driver === selectedDriver)
-                    .reduce((sum, item) => sum + item.driverTotal, 0)
-                )
-              }}
+            <p class="mt-3 text-sm font-medium text-slate-600">
+              Tidak ada data pembayaran
+            </p>
+
+            <p class="mt-1 text-xs text-slate-400">
+              Tidak ditemukan pengiriman untuk driver dan filter tersebut.
             </p>
           </div>
 
-          <p class="mt-3 text-xs leading-5 text-slate-400">
-            Rincian ini merupakan data simulasi. Nantinya nilai mengikuti komponen biaya
-            yang benar-benar tersimpan pada modul Shipment MJI.
-          </p>
+          <template v-else>
+            <!-- COMPONENT BREAKDOWN -->
+            <div class="divide-y divide-slate-100">
+              <div v-for="component in detailCostBreakdown" :key="component.key"
+                class="flex items-center justify-between gap-4 py-3">
+                <span class="text-sm text-slate-600">
+                  {{ component.label }}
+                </span>
 
-          <button type="button" @click="showCostDetails = false"
+                <span class="text-sm font-semibold tabular-nums text-slate-800">
+                  {{ money(component.total) }}
+                </span>
+              </div>
+            </div>
+
+            <!-- TOTAL -->
+            <div class="mt-4 rounded-xl bg-blue-50 p-4">
+              <p class="text-xs font-medium text-blue-700">
+                Total pembayaran driver
+              </p>
+
+              <p class="mt-1 text-2xl font-bold text-[#003366]">
+                {{ money(detailTotalMoney) }}
+              </p>
+            </div>
+
+            <!-- SHIPMENT COUNT -->
+            <div class="mt-3 flex items-center justify-between rounded-xl bg-slate-50 p-3">
+              <span class="text-xs text-slate-500">
+                Jumlah pengiriman
+              </span>
+
+              <span class="text-sm font-bold text-slate-800">
+                {{ number(selectedCostShipments.length) }} trip
+              </span>
+            </div>
+          </template>
+
+          <button type="button" @click="closeCostDetails"
             class="mt-5 w-full rounded-xl bg-[#0052cc] px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700">
             Tutup
           </button>
